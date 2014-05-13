@@ -1,0 +1,1 @@
+﻿Workflow 4 Node copyright (c) 2014 Gábor Mező (gabor.mezo@outlook.com)
