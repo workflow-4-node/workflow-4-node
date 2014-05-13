@@ -119,7 +119,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
         {
             context.scope.__argErrors = [];
             context.scope.__argCancelCounts = 0;
-            context.scope.__argIdleCounts = 0;
+            context.scope.__argIdleIds = [];
             context.scope.__argRemaining = activities.length;
             context.scope.__argEndBookmarkName = self._internalBookmarkName();
             context.createBookmark(self.id, context.scope.__argEndBookmarkName, endCallback);
@@ -150,16 +150,16 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
 }
 
-Activity.prototype.unschedule = function()
+Activity.prototype.unschedule = function(context)
 {
     var self = this;
-    var state = self.context.getState(self.id);
+    var state = context.getState(self.id);
     state.childActivityIds.forEach(function (childId)
     {
         var ibmName = self._internalBookmarkName(childId);
-        if (self.context.isBookmarkExists(ibmName))
+        if (context.isBookmarkExists(ibmName))
         {
-            self.context.resumeBookmarkInScope(ibmName, Activity.states.cancel);
+            context.resumeBookmarkInScope(ibmName, Activity.states.cancel);
         }
     });
 }
@@ -183,7 +183,8 @@ Activity.prototype._setupParentChildRelationship = function (context, parentId, 
 
 Activity.prototype._argCollected = function (context, reason, result, bookmark)
 {
-    var resultIndex = this.__argValues.indexOf(this._activity._internalBookmarkNameToActivityId(bookmark.name));
+    var childId = this._activity._internalBookmarkNameToActivityId(bookmark.name);
+    var resultIndex = this.__argValues.indexOf(childId);
     switch (reason)
     {
         case Activity.states.complete:
@@ -194,7 +195,7 @@ Activity.prototype._argCollected = function (context, reason, result, bookmark)
             this.__argValues[resultIndex] = null;
             break;
         case Activity.states.idle:
-            this.__argIdleCounts++;
+            this.__argIdleIds.push(childId);
             this.__argValues[resultIndex] = null;
             break;
         case Activity.states.fail:
@@ -228,7 +229,7 @@ Activity.prototype._argCollected = function (context, reason, result, bookmark)
         {
             reason = Activity.states.cancel;
         }
-        else if (this.__argIdleCounts)
+        else if (this.__argIdleIds.length)
         {
             reason = Activity.states.idle;
         }
@@ -242,7 +243,7 @@ Activity.prototype._argCollected = function (context, reason, result, bookmark)
         delete this.__argErrors;
         delete this.__argRemaining;
         delete this.__argEndBookmarkName;
-        delete this.__argIdleCounts;
+        delete this.__argIdleIds;
         delete this.__argCancelCounts;
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);

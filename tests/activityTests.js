@@ -372,9 +372,51 @@ module.exports = {
             engine.invoke().then(
                 function (result)
                 {
-                    test.equal(result.length, 2)
+                    test.equal(result.length, 2);
                     test.equal(result[0], "a");
                     test.equal(result[1], "ab");
+                },
+                function (e)
+                {
+                    test.ifError(e);
+                }).finally(
+                function ()
+                {
+                    test.done();
+                });
+        },
+
+        pickTest: function (test)
+        {
+            var activityMarkup = new ActivityMarkup();
+            var activity = activityMarkup.parse(
+                {
+                    pick: {
+                        var1: "",
+                        args: [
+                            {
+                                func: {
+                                    code: function ()
+                                    {
+                                        return this.var1 += "a";
+                                    }
+                                }
+                            },
+                            {
+                                func: {
+                                    code: 'function() { return this.var1 += "b"; }'
+                                }
+                            }
+                        ]
+                    }
+                });
+
+            var engine = new WorkflowEngine(activity);
+
+            engine.invoke().then(
+                function (result)
+                {
+                    test.equal(result, "a");
                 },
                 function (e)
                 {

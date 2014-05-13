@@ -12,15 +12,21 @@ util.inherits(Pick, Declarator);
 
 Pick.prototype.varsDeclared = function (context, args)
 {
+    this._pickedReason = null;
+    this._pickedResult = null;
     if (args && args.length)
     {
         // Monkeypatching FTW!
         this._prevArgCollected = this._argCollected;
         this._argCollected = function(context, reason, result, bookmarkName)
         {
-            if (!this._picked && reason == Activity.states.complete) this._picked = result;
-            this.unschedule();
-            this._prevArgCollected.call(this, context, reason, result, bookmarkName);
+            if (!this._pickedReason)
+            {
+                this._pickedReason = reason;
+                this._pickedResult = result;
+                this.unschedule();
+                this._prevArgCollected.call(this, context, reason, result, bookmarkName);
+            }
         }
         this.schedule(args, "_argsGot");
     }
@@ -32,10 +38,9 @@ Pick.prototype.varsDeclared = function (context, args)
 
 Pick.prototype._argsGot = function(context, reason, result)
 {
-    if (reason == Activity.states.complete)
+    if (this._pickedReason)
     {
-        if (this._picked == undefined) throw new ex.ActivityRuntimeError("There should be a picked value so far!");
-        this.complete(this._picked);
+        this.end(this._pickedReason, this._pickedResult);
     }
     else
     {

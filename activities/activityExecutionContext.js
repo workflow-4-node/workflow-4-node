@@ -35,7 +35,7 @@ function ActivityExecutionContext()
         },
         unschedule: function()
         {
-            if (this._activity) this._activity.unschedule.call(this._activity);
+            if (this._activity) this._activity.unschedule.call(this._activity, self);
         },
         createBookmark: function(name, callback)
         {
