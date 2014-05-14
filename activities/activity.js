@@ -86,11 +86,24 @@ Activity.prototype.end = function (context, reason, result)
 
     context.endScope();
 
-    state.emit(context, reason, result);
-    state.emit(Activity.states.end, reason, result);
-
     var bmName = this._internalBookmarkName();
-    if (context.isBookmarkExists(bmName)) context.resumeBookmarkInScope(bmName, reason, result);
+    if (context.isBookmarkExists(bmName))
+    {
+        context.resumeBookmarkInScope(bmName, reason, result);
+        return;
+    }
+
+    if (state.isRoot)
+    {
+        // This is a root
+        if (context.processResumeBookmarkQueue(this.id))
+        {
+            return;
+        }
+    }
+
+    state.emit(reason, result);
+    state.emit(Activity.states.end, reason, result);
 }
 
 Activity.prototype.schedule = function (context, obj, endCallback)

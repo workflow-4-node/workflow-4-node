@@ -2,12 +2,13 @@ var EventEmitter = require('events').EventEmitter;
 var util = require("util");
 var enums = require("./enums");
 
-function ActivityExecutionState(activityId)
+function ActivityExecutionState(activityId, isRoot)
 {
     this.activityId = activityId;
     this.execState = enums.ActivityStates.idle;
     this.parentActivityId = null;
     this.childActivityIds = [];
+    this.isRoot = isRoot;
 }
 
 util.inherits(ActivityExecutionState, EventEmitter);

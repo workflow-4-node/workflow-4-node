@@ -2,7 +2,9 @@ var util = require("util");
 
 function ActivityStateExceptionError(message)
 {
-    Error.call(this, message);
+    Error.call(this);
+    Error.captureStackTrace(this, this.constructor);
+    this.message = message;
 }
 
 util.inherits(ActivityStateExceptionError, Error);
@@ -31,21 +33,27 @@ util.inherits(AggregateError, ActivityStateExceptionError);
 
 function ActivityMarkupError(message)
 {
-    Error.call(this, message);
+    Error.call(this);
+    Error.captureStackTrace(this, this.constructor);
+    this.message = message;
 }
 
 util.inherits(ActivityMarkupError, Error);
 
 function ActivityRuntimeError(message)
 {
-    Error.call(this, message);
+    Error.call(this);
+    Error.captureStackTrace(this, this.constructor);
+    this.message = message;
 }
 
 util.inherits(ActivityRuntimeError, Error);
 
 function ValidationError(message)
 {
-    Error.call(this, message);
+    Error.call(this);
+    Error.captureStackTrace(this, this.constructor);
+    this.message = message;
 }
 
 util.inherits(ValidationError, Error);

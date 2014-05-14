@@ -44,22 +44,7 @@ WorkflowEngine.prototype._setRootState = function(state)
         });
         self._rootState.on(Activity.states.idle, function()
         {
-            try
-            {
-                if (self._context.processResumeBookmarkQueue(self._rootActivity.id))
-                {
-                    // There was idle continutations, so we should not emit anything there.
-                    return;
-                }
-                else
-                {
-                    self.emit(Activity.states.idle);
-                }
-            }
-            catch (e)
-            {
-                self.emit(Activity.states.fail, e);
-            }
+            self.emit(Activity.states.idle);
         });
     }
 }
@@ -77,7 +62,7 @@ WorkflowEngine.prototype.invoke = function ()
     try
     {
         this._setRootState(this._context.getState(this._rootActivity.id));
-        this._rootState.once(Activity.states.end, function (reason, result)
+        this.once(Activity.states.end, function (reason, result)
         {
             switch (reason)
             {
