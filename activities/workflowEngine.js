@@ -5,13 +5,18 @@ var EventEmitter = require('events').EventEmitter;
 var util = require("util");
 var ex = require("./ActivityExceptions");
 var Q = require("q");
+var _ = require("underscore-node");
+var TrackingParticipant = require("./TrackingParticipant");
 
 function WorkflowEngine(rootActivity)
 {
     if (!(rootActivity instanceof Activity)) throw new TypeError("Argument 'rootActivity' is not an activity.");
     this._rootActivity = rootActivity;
     this._context = new ActivityExecutionContext();
+    this._context.initialize(this._rootActivity);
     this._rootState = null;
+    this._trackers = [];
+    this._hookContext();
 }
 
 util.inherits(WorkflowEngine, EventEmitter);
@@ -47,6 +52,31 @@ WorkflowEngine.prototype._setRootState = function(state)
             self.emit(Activity.states.idle);
         });
     }
+}
+
+WorkflowEngine.prototype._hookContext = function()
+{
+    var self = this;
+    self._context.on(Activity.states.run, function (activity)
+    {
+        self._trackers.forEach(function(t)
+        {
+            t.activityStateChanged(activity, Activity.states.run);
+        });
+    });
+    self._context.on(Activity.states.end, function (activity, reason, result)
+    {
+        self._trackers.forEach(function(t)
+        {
+            t.activityStateChanged(activity, reason, result);
+        });
+    });
+}
+
+WorkflowEngine.prototype.addTracker = function (tracker)
+{
+    if (!_.isObject(tracker)) throw new TypeError("Parameter is not an object.");
+    this._trackers.push(new TrackingParticipant(tracker));
 }
 
 WorkflowEngine.prototype.start = function ()

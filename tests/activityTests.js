@@ -4,18 +4,9 @@ var ActivityMarkup = require("../activities/activityMarkup");
 var WorkflowEngine = require("../activities/workflowEngine");
 var Q = require("q");
 var _ = require("underscore-node");
+var ConsoleTracker = require("../activities/consoleTracker");
 
 module.exports = {
-    setUp: function (callback)
-    {
-        callback();
-    },
-
-    tearDown: function (callback)
-    {
-        callback();
-    },
-
     basic: {
         funcSyncTest: function (test)
         {
@@ -419,12 +410,12 @@ module.exports = {
                 {
                     test.equals(result, "a");
 
-                    var context = engine._context;
-                    test.equals(_(context._activityStates).keys().length, 2);
-                    test.equals(context._scopeExtenders.length, 0);
-                    test.equals(_(context._bookmarks).keys().length, 0);
-                    test.equals(_(context._scopeParts).keys().length, 0);
-                    test.equals(context._resumeBMQueue.isEmpty(), true);
+//                    var context = engine._context;
+//                    test.equals(_(context._activityStates).keys().length, 2);
+//                    test.equals(context._scopeExtenders.length, 0);
+//                    test.equals(_(context._bookmarks).keys().length, 0);
+//                    test.equals(_(context._scopeParts).keys().length, 0);
+//                    test.equals(context._resumeBMQueue.isEmpty(), true);
                 },
                 function (e)
                 {
@@ -437,89 +428,7 @@ module.exports = {
         }
     },
 
-//    bookmarking: {
-//        parallelTest: function (test)
-//        {
-//            var var1 = "";
-//            var activityMarkup = new ActivityMarkup();
-//            var activity = activityMarkup.parse(
-//                {
-//                    parallel: {
-//                        args: [
-//                            {
-//                                block: [
-//                                    {
-//                                        waitForBookmark: {
-//                                            bookmarkName: "bm1"
-//                                        }
-//                                    },
-//                                    {
-//                                        func: {
-//                                            code: function ()
-//                                            {
-//                                                var1 += "a";
-//                                            }
-//                                        }
-//                                    }
-//                                ]
-//                            },
-//                            {
-//                                block: [
-//                                    {
-//                                        waitForBookmark: {
-//                                            bookmarkName: "bm2"
-//                                        }
-//                                    },
-//                                    {
-//                                        func: {
-//                                            code: function ()
-//                                            {
-//                                                var1 += "b";
-//                                            }
-//                                        }
-//                                    }
-//                                ]
-//                            },
-//                            {
-//                                block: [
-//                                    {
-//                                        resumeBookmark: {
-//                                            bookmarkName: "bm1"
-//                                        }
-//                                    },
-//                                    {
-//                                        resumeBookmark: {
-//                                            bookmarkName: "bm2"
-//                                        }
-//                                    }
-//                                ]
-//                            }
-//                        ]
-//                    }
-//                });
-//
-//            var engine = new WorkflowEngine(activity);
-//
-//            engine.invoke().then(
-//                function (result)
-//                {
-//                    test.equals(var1, "ab");
-//
-////                    var context = engine._context;
-////                    test.equals(_(context._activityStates).keys().length, 2);
-////                    test.equals(context._scopeExtenders.length, 0);
-////                    test.equals(_(context._bookmarks).keys().length, 0);
-////                    test.equals(_(context._scopeParts).keys().length, 0);
-////                    test.equals(context._resumeBMQueue.isEmpty(), true);
-//                },
-//                function (e)
-//                {
-//                    test.ifError(e);
-//                }).finally(
-//                function ()
-//                {
-//                    test.done();
-//                });
-//        }
-//    }
+    bookmarking: {
+
+    }
 }

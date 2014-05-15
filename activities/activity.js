@@ -6,9 +6,11 @@ var ActivityExecutionContext = require("./activityExecutionContext");
 
 function Activity()
 {
+    this.__typeid = "___ACTIVITY___";
     this.id = Guid.create().toString();
     this.args = null;
-    this._nonScoped = [ "_nonScoped", "id", "args"];
+    this.displayName = "";
+    this._nonScoped = [ "_nonScoped", "id", "args", "__typeid", "displayName" ];
 }
 
 Activity.prototype.asNonScoped = function (fieldName)
@@ -89,7 +91,12 @@ Activity.prototype.end = function (context, reason, result)
     var bmName = this._internalBookmarkName();
     if (context.isBookmarkExists(bmName))
     {
+        state.emit(reason, result);
+        state.emit(Activity.states.end, reason, result);
+
         context.resumeBookmarkInScope(bmName, reason, result);
+
+        return;
     }
     
     if (state.isRoot() && inIdle)
@@ -135,7 +142,6 @@ Activity.prototype.schedule = function (context, obj, endCallback)
                 function (a)
                 {
                     context.createBookmark(self.id, a._internalBookmarkName(), "argCollected");
-                    self._setupParentChildRelationship(context, self.id, a.id);
                     a.start(context);
                 });
         }
@@ -149,7 +155,6 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     else if (obj instanceof Activity)
     {
         context.createBookmark(self.id, obj._internalBookmarkName(), endCallback);
-        self._setupParentChildRelationship(context, self.id, obj.id);
         obj.start(context);
     }
     else
@@ -170,23 +175,6 @@ Activity.prototype.unschedule = function(context)
             context.resumeBookmarkInScope(ibmName, Activity.states.cancel);
         }
     });
-}
-
-Activity.prototype._setupParentChildRelationship = function (context, parentId, childId)
-{
-    var ps = context.getState(parentId);
-    var cs = context.getState(childId);
-
-    if (!cs.parentActivityId)
-    {
-        cs.parentActivityId = parentId;
-    }
-    else if (cs.parentActivityId != parentId)
-    {
-        throw new Error("Activity '" + childId + "' parent has been already determined by the current execution order.");
-    }
-
-    if (ps.childActivityIds.indexOf(childId) == -1) ps.childActivityIds.push(childId);
 }
 
 Activity.prototype.argCollected = function (context, reason, result, bookmark)

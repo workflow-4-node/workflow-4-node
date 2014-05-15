@@ -3,6 +3,9 @@ var ActivityExecutionState = require("./activityExecutionState");
 var ResumeBookmarkQueue = require("./resumeBookmarkQueue");
 var enums = require("./enums");
 var ex = require("./activityExceptions");
+var util = require("util");
+var EventEmitter = require('events').EventEmitter;
+var _ = require("underscore-node");
 
 function ActivityExecutionContext()
 {
@@ -57,15 +60,70 @@ function ActivityExecutionContext()
     this._nonPersistZoneCounter = 0;
     this._scopeParts = {};
     this._resumeBMQueue = new ResumeBookmarkQueue();
+    this._knonwActivities = {};
+}
+
+util.inherits(ActivityExecutionContext, EventEmitter);
+
+ActivityExecutionContext.prototype.initialize = function (rootActivity)
+{
+    this._initialize(null, rootActivity, { id: 0 });
+}
+
+ActivityExecutionContext.prototype._initialize = function (parent, activity, idCounter)
+{
+    var self = this;
+    activity.id = (idCounter.id++).toString();
+    var state = self.getState(activity.id);
+    state.parentActivityId = parent ? parent.id : null;
+    self._knonwActivities[activity.id] = activity;
+
+    for (var fieldName in activity)
+    {
+        var fieldValue = activity[fieldName];
+        if (fieldValue)
+        {
+            if (_.isArray(fieldValue))
+            {
+                fieldValue.forEach(function(obj)
+                {
+                    if (obj["__typeid"] == "___ACTIVITY___")
+                    {
+                        self._initialize(activity, obj, idCounter);
+                        state.childActivityIds.push(obj.id);
+                    }
+                });
+            }
+            else if (fieldValue["__typeid"] == "___ACTIVITY___")
+            {
+                self._initialize(activity, fieldValue, idCounter);
+                state.childActivityIds.push(fieldValue.id);
+            }
+        }
+    }
 }
 
 ActivityExecutionContext.prototype.getState = function(id)
 {
-    var state = this._activityStates[id];
+    var self = this;
+
+    var state = self._activityStates[id];
     if (state == undefined)
     {
         state = new ActivityExecutionState(id);
-        this._activityStates[id] = state;
+        state.on(enums.ActivityStates.run, function ()
+        {
+            var activity = self._knonwActivities[id];
+            if (!activity) activity = { id: id };
+            self.emit(enums.ActivityStates.run, activity);
+        });
+        state.on(enums.ActivityStates.end, function (reason, result)
+        {
+            var activity = self._knonwActivities[id];
+            if (!activity) activity = { id: id };
+            self.emit(enums.ActivityStates.end, activity, reason, result);
+        });
+        self._activityStates[id] = state;
     }
     return state;
 }
@@ -236,7 +294,7 @@ ActivityExecutionContext.prototype._restoreScope = function(rootActivityId, acti
     var currentId = currentState.activityId;
     do
     {
-        path.push(currentId);
+        path.unshift(currentId);
 
         currentId = currentState.parentActivityId;
         if (currentId)
@@ -249,7 +307,7 @@ ActivityExecutionContext.prototype._restoreScope = function(rootActivityId, acti
 
     path.forEach(function(id)
     {
-        var scopePart = self._scopeParts[activityId];
+        var scopePart = self._scopeParts[id];
         if (!scopePart) throw new Error("Scope part not found for Activity '" + id + "'.");
         self.beginScope(id, scopePart);
     });
