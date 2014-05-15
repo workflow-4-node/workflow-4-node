@@ -1,6 +1,6 @@
 function ScopeExtender(originalScope)
 {
-    this.currentScope = {};
+    this.currentScope = originalScope;
     this.restoreFields = {};
     this.originalFields = {};
     this.privateFields = {};
@@ -9,7 +9,6 @@ function ScopeExtender(originalScope)
     for (var fieldName in originalScope)
     {
         this.originalFields[fieldName] = true;
-        this.currentScope[fieldName] = originalScope[fieldName];
     }
 }
 

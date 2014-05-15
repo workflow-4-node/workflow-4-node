@@ -91,28 +91,40 @@ WorkflowEngine.prototype.invoke = function ()
     var defer = Q.defer();
     try
     {
+        var argRemoveToken = null;
+        var args = [];
+        Array.prototype.forEach.call(arguments, function (a) { args.push(a); });
+        if (args.length) argRemoveToken = this._context.appendToContext(this._rootActivity, args);
+        args.unshift(this._context);
+
         this._setRootState(this._context.getState(this._rootActivity.id));
         this.once(Activity.states.end, function (reason, result)
         {
-            switch (reason)
+            try
             {
-                case Activity.states.complete:
-                    defer.resolve(result);
-                    break;
-                case Activity.states.cancel:
-                    defer.reject(new ex.Cancelled());
-                    break;
-                case Activity.states.idle:
-                    defer.reject(new ex.Idle());
-                    break;
-                default :
-                    result = result || new ex.ActivityStateExceptionError("Unknonw error.");
-                    defer.reject(result);
-                    break;
+                switch (reason)
+                {
+                    case Activity.states.complete:
+                        defer.resolve(result);
+                        break;
+                    case Activity.states.cancel:
+                        defer.reject(new ex.Cancelled());
+                        break;
+                    case Activity.states.idle:
+                        defer.reject(new ex.Idle());
+                        break;
+                    default :
+                        result = result || new ex.ActivityStateExceptionError("Unknonw error.");
+                        defer.reject(result);
+                        break;
+                }
+            }
+            finally
+            {
+                if (argRemoveToken) this._context.removeFromContext(this._rootActivity, argRemoveToken);
             }
         });
-        var args = [ this._context ];
-        Array.prototype.forEach.call(arguments, function (a) { args.push(a); });
+
         this._rootActivity.start.apply(this._rootActivity, args);
     }
     catch (e)

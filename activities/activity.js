@@ -6,11 +6,11 @@ var ActivityExecutionContext = require("./activityExecutionContext");
 
 function Activity()
 {
-    this.__typeid = "___ACTIVITY___";
-    this.id = Guid.create().toString();
+    this.__typeTag = "___ACTIVITY___";
+    this.id = null;
     this.args = null;
     this.displayName = "";
-    this._nonScoped = [ "_nonScoped", "id", "args", "__typeid", "displayName" ];
+    this._nonScoped = [ "_nonScoped", "id", "args", "__typeTag", "displayName" ];
 }
 
 Activity.prototype.asNonScoped = function (fieldName)
@@ -30,7 +30,7 @@ Activity.prototype.start = function (context)
     if (state.isRunning()) throw new Error("Activity is already running.");
 
     var args = this.args;
-    if (!args)
+    if (arguments.length > 1)
     {
         args = [];
         for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
@@ -237,12 +237,12 @@ Activity.prototype.argCollected = function (context, reason, result, bookmark)
             result = self.__argValues;
         }
 
-        delete self.__argValues;
-        delete self.__argErrors;
+        /*delete self.__argValues;
         delete self.__argRemaining;
-        delete self.__argEndBookmarkName;
         delete self.__argIdleBms;
+        delete self.__argEndBookmarkName;
         delete self.__argCancelCounts;
+        delete self.__argErrors;*/
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);
     }

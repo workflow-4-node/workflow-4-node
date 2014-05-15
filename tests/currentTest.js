@@ -28,6 +28,7 @@ module.exports = {
                                     },
                                     {
                                         func: {
+                                            displayName: "Func 1",
                                             code: function ()
                                             {
                                                 var1 += "a";
@@ -48,6 +49,7 @@ module.exports = {
                                     },
                                     {
                                         func: {
+                                            displayName: "Func 2",
                                             code: function ()
                                             {
                                                 var1 += "b";

@@ -60,7 +60,8 @@ function ActivityExecutionContext()
     this._nonPersistZoneCounter = 0;
     this._scopeParts = {};
     this._resumeBMQueue = new ResumeBookmarkQueue();
-    this._knonwActivities = {};
+    this._knownActivities = {};
+    this._nextActivityId = 0;
 }
 
 util.inherits(ActivityExecutionContext, EventEmitter);
@@ -70,13 +71,54 @@ ActivityExecutionContext.prototype.initialize = function (rootActivity)
     this._initialize(null, rootActivity, { id: 0 });
 }
 
+ActivityExecutionContext.prototype.appendToContext = function (rootActivity, args)
+{
+    var self = this;
+
+    var state = self.getState(rootActivity.id);
+    var currMax = self._nextActivityId;
+    var c = { id: currMax };
+    if (_.isArray(args))
+    {
+        args.forEach(function (arg)
+        {
+            if (self._isActivity(arg))
+            {
+                state.childActivityIds.push(arg.id);
+                self._initialize(rootActivity, arg, c);
+            }
+        });
+    }
+
+    return {
+        fromId: currMax,
+        toId: this._nextActivityId
+    };
+}
+
+ActivityExecutionContext.prototype.removeFromContext = function (rootActivity, removeToken)
+{
+    var state = this.getState(rootActivity.id);
+
+    for (var id = removeToken.fromId; id <= removeToken.toId; id++)
+    {
+        delete this._knownActivities[id];
+        var cidx = state.childActivityIds.indexOf(id);
+        if (cidx != -1) state.childActivityIds.splice(cidx, 1);
+    }
+
+    this._nextActivityId = removeToken.fromId;
+}
+
 ActivityExecutionContext.prototype._initialize = function (parent, activity, idCounter)
 {
     var self = this;
+
     activity.id = (idCounter.id++).toString();
+    self._nextActivityId = idCounter.id;
     var state = self.getState(activity.id);
     state.parentActivityId = parent ? parent.id : null;
-    self._knonwActivities[activity.id] = activity;
+    self._knownActivities[activity.id] = activity;
 
     for (var fieldName in activity)
     {
@@ -87,20 +129,25 @@ ActivityExecutionContext.prototype._initialize = function (parent, activity, idC
             {
                 fieldValue.forEach(function(obj)
                 {
-                    if (obj["__typeid"] == "___ACTIVITY___")
+                    if (self._isActivity(obj))
                     {
                         self._initialize(activity, obj, idCounter);
                         state.childActivityIds.push(obj.id);
                     }
                 });
             }
-            else if (fieldValue["__typeid"] == "___ACTIVITY___")
+            else if (self._isActivity(fieldValue))
             {
                 self._initialize(activity, fieldValue, idCounter);
                 state.childActivityIds.push(fieldValue.id);
             }
         }
     }
+}
+
+ActivityExecutionContext.prototype._isActivity = function(obj)
+{
+    return obj["__typeTag"] == "___ACTIVITY___"; // TODO: Find a better method than this!
 }
 
 ActivityExecutionContext.prototype.getState = function(id)
@@ -113,13 +160,13 @@ ActivityExecutionContext.prototype.getState = function(id)
         state = new ActivityExecutionState(id);
         state.on(enums.ActivityStates.run, function ()
         {
-            var activity = self._knonwActivities[id];
+            var activity = self._knownActivities[id];
             if (!activity) activity = { id: id };
             self.emit(enums.ActivityStates.run, activity);
         });
         state.on(enums.ActivityStates.end, function (reason, result)
         {
-            var activity = self._knonwActivities[id];
+            var activity = self._knownActivities[id];
             if (!activity) activity = { id: id };
             self.emit(enums.ActivityStates.end, activity, reason, result);
         });
@@ -133,7 +180,6 @@ ActivityExecutionContext.prototype.beginScope = function(activityId, newScope)
     var scopeExtender = new ScopeExtender(this.scope);
     scopeExtender.extend(newScope);
     this._scopeExtenders.push({ activityId: activityId, scopeExtender: scopeExtender });
-    this.scope = scopeExtender.currentScope;
 }
 
 ActivityExecutionContext.prototype.endScope = function()
@@ -142,7 +188,6 @@ ActivityExecutionContext.prototype.endScope = function()
     {
         var ext = this._scopeExtenders[this._scopeExtenders.length - 1];
         ext.scopeExtender.undo();
-        this.scope = ext.scopeExtender.currentScope;
         this._scopeExtenders.length--;
     }
     else
