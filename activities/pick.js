@@ -18,7 +18,7 @@ Pick.prototype.varsDeclared = function (context, args)
     {
         // Monkeypatching FTW!
         this._prevArgCollected = this._argCollected;
-        this._argCollected = function(context, reason, result, bookmarkName)
+        this.argCollected = function(context, reason, result, bookmarkName)
         {
             if (!this._pickedReason)
             {

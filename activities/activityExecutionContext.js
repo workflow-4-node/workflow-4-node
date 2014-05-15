@@ -1,53 +1,55 @@
 var ScopeExtender = require("./scopeExtender");
 var ActivityExecutionState = require("./activityExecutionState");
 var ResumeBookmarkQueue = require("./resumeBookmarkQueue");
+var enums = require("./enums");
+var ex = require("./activityExceptions");
 
 function ActivityExecutionContext()
 {
     var self = this;
     this._activityStates = {};
     this.scope = {
-        _activity: null,
+        activity: null,
         // TODO: Validate arguments of the following methods, because they are protected.
         complete: function (result)
         {
-            if (this._activity) this._activity.complete.call(this._activity, self, result);
+            if (this.activity) this.activity.complete.call(this.activity, self, result);
         },
         cancel: function ()
         {
-            if (this._activity) this._activity.cancel.call(this._activity, self);
+            if (this.activity) this.activity.cancel.call(this.activity, self);
         },
         idle: function ()
         {
-            if (this._activity) this._activity.idle.call(this._activity, self);
+            if (this.activity) this.activity.idle.call(this.activity, self);
         },
         fail: function (e)
         {
-            if (this._activity) this._activity.fail.call(this._activity, self, e);
+            if (this.activity) this.activity.fail.call(this.activity, self, e);
         },
         end: function (reason, result)
         {
-            if (this._activity) this._activity.end.call(this._activity, self, reason, result);
+            if (this.activity) this.activity.end.call(this.activity, self, reason, result);
         },
         schedule: function(obj, endcallback)
         {
-            if (this._activity) this._activity.schedule.call(this._activity, self, obj, endcallback);
+            if (this.activity) this.activity.schedule.call(this.activity, self, obj, endcallback);
         },
         unschedule: function()
         {
-            if (this._activity) this._activity.unschedule.call(this._activity, self);
+            if (this.activity) this.activity.unschedule.call(this.activity, self);
         },
         createBookmark: function(name, callback)
         {
-            if (this._activity) self.createBookmark(this._activity.id, name, callback);
+            if (this.activity) self.createBookmark(this.activity.id, name, callback);
         },
         resumeBookmark: function(name, reason, result)
         {
             self.resumeBookmarkInternal(name, reason, result);
         },
-        _argCollected: function(context, reason, result, bookmarkName)
+        argCollected: function(context, reason, result, bookmarkName)
         {
-            if (this._activity) this._activity._argCollected.call(this, context, reason, result, bookmarkName);
+            if (this.activity) this.activity.argCollected.call(this, context, reason, result, bookmarkName);
         }
     };
     this._scopeExtenders = [];
@@ -59,16 +61,10 @@ function ActivityExecutionContext()
 
 ActivityExecutionContext.prototype.getState = function(id)
 {
-    var any = false;
-    for (var x in this._activityStates)
-    {
-        any = true;
-        break;
-    }
     var state = this._activityStates[id];
     if (state == undefined)
     {
-        state = new ActivityExecutionState(id, !any);
+        state = new ActivityExecutionState(id);
         this._activityStates[id] = state;
     }
     return state;
@@ -79,7 +75,7 @@ ActivityExecutionContext.prototype.beginScope = function(activityId, newScope)
     var scopeExtender = new ScopeExtender(this.scope);
     scopeExtender.extend(newScope);
     this._scopeExtenders.push({ activityId: activityId, scopeExtender: scopeExtender });
-    return scopeExtender.currentScope;
+    this.scope = scopeExtender.currentScope;
 }
 
 ActivityExecutionContext.prototype.endScope = function()
@@ -88,6 +84,7 @@ ActivityExecutionContext.prototype.endScope = function()
     {
         var ext = this._scopeExtenders[this._scopeExtenders.length - 1];
         ext.scopeExtender.undo();
+        this.scope = ext.scopeExtender.currentScope;
         this._scopeExtenders.length--;
     }
     else
@@ -113,7 +110,7 @@ ActivityExecutionContext.prototype.exitNonPersistZone = function()
 
 ActivityExecutionContext.prototype.createBookmark = function (activityId, name, endCallback)
 {
-    this._registerBookmark(
+    this.registerBookmark(
         {
             name: name,
             activityId: activityId,
@@ -134,7 +131,7 @@ ActivityExecutionContext.prototype.getBookmarksByActivityId = function (id)
     return result;
 }
 
-ActivityExecutionContext.prototype._registerBookmark = function(bookmark)
+ActivityExecutionContext.prototype.registerBookmark = function(bookmark)
 {
     if (this._bookmarks[bookmark.name]) throw new Error("Bookmark '" + bookmark.name + "' already exists.");
     this._bookmarks[bookmark.name] = bookmark;
@@ -148,10 +145,20 @@ ActivityExecutionContext.prototype.isBookmarkExists = function(name)
 ActivityExecutionContext.prototype.resumeBookmarkInScope = function(name, reason, result)
 {
     var bm = this._bookmarks[name];
-    if (bm == undefined) throw new Error("Bookmark '" + name + "' doesn't exists.");
+    if (bm == undefined)
+    {
+        throw new Error("Bookmark '" + name + "' doesn't exists.");
+    }
     var scopesAId = this._getActivityIdOfCurrentScope();
-    if (scopesAId != bm.activityId) throw new Error("Bookmark '" + bm.name + "' doesn't exists at current scope.");
+    if (scopesAId != bm.activityId)
+    {
+        throw new Error("Bookmark's '" + bm.name + "' scope is not the current scope.");
+    }
     this._doResumeBookmark(bm, reason, result);
+    if (reason == enums.ActivityStates.idle)
+    {
+        this.registerBookmark(bm);
+    }
 }
 
 ActivityExecutionContext.prototype.resumeBookmarkInternal = function(name, reason, result)
@@ -169,13 +176,16 @@ ActivityExecutionContext.prototype.resumeBookmarkExternal = function(name, reaso
 ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reason, result)
 {
     delete this._bookmarks[bookmark.name];
+    if (this.scope[bookmark.endCallback] == undefined)
+    {
+        throw new ex.ActivityRuntimeError("Bookmark's '" + bookmark.name + "' callback '" + bookmark.endCallback + "' is not defined on the current scope.");
+    }
     this.scope[bookmark.endCallback].call(this.scope, this, reason, result, bookmark);
 }
 
 ActivityExecutionContext.prototype._getActivityIdOfCurrentScope = function()
 {
-    if (this._scopeExtenders.length) return this._scopeExtenders[this._scopeExtenders.length - 1].activityId;
-    return null;
+    return this.scope && this.scope.activity ? this.scope.activity.id : null;
 }
 
 ActivityExecutionContext.prototype.processResumeBookmarkQueue = function(rootActivityId)

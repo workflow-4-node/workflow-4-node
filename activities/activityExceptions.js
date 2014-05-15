@@ -63,3 +63,5 @@ module.exports.Cancelled = Cancelled;
 module.exports.Idle = Idle;
 module.exports.AggregateError = AggregateError;
 module.exports.ActivityMarkupError = ActivityMarkupError;
+module.exports.ActivityRuntimeError = ActivityRuntimeError;
+module.exports.ValidationError = ValidationError;

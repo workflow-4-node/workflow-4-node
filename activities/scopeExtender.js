@@ -1,19 +1,30 @@
 function ScopeExtender(originalScope)
 {
-    this.currentScope = originalScope;
+    this.currentScope = {};
     this.restoreFields = {};
     this.originalFields = {};
+    this.privateFields = {};
     this.extended = false;
 
     for (var fieldName in originalScope)
     {
         this.originalFields[fieldName] = true;
+        this.currentScope[fieldName] = originalScope[fieldName];
     }
 }
 
 ScopeExtender.prototype.extend = function (scope)
 {
     if (this.extended) throw new Error("Scope already extended.");
+
+    for (var fieldName in this.currentScope)
+    {
+        if (fieldName[0] == "_")
+        {
+            this.privateFields[fieldName] = this.currentScope[fieldName];
+            delete this.currentScope[fieldName];
+        }
+    }
 
     for (var fieldName in scope)
     {
@@ -57,7 +68,14 @@ ScopeExtender.prototype.undo = function()
             delete self.currentScope[n];
         });
 
+    // Lastly we will restore private fields:
+    for (var fieldName in self.privateFields)
+    {
+        self.currentScope[fieldName] = self.privateFields[fieldName];
+    }
+
     self.restoreFields = {};
+    self.privateFields = {};
 
     self.extended = false;
 }
@@ -68,7 +86,9 @@ ScopeExtender.prototype.getExtension = function()
     var ext = {};
     for (var fieldName in self.currentScope)
     {
-        if (self.originalFields[fieldName] == undefined)
+        var originalValue = self.originalFields[fieldName];
+        var currentValue = self.currentScope[fieldName];
+        if (originalValue !== currentValue)
         {
             ext[fieldName] = self.currentScope[fieldName];
         }

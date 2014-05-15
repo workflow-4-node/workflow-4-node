@@ -34,9 +34,9 @@ Activity.prototype.start = function (context)
         for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
     }
 
-    var scope = context.beginScope(this.id, this.createScope());
+    context.beginScope(this.id, this.createScope());
     this.emit(context, Activity.states.run);
-    this.run.call(scope, context, args);
+    this.run.call(context.scope, context, args);
 
     return state;
 }
@@ -90,16 +90,11 @@ Activity.prototype.end = function (context, reason, result)
     if (context.isBookmarkExists(bmName))
     {
         context.resumeBookmarkInScope(bmName, reason, result);
-        return;
     }
-
-    if (state.isRoot)
+    
+    if (state.isRoot() && inIdle)
     {
-        // This is a root
-        if (context.processResumeBookmarkQueue(this.id))
-        {
-            return;
-        }
+        if (context.processResumeBookmarkQueue(this.id)) return;
     }
 
     state.emit(reason, result);
@@ -132,14 +127,14 @@ Activity.prototype.schedule = function (context, obj, endCallback)
         {
             context.scope.__argErrors = [];
             context.scope.__argCancelCounts = 0;
-            context.scope.__argIdleIds = [];
+            context.scope.__argIdleBms = [];
             context.scope.__argRemaining = activities.length;
             context.scope.__argEndBookmarkName = self._internalBookmarkName();
             context.createBookmark(self.id, context.scope.__argEndBookmarkName, endCallback);
             activities.forEach(
                 function (a)
                 {
-                    context.createBookmark(self.id, a._internalBookmarkName(), "_argCollected");
+                    context.createBookmark(self.id, a._internalBookmarkName(), "argCollected");
                     self._setupParentChildRelationship(context, self.id, a.id);
                     a.start(context);
                 });
@@ -194,70 +189,72 @@ Activity.prototype._setupParentChildRelationship = function (context, parentId, 
     if (ps.childActivityIds.indexOf(childId) == -1) ps.childActivityIds.push(childId);
 }
 
-Activity.prototype._argCollected = function (context, reason, result, bookmark)
+Activity.prototype.argCollected = function (context, reason, result, bookmark)
 {
-    var childId = this._activity._internalBookmarkNameToActivityId(bookmark.name);
-    var resultIndex = this.__argValues.indexOf(childId);
+    var self = this;
+    
+    var childId = self.activity._internalBookmarkNameToActivityId(bookmark.name);
+    var resultIndex = self.__argValues.indexOf(childId);
     switch (reason)
     {
         case Activity.states.complete:
-            this.__argValues[resultIndex] = result;
+            self.__argValues[resultIndex] = result;
             break;
         case Activity.states.cancel:
-            this.__argCancelCounts++;
-            this.__argValues[resultIndex] = null;
+            self.__argCancelCounts++;
+            self.__argValues[resultIndex] = null;
             break;
         case Activity.states.idle:
-            this.__argIdleIds.push(childId);
-            this.__argValues[resultIndex] = null;
+            self.__argIdleBms.push(bookmark);
+            self.__argValues[resultIndex] = null;
             break;
         case Activity.states.fail:
             result = result || new ex.ActivityStateExceptionError("Unknown error.");
-            this.__argErrors.push(result);
-            this.__argValues[resultIndex] = null;
+            self.__argErrors.push(result);
+            self.__argValues[resultIndex] = null;
             break;
         default:
-            this.__argErrors.push(new ex.ActivityStateExceptionError("Bookmark should not be continued with reason '" + reason + "'."));
-            this.__argValues[resultIndex] = null;
+            self.__argErrors.push(new ex.ActivityStateExceptionError("Bookmark should not be continued with reason '" + reason + "'."));
+            self.__argValues[resultIndex] = null;
             break;
     }
-    if (--this.__argRemaining == 0)
+    if (--self.__argRemaining == 0)
     {
-        var endBookmarkName = this.__argEndBookmarkName;
+        var endBookmarkName = self.__argEndBookmarkName;
         var reason;
         var result = null;
-        if (this.__argErrors.length)
+        if (self.__argErrors.length)
         {
             reason = Activity.states.fail;
-            if (this.__argErrors.length == 1)
+            if (self.__argErrors.length == 1)
             {
-                result = this.__argErrors[0];
+                result = self.__argErrors[0];
             }
             else
             {
-                result = new ex.AggregateError(this.__argErrors);
+                result = new ex.AggregateError(self.__argErrors);
             }
         }
-        else if (this.__argCancelCounts)
+        else if (self.__argCancelCounts)
         {
             reason = Activity.states.cancel;
         }
-        else if (this.__argIdleIds.length)
+        else if (self.__argIdleBms.length)
         {
             reason = Activity.states.idle;
         }
         else
         {
             reason = Activity.states.complete;
-            result = this.__argValues;
+            result = self.__argValues;
         }
 
-        delete this.__argValues;
-        delete this.__argErrors;
-        delete this.__argRemaining;
-        delete this.__argEndBookmarkName;
-        delete this.__argIdleIds;
-        delete this.__argCancelCounts;
+        delete self.__argValues;
+        delete self.__argErrors;
+        delete self.__argRemaining;
+        delete self.__argEndBookmarkName;
+        delete self.__argIdleBms;
+        delete self.__argCancelCounts;
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);
     }
@@ -283,7 +280,7 @@ Activity.prototype.emit = function (context)
 
 Activity.prototype.createScope = function ()
 {
-    var scope = { _activity: this };
+    var scope = { activity: this };
     for (var fieldName in this)
     {
         var fieldValue = this[fieldName];

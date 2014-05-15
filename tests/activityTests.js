@@ -30,7 +30,7 @@ module.exports = {
             engine.invoke({ name: "Gabor" }).then(
                 function (result)
                 {
-                    test.equal(result, "Gabor");
+                    test.equals(result, "Gabor");
                 },
                 function (e)
                 {
@@ -60,7 +60,7 @@ module.exports = {
             engine.invoke({ name: "Gabor" }).then(
                 function (result)
                 {
-                    test.equal(result, "Gabor");
+                    test.equals(result, "Gabor");
                 },
                 function (e)
                 {
@@ -87,7 +87,7 @@ module.exports = {
             engine.invoke({ name: "Mezo" }).then(
                 function (result)
                 {
-                    test.equal(result, "Mezo");
+                    test.equals(result, "Mezo");
                 },
                 function (e)
                 {
@@ -118,7 +118,7 @@ module.exports = {
             engine.invoke(fopin).then(
                 function (result)
                 {
-                    test.equal(result, expected.name);
+                    test.equals(result, expected.name);
                 },
                 function (e)
                 {
@@ -158,7 +158,7 @@ module.exports = {
             engine.invoke().then(
                 function (result)
                 {
-                    test.equal(result, expected.name);
+                    test.equals(result, expected.name);
                 },
                 function (e)
                 {
@@ -206,7 +206,7 @@ module.exports = {
                     x3 += x1 * 2;
                     x3 += x2 * 3;
                     var r = x3 * 4;
-                    test.equal(result, r);
+                    test.equals(result, r);
                 },
                 function (e)
                 {
@@ -267,7 +267,7 @@ module.exports = {
                     x3 += x1 * 2;
                     x3 += x2 * 3;
                     var r = x3 * 4;
-                    test.equal(result, r);
+                    test.equals(result, r);
                 },
                 function (e)
                 {
@@ -331,7 +331,7 @@ module.exports = {
                     x3 += x1 * 2;
                     x3 += x2 * 3;
                     var r = x3 * 4;
-                    test.equal(result, r);
+                    test.equals(result, r);
                 },
                 function (e)
                 {
@@ -417,7 +417,7 @@ module.exports = {
             engine.invoke().then(
                 function (result)
                 {
-                    test.equal(result, "a");
+                    test.equals(result, "a");
 
                     var context = engine._context;
                     test.equals(_(context._activityStates).keys().length, 2);
@@ -437,89 +437,89 @@ module.exports = {
         }
     },
 
-    bookmarking: {
-        parallelTest: function (test)
-        {
-            var var1 = "";
-            var activityMarkup = new ActivityMarkup();
-            var activity = activityMarkup.parse(
-                {
-                    parallel: {
-                        args: [
-                            {
-                                block: [
-                                    {
-                                        waitForBookmark: {
-                                            bookmarkName: "bm1"
-                                        }
-                                    },
-                                    {
-                                        func: {
-                                            code: function ()
-                                            {
-                                                var1 += "a";
-                                            }
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                block: [
-                                    {
-                                        waitForBookmark: {
-                                            bookmarkName: "bm2"
-                                        }
-                                    },
-                                    {
-                                        func: {
-                                            code: function ()
-                                            {
-                                                var1 += "b";
-                                            }
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                block: [
-                                    {
-                                        resumeBookmark: {
-                                            bookmarkName: "bm1"
-                                        },
-                                        resumeBookmark: {
-                                            bookmarkName: "bm2"
-                                        }
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                });
-
-            var engine = new WorkflowEngine(activity);
-
-            engine.invoke().then(
-                function (result)
-                {
-                    test.equals(result.length, 2);
-                    test.equals(result[0], "a");
-                    test.equals(result[1], "ab");
-
-//                    var context = engine._context;
-//                    test.equals(_(context._activityStates).keys().length, 2);
-//                    test.equals(context._scopeExtenders.length, 0);
-//                    test.equals(_(context._bookmarks).keys().length, 0);
-//                    test.equals(_(context._scopeParts).keys().length, 0);
-//                    test.equals(context._resumeBMQueue.isEmpty(), true);
-                },
-                function (e)
-                {
-                    test.ifError(e);
-                }).finally(
-                function ()
-                {
-                    test.done();
-                });
-        }
-    }
+//    bookmarking: {
+//        parallelTest: function (test)
+//        {
+//            var var1 = "";
+//            var activityMarkup = new ActivityMarkup();
+//            var activity = activityMarkup.parse(
+//                {
+//                    parallel: {
+//                        args: [
+//                            {
+//                                block: [
+//                                    {
+//                                        waitForBookmark: {
+//                                            bookmarkName: "bm1"
+//                                        }
+//                                    },
+//                                    {
+//                                        func: {
+//                                            code: function ()
+//                                            {
+//                                                var1 += "a";
+//                                            }
+//                                        }
+//                                    }
+//                                ]
+//                            },
+//                            {
+//                                block: [
+//                                    {
+//                                        waitForBookmark: {
+//                                            bookmarkName: "bm2"
+//                                        }
+//                                    },
+//                                    {
+//                                        func: {
+//                                            code: function ()
+//                                            {
+//                                                var1 += "b";
+//                                            }
+//                                        }
+//                                    }
+//                                ]
+//                            },
+//                            {
+//                                block: [
+//                                    {
+//                                        resumeBookmark: {
+//                                            bookmarkName: "bm1"
+//                                        }
+//                                    },
+//                                    {
+//                                        resumeBookmark: {
+//                                            bookmarkName: "bm2"
+//                                        }
+//                                    }
+//                                ]
+//                            }
+//                        ]
+//                    }
+//                });
+//
+//            var engine = new WorkflowEngine(activity);
+//
+//            engine.invoke().then(
+//                function (result)
+//                {
+//                    test.equals(var1, "ab");
+//
+////                    var context = engine._context;
+////                    test.equals(_(context._activityStates).keys().length, 2);
+////                    test.equals(context._scopeExtenders.length, 0);
+////                    test.equals(_(context._bookmarks).keys().length, 0);
+////                    test.equals(_(context._scopeParts).keys().length, 0);
+////                    test.equals(context._resumeBMQueue.isEmpty(), true);
+//                },
+//                function (e)
+//                {
+//                    test.ifError(e);
+//                }).finally(
+//                function ()
+//                {
+//                    test.done();
+//                });
+//        }
+//    }
 }
