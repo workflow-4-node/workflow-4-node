@@ -94,7 +94,7 @@ WorkflowEngine.prototype.invoke = function ()
         var argRemoveToken = null;
         var args = [];
         Array.prototype.forEach.call(arguments, function (a) { args.push(a); });
-        if (args.length) argRemoveToken = this._context.appendToContext(this._rootActivity, args);
+        if (args.length) argRemoveToken = this._context.appendToContext(args);
         args.unshift(this._context);
 
         this._setRootState(this._context.getState(this._rootActivity.id));
@@ -121,7 +121,7 @@ WorkflowEngine.prototype.invoke = function ()
             }
             finally
             {
-                if (argRemoveToken) this._context.removeFromContext(this._rootActivity, argRemoveToken);
+                if (argRemoveToken) this._context.removeFromContext(argRemoveToken);
             }
         });
 

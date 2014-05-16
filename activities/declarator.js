@@ -5,7 +5,8 @@ function Declarator()
 {
     Activity.call(this);
     this._reserved = [];
-    this.asNonScoped("__reserved");
+    this.asNonScoped("_reserved");
+    this.asReserved("activity");
 }
 
 util.inherits(Declarator, Activity);
@@ -21,9 +22,9 @@ Declarator.prototype.run = function (context, args)
     this._varFields = [];
     for (var fieldName in this)
     {
-        if (this._reserved.indexOf(fieldName) == -1)
+        if (this.activity._reserved.indexOf(fieldName) == -1 && this.activity._nonScoped.indexOf(fieldName) == -1)
         {
-            var fieldValue = this[fieldValue];
+            var fieldValue = this[fieldName];
             if (fieldValue instanceof Activity)
             {
                 vars.push(fieldValue);

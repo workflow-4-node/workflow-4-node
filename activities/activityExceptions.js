@@ -58,6 +58,7 @@ function ValidationError(message)
 
 util.inherits(ValidationError, Error);
 
+module.exports.ActivityStateExceptionError = ActivityStateExceptionError;
 module.exports.ActivityExceptionError = ActivityStateExceptionError;
 module.exports.Cancelled = Cancelled;
 module.exports.Idle = Idle;
