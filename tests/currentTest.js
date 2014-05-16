@@ -9,12 +9,12 @@ var ConsoleTracker = require("../activities/consoleTracker");
 module.exports = {
     parallelTest: function (test)
     {
-        var var1 = "";
         var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
             {
                 parallel: {
-                    diplayName: "Root",
+                    var1: "",
+                    displayName: "Root",
                     args: [
                         {
                             block: {
@@ -31,11 +31,12 @@ module.exports = {
                                             displayName: "Func 1",
                                             code: function ()
                                             {
-                                                var1 += "a";
+                                                return this.var1 += "a";
                                             }
                                         }
                                     }
-                                ]}
+                                ]
+                            }
                         },
                         {
                             block: {
@@ -52,7 +53,7 @@ module.exports = {
                                             displayName: "Func 2",
                                             code: function ()
                                             {
-                                                var1 += "b";
+                                                return this.var1 += "b";
                                             }
                                         }
                                     }
@@ -74,7 +75,8 @@ module.exports = {
                                             displayName: "Resume 2",
                                             bookmarkName: "bm2"
                                         }
-                                    }
+                                    },
+                                    "bubu"
                                 ]
                             }
                         }
@@ -88,7 +90,18 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(var1, "ab");
+                try
+                {
+                    test.ok(_.isArray(result));
+                    test.equals(result.length, 3);
+                    test.equals(result[0], "a");
+                    test.equals(result[1], "ab");
+                    test.equals(result[2], "bubu");
+                }
+                catch (e)
+                {
+                    test.ifError(e);
+                }
 
 //                    var context = engine._context;
 //                    test.equals(_(context._activityStates).keys().length, 2);

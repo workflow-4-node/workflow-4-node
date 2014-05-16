@@ -1,12 +1,18 @@
 var Activity = require("./activity");
 var util = require("util");
+var guids = require("./guids");
 
 function Declarator()
 {
     Activity.call(this);
-    this._reserved = [];
-    this.asNonScoped("_reserved");
-    this.asReserved("activity");
+    this._reserved = [
+        "_reserved",
+        "varsDeclared",
+        "_activityVariableFieldNames",
+        "_varsGot",
+        guids.markers.variableFieldNames
+    ];
+    this.asNonScoped("asReserved");
 }
 
 util.inherits(Declarator, Activity);
@@ -18,28 +24,30 @@ Declarator.prototype.asReserved = function(fieldName)
 
 Declarator.prototype.run = function (context, args)
 {
-    var vars = [];
-    this._varFields = [];
+    var activityVariables = [];
+    this._activityVariableFieldNames = [];
+    this[guids.markers.variableFieldNames] = [];
     for (var fieldName in this)
     {
         if (this.activity._reserved.indexOf(fieldName) == -1 && this.activity._nonScoped.indexOf(fieldName) == -1)
         {
+            this[guids.markers.variableFieldNames].push(fieldName);
             var fieldValue = this[fieldName];
             if (fieldValue instanceof Activity)
             {
-                vars.push(fieldValue);
-                this._varFields.push(fieldName);
+                activityVariables.push(fieldValue);
+                this._activityVariableFieldNames.push(fieldName);
             }
         }
     }
-    if (vars.length)
+    if (activityVariables.length)
     {
         this._args = args;
-        this.schedule(vars, "_varsGot")
+        this.schedule(activityVariables, "_varsGot")
     }
     else
     {
-        delete this._varFields;
+        delete this._activityVariableFieldNames;
         this.varsDeclared(context, args);
     }
 }
@@ -49,13 +57,13 @@ Declarator.prototype._varsGot = function (context, reason, result)
     if (reason == Activity.states.complete)
     {
         var idx = 0;
-        this._varFields.forEach(function(fieldName)
+        this._activityVariableFieldNames.forEach(function(fieldName)
         {
             this[fieldName] = result[idx++];
         });
         var args = this._args;
         delete this._args;
-        delete this._varFields;
+        delete this._activityVariableFieldNames;
         this.varsDeclared(context, args);
     }
     else

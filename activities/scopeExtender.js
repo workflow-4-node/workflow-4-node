@@ -1,3 +1,6 @@
+var guids = require("./guids");
+var _ = require("underscore-node");
+
 function ScopeExtender(originalScope)
 {
     this.currentScope = originalScope;
@@ -5,6 +8,10 @@ function ScopeExtender(originalScope)
     this.originalFields = {};
     this.privateFields = {};
     this.extended = false;
+    this.originalVariableFieldNames = this._getVariableFieldNames(originalScope);
+    this.currentVariableFieldNames = {};
+    _.extend(this.currentVariableFieldNames, this.originalVariableFieldNames);
+    this.newVariableFieldNames = {};
 
     for (var fieldName in originalScope)
     {
@@ -12,10 +19,28 @@ function ScopeExtender(originalScope)
     }
 }
 
+ScopeExtender.prototype._getVariableFieldNames = function (scope)
+{
+    var names = {};
+    if (_.isArray(scope[guids.markers.variableFieldNames]))
+    {
+        scope[guids.markers.variableFieldNames].forEach(function (fieldName)
+        {
+            names[fieldName] = true;
+        });
+    }
+    return names;
+}
+
 ScopeExtender.prototype.extend = function (scope)
 {
     if (this.extended) throw new Error("Scope already extended.");
 
+    // Handle variables:
+    this.newVariableFieldNames = this._getVariableFieldNames(scope);
+    _.extend(this.currentVariableFieldNames, this.newVariableFieldNames);
+
+    // Handle privates:
     for (var fieldName in this.currentScope)
     {
         if (fieldName[0] == "_")
@@ -25,10 +50,12 @@ ScopeExtender.prototype.extend = function (scope)
         }
     }
 
+    // Handle overridable publics:
     for (var fieldName in scope)
     {
-        if (this.currentScope[fieldName] != undefined)
+        if (this.currentVariableFieldNames[fieldName] == undefined && this.currentScope[fieldName] != undefined)
         {
+            // If this is not a variable:
             // Current scope field will be overridden by the new scope same named field.
             // We should remember the original field value to be able to restore it later.
             this.restoreFields[fieldName] = this.currentScope[fieldName];
@@ -75,6 +102,7 @@ ScopeExtender.prototype.undo = function()
 
     self.restoreFields = {};
     self.privateFields = {};
+    self.currentVariableFieldNames = _.extend({}, this.originalVariableFieldNames);
 
     self.extended = false;
 }

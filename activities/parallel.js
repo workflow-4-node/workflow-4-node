@@ -6,6 +6,7 @@ var ex = require("./ActivityExceptions");
 function Parallel()
 {
     Declarator.call(this);
+    this.asReserved("_argsGot");
 }
 
 util.inherits(Parallel, Declarator);

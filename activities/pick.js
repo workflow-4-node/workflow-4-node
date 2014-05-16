@@ -6,6 +6,7 @@ var ex = require("./ActivityExceptions");
 function Pick()
 {
     Declarator.call(this);
+    this.asReserved("_argsGot");
 }
 
 util.inherits(Pick, Declarator);

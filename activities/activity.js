@@ -10,7 +10,24 @@ function Activity()
     this.id = null;
     this.args = null;
     this.displayName = "";
-    this._nonScoped = [ "_nonScoped", "id", "args", "__typeTag", "displayName" ];
+    this._nonScoped = [
+        "activity",
+        "_nonScoped",
+        "id",
+        "args",
+        "__typeTag",
+        "displayName",
+        "complete",
+        "cancel",
+        "idle",
+        "fail",
+        "end",
+        "schedule",
+        "unschedule",
+        "createBookmark",
+        "resumeBookmark",
+        "argCollected"
+    ];
 }
 
 Activity.prototype.asNonScoped = function (fieldName)
@@ -88,11 +105,18 @@ Activity.prototype.end = function (context, reason, result)
 
     context.endScope();
 
+    var emit = function()
+    {
+        state.emit(reason, result);
+        state.emit(Activity.states.end, reason, result);
+    }
+
     if (context.hasScope())
     {
         var bmName = this._internalBookmarkName();
         if (context.isBookmarkExists(bmName))
         {
+            emit();
             context.resumeBookmarkInScope(bmName, reason, result);
             return;
         }
@@ -100,10 +124,12 @@ Activity.prototype.end = function (context, reason, result)
     else if (inIdle)
     {
         if (context.processResumeBookmarkQueue(this.id)) return;
+        emit();
     }
-
-    state.emit(reason, result);
-    state.emit(Activity.states.end, reason, result);
+    else
+    {
+        emit();
+    }
 }
 
 Activity.prototype.schedule = function (context, obj, endCallback)
