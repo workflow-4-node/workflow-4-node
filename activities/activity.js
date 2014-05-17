@@ -107,15 +107,12 @@ Activity.prototype.end = function (context, reason, result)
         context.resumeBookmarkInScope(bmName, reason, result);
         return;
     }
-    else if (inIdle && !context.hasScope())
+    else if (inIdle && !context.hasScope() && context.processResumeBookmarkQueue())
     {
-        if (context.processResumeBookmarkQueue()) return;
-        emit();
+        return;
     }
-    else
-    {
-        emit();
-    }
+
+    emit();
 }
 
 Activity.prototype.schedule = function (context, obj, endCallback)
