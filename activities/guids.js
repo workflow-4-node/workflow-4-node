@@ -6,8 +6,7 @@ var guids =
         activity: "fd346c18-6de6-4c54-8173-1d3192e3c27f"
     },
     markers: {
-        arg: "264b51c8-9f0d-407c-a59e-b5ab456330ba",
-        variableFieldNames: "74a66b0d-c527-41bf-82a1-d77119f11341"
+        arg: "264b51c8-9f0d-407c-a59e-b5ab456330ba"
     },
     ids: {
         initialScope: "1f6a572f-af3c-404d-8fdd-4a24f0797440"

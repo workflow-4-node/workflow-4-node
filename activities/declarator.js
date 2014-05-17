@@ -1,18 +1,16 @@
 var Activity = require("./activity");
 var util = require("util");
-var guids = require("./guids");
 
 function Declarator()
 {
     Activity.call(this);
     this._reserved = [
-        "_reserved",
         "varsDeclared",
         "_activityVariableFieldNames",
-        "_varsGot",
-        guids.markers.variableFieldNames
+        "_varsGot"
     ];
     this.asNonScoped("asReserved");
+    this.asNonScoped("_reserved");
 }
 
 util.inherits(Declarator, Activity);
@@ -26,12 +24,10 @@ Declarator.prototype.run = function (context, args)
 {
     var activityVariables = [];
     this._activityVariableFieldNames = [];
-    this[guids.markers.variableFieldNames] = [];
     for (var fieldName in this)
     {
         if (this.activity._reserved.indexOf(fieldName) == -1 && this.activity._nonScoped.indexOf(fieldName) == -1)
         {
-            this[guids.markers.variableFieldNames].push(fieldName);
             var fieldValue = this[fieldName];
             if (fieldValue instanceof Activity)
             {

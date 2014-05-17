@@ -7,63 +7,66 @@ var util = require("util");
 var EventEmitter = require('events').EventEmitter;
 var _ = require("underscore-node");
 var guids = require("./guids");
+var ScopeTree = require("./scopeTree");
 
 function ActivityExecutionContext()
 {
-    var self = this;
     this._activityStates = {};
-    this.scope = {
-        activity: null,
-        // TODO: Validate arguments of the following methods, because they are protected.
-        complete: function (result)
-        {
-            if (this.activity) this.activity.complete.call(this.activity, self, result);
-        },
-        cancel: function ()
-        {
-            if (this.activity) this.activity.cancel.call(this.activity, self);
-        },
-        idle: function ()
-        {
-            if (this.activity) this.activity.idle.call(this.activity, self);
-        },
-        fail: function (e)
-        {
-            if (this.activity) this.activity.fail.call(this.activity, self, e);
-        },
-        end: function (reason, result)
-        {
-            if (this.activity) this.activity.end.call(this.activity, self, reason, result);
-        },
-        schedule: function(obj, endcallback)
-        {
-            if (this.activity) this.activity.schedule.call(this.activity, self, obj, endcallback);
-        },
-        unschedule: function()
-        {
-            if (this.activity) this.activity.unschedule.call(this.activity, self);
-        },
-        createBookmark: function(name, callback)
-        {
-            if (this.activity) self.createBookmark(this.activity.id, name, callback);
-        },
-        resumeBookmark: function(name, reason, result)
-        {
-            self.resumeBookmarkInternal(name, reason, result);
-        },
-        argCollected: function(context, reason, result, bookmarkName)
-        {
-            if (this.activity) this.activity.argCollected.call(this, context, reason, result, bookmarkName);
-        }
-    };
-    this._scopeExtenders = [];
     this._bookmarks = {};
     this._nonPersistZoneCounter = 0;
-    this._scopeParts = {};
     this._resumeBMQueue = new ResumeBookmarkQueue();
     this._rootActivity = null;
     this._knownActivities = {};
     this._nextActivityId = 0;
+
+    var self = this;
+    this._scopeTree = new ScopeTree(
+        {
+            complete: function (result)
+            {
+                if (this.activity) this.activity.complete.call(this.activity, self, result);
+            },
+            cancel: function ()
+            {
+                if (this.activity) this.activity.cancel.call(this.activity, self);
+            },
+            idle: function ()
+            {
+                if (this.activity) this.activity.idle.call(this.activity, self);
+            },
+            fail: function (e)
+            {
+                if (this.activity) this.activity.fail.call(this.activity, self, e);
+            },
+            end: function (reason, result)
+            {
+                if (this.activity) this.activity.end.call(this.activity, self, reason, result);
+            },
+            schedule: function (obj, endcallback)
+            {
+                if (this.activity) this.activity.schedule.call(this.activity, self, obj, endcallback);
+            },
+            unschedule: function ()
+            {
+                if (this.activity) this.activity.unschedule.call(this.activity, self);
+            },
+            createBookmark: function (name, callback)
+            {
+                if (this.activity) self.createBookmark(this.activity.id, name, callback);
+            },
+            resumeBookmark: function (name, reason, result)
+            {
+                self.resumeBookmarkInternal(name, reason, result);
+            },
+            argCollected: function (context, reason, result, bookmarkName)
+            {
+                if (this.activity) this.activity.argCollected.call(this, context, reason, result, bookmarkName);
+            }
+        },
+        function(id)
+        {
+            return self._getKnownActivity(id);
+        });
 }
 
 util.inherits(ActivityExecutionContext, EventEmitter);
@@ -89,14 +92,15 @@ ActivityExecutionContext.prototype.appendToContext = function (args)
     if (_.isArray(args))
     {
         var state = self.getState(self._rootActivity.id);
-        args.forEach(function (arg)
-        {
-            if (self._isActivity(arg))
+        args.forEach(
+            function (arg)
             {
-                state.childActivityIds.push(arg.id);
-                self._initialize(self._rootActivity, arg, c);
-            }
-        });
+                if (self._isActivity(arg))
+                {
+                    state.childActivityIds.push(arg.id);
+                    self._initialize(self._rootActivity, arg, c);
+                }
+            });
     }
     else
     {
@@ -132,7 +136,7 @@ ActivityExecutionContext.prototype.removeFromContext = function (removeToken)
     this._nextActivityId = removeToken.fromId;
 }
 
-ActivityExecutionContext.prototype._checkInit = function()
+ActivityExecutionContext.prototype._checkInit = function ()
 {
     if (!this._rootActivity) throw new Error("Context is not initialized.");
 }
@@ -154,14 +158,15 @@ ActivityExecutionContext.prototype._initialize = function (parent, activity, idC
         {
             if (_.isArray(fieldValue))
             {
-                fieldValue.forEach(function(obj)
-                {
-                    if (self._isActivity(obj))
+                fieldValue.forEach(
+                    function (obj)
                     {
-                        self._initialize(activity, obj, idCounter);
-                        state.childActivityIds.push(obj.id);
-                    }
-                });
+                        if (self._isActivity(obj))
+                        {
+                            self._initialize(activity, obj, idCounter);
+                            state.childActivityIds.push(obj.id);
+                        }
+                    });
             }
             else if (self._isActivity(fieldValue))
             {
@@ -172,12 +177,12 @@ ActivityExecutionContext.prototype._initialize = function (parent, activity, idC
     }
 }
 
-ActivityExecutionContext.prototype._isActivity = function(obj)
+ActivityExecutionContext.prototype._isActivity = function (obj)
 {
     return obj["__typeTag"] == guids.types.activity;
 }
 
-ActivityExecutionContext.prototype.getState = function(id)
+ActivityExecutionContext.prototype.getState = function (id)
 {
     var self = this;
 
@@ -185,60 +190,63 @@ ActivityExecutionContext.prototype.getState = function(id)
     if (state == undefined)
     {
         state = new ActivityExecutionState(id);
-        state.on(enums.ActivityStates.run, function ()
-        {
-            var activity = self._knownActivities[id];
-            if (!activity) activity = { id: id };
-            self.emit(enums.ActivityStates.run, activity);
-        });
-        state.on(enums.ActivityStates.end, function (reason, result)
-        {
-            var activity = self._knownActivities[id];
-            if (!activity) activity = { id: id };
-            self.emit(enums.ActivityStates.end, activity, reason, result);
-        });
+        state.on(
+            enums.ActivityStates.run, function ()
+            {
+                var activity = self._knownActivities[id];
+                if (!activity) activity = { id: id };
+                self.emit(enums.ActivityStates.run, activity);
+            });
+        state.on(
+            enums.ActivityStates.end, function (reason, result)
+            {
+                var activity = self._knownActivities[id];
+                if (!activity) activity = { id: id };
+                self.emit(enums.ActivityStates.end, activity, reason, result);
+            });
         self._activityStates[id] = state;
     }
     return state;
 }
 
-ActivityExecutionContext.prototype.beginScope = function(activityId, newScope)
+ActivityExecutionContext.prototype._getKnownActivity = function (activityId)
 {
-    var scopeExtender = new ScopeExtender(this.scope);
-    scopeExtender.extend(newScope);
-    this._scopeExtenders.push({ activityId: activityId, scopeExtender: scopeExtender });
+    var activity = this._knownActivities[activityId];
+    if (!activity) throw new ex.ActivityRuntimeError("Activity by id '" + activityId + "' not found.");
+    return activity;
 }
 
-ActivityExecutionContext.prototype.endScope = function()
+ActivityExecutionContext.prototype.scope = function ()
 {
-    if (this._scopeExtenders.length)
-    {
-        var ext = this._scopeExtenders[this._scopeExtenders.length - 1];
-        ext.scopeExtender.undo();
-        this._scopeExtenders.length--;
-    }
-    else
-    {
-        throw new Error("There is no active scope.");
-    }
+    return this._scopeTree.currentScope;
 }
 
-ActivityExecutionContext.prototype.hasScope = function()
+ActivityExecutionContext.prototype.beginScope = function (activityId, scopePart)
 {
-    return this._scopeExtenders.length != 0;
+    this._scopeTree.next(activityId, scopePart);
 }
 
-ActivityExecutionContext.prototype.inNonPersistZone = function()
+ActivityExecutionContext.prototype.endScope = function (inIdle)
+{
+    this._scopeTree.back(inIdle);
+}
+
+ActivityExecutionContext.prototype.hasScope = function ()
+{
+    return !this._scopeTree.isOnInitial();
+}
+
+ActivityExecutionContext.prototype.inNonPersistZone = function ()
 {
     return this._nonPersistZoneCounter > 0;
 }
 
-ActivityExecutionContext.prototype.enterNonPersistZone = function()
+ActivityExecutionContext.prototype.enterNonPersistZone = function ()
 {
     this._nonPersistZoneCounter++;
 }
 
-ActivityExecutionContext.prototype.exitNonPersistZone = function()
+ActivityExecutionContext.prototype.exitNonPersistZone = function ()
 {
     if (this._nonPersistZoneCounter == 0) throw new Error("Non-persist zone is not reached.");
 }
@@ -266,18 +274,18 @@ ActivityExecutionContext.prototype.getBookmarksByActivityId = function (id)
     return result;
 }
 
-ActivityExecutionContext.prototype.registerBookmark = function(bookmark)
+ActivityExecutionContext.prototype.registerBookmark = function (bookmark)
 {
     if (this._bookmarks[bookmark.name]) throw new Error("Bookmark '" + bookmark.name + "' already exists.");
     this._bookmarks[bookmark.name] = bookmark;
 }
 
-ActivityExecutionContext.prototype.isBookmarkExists = function(name)
+ActivityExecutionContext.prototype.isBookmarkExists = function (name)
 {
     return this._bookmarks[name] != undefined;
 }
 
-ActivityExecutionContext.prototype.resumeBookmarkInScope = function(name, reason, result)
+ActivityExecutionContext.prototype.resumeBookmarkInScope = function (name, reason, result)
 {
     var bm = this._bookmarks[name];
     if (bm == undefined)
@@ -292,38 +300,40 @@ ActivityExecutionContext.prototype.resumeBookmarkInScope = function(name, reason
     this._doResumeBookmark(bm, reason, result, reason == enums.ActivityStates.idle);
 }
 
-ActivityExecutionContext.prototype.resumeBookmarkInternal = function(name, reason, result)
+ActivityExecutionContext.prototype.resumeBookmarkInternal = function (name, reason, result)
 {
     var bm = this._bookmarks[name];
     if (bm == undefined) throw new Error("Bookmark '" + name + "' doesn't exists.");
     this._resumeBMQueue.enqueue(name, true, reason, result);
 }
 
-ActivityExecutionContext.prototype.resumeBookmarkExternal = function(name, reason, result)
+ActivityExecutionContext.prototype.resumeBookmarkExternal = function (name, reason, result)
 {
     this._resumeBMQueue.enqueue(name, false, reason, result);
 }
 
 ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reason, result, noRemove)
 {
+    var scope = this.scope();
     if (!noRemove) delete this._bookmarks[bookmark.name];
-    if (this.scope[bookmark.endCallback] == undefined)
+    if (scope[bookmark.endCallback] == undefined)
     {
         throw new ex.ActivityRuntimeError("Bookmark's '" + bookmark.name + "' callback '" + bookmark.endCallback + "' is not defined on the current scope.");
     }
-    this.scope[bookmark.endCallback].call(this.scope, this, reason, result, bookmark);
+    scope[bookmark.endCallback].call(scope, this, reason, result, bookmark);
 }
 
-ActivityExecutionContext.prototype._getActivityIdOfCurrentScope = function()
+ActivityExecutionContext.prototype._getActivityIdOfCurrentScope = function ()
 {
-    return this.scope && this.scope.activity ? this.scope.activity.id : null;
+    var scope = this.scope();
+    return scope && scope.activity ? scope.activity.id : null;
 }
 
-ActivityExecutionContext.prototype.processResumeBookmarkQueue = function(rootActivityId)
+ActivityExecutionContext.prototype.processResumeBookmarkQueue = function ()
 {
     var self = this;
-    
-    if (self._scopeExtenders.length)
+
+    if (!self._scopeTree.isOnInitial())
     {
         throw new Error("Resume bookmark queue cannot be processed when there is an active scope.");
     }
@@ -333,7 +343,7 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function(rootAct
     {
         var bm = self._bookmarks[command.name];
         if (bm == undefined) throw new Error("Internal resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists.");
-        self._restoreScope(rootActivityId, bm.activityId);
+        self._restoreScope(bm.activityId);
         self._doResumeBookmark(bm, command.reason, command.result);
         return true;
     }
@@ -343,9 +353,10 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function(rootAct
     {
         var bm = self._bookmarks[command.name];
         if (bm == undefined)
-            throw new Error("External resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists." +
-                " (This ain't possible, dequeueExternals method should return only existing ones.)");
-        self._restoreScope(rootActivityId, bm.activityId);
+            throw new Error(
+                    "External resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists." +
+                    " (This ain't possible, dequeueExternals method should return only existing ones.)");
+        self._restoreScope(bm.activityId);
         self._doResumeBookmark(bm, command.reason, command.result);
         return true;
     }
@@ -353,45 +364,12 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function(rootAct
     return false;
 }
 
-ActivityExecutionContext.prototype._restoreScope = function(rootActivityId, activityId)
+ActivityExecutionContext.prototype._restoreScope = function (activityId)
 {
-    var self = this;
-    
-    var rootState = self._activityStates[rootActivityId];
-    if (!rootState) throw self._activityDoesntExistsError(rootActivityId);
-    var childState = self._findChildState(rootState, activityId);
-    if (!childState) throw self._activityDoesntExistsError(activityId);
-
-    var path = [];
-    var currentState = childState;
-    var currentId = currentState.activityId;
-    do
-    {
-        path.unshift(currentId);
-
-        currentId = currentState.parentActivityId;
-        if (currentId)
-        {
-            currentState = self._activityStates[currentId];
-            if (!currentState) throw self._activityDoesntExistsError(currentId);
-        }
-    }
-    while (currentId);
-
-    path.forEach(function(id)
-    {
-        var scopePart = self._scopeParts[id];
-        if (!scopePart) throw new Error("Scope part not found for Activity '" + id + "'.");
-        self.beginScope(id, scopePart);
-    });
+    this._scopeTree.goTo(activityId);
 }
 
-ActivityExecutionContext.prototype._activityDoesntExistsError = function (id)
-{
-    return new Error("Activity '" + id + "' doesn't exists.");
-}
-
-ActivityExecutionContext.prototype._findChildState = function(currentState, activityId)
+ActivityExecutionContext.prototype._findChildState = function (currentState, activityId)
 {
     if (currentState.activityId == activityId) return currentState;
     for (var i = 0; i < currentState.childActivityIds.length; i++)
@@ -401,24 +379,6 @@ ActivityExecutionContext.prototype._findChildState = function(currentState, acti
         if (foundInChild) return foundInChild;
     }
     return null;
-}
-
-ActivityExecutionContext.prototype.saveScopePart = function (activityId)
-{
-    if (this._scopeExtenders.length)
-    {
-        var ext = this._scopeExtenders[this._scopeExtenders.length - 1];
-        this._scopeParts[activityId] = ext.scopeExtender.getExtension();
-    }
-    else
-    {
-        throw new Error("There is no active scope.");
-    }
-}
-
-ActivityExecutionContext.prototype.deleteScopePart = function (activityId)
-{
-    if (this._scopeParts[activityId] != undefined) delete this._scopeParts[activityId];
 }
 
 module.exports = ActivityExecutionContext;

@@ -53,9 +53,9 @@ Activity.prototype.start = function (context)
         for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
     }
 
-    context.beginScope(this.id, this.createScope());
+    context.beginScope(this.id, this.createScopePart());
     this.emit(context, Activity.states.run);
-    this.run.call(context.scope, context, args);
+    this.run.call(context.scope(), context, args);
 
     return state;
 }
@@ -90,20 +90,9 @@ Activity.prototype.end = function (context, reason, result)
     var state = context.getState(this.id);
     state.execState = reason;
 
-    var inIdle = false;
-    if (reason == Activity.states.idle)
-    {
-        // If the activity goes idle we should store his part of the scope:
-        context.saveScopePart(this.id);
-        inIdle = true;
-    }
-    else
-    {
-        // If the activity is not idle we have to erase previously stored state parst:
-        context.deleteScopePart(this.id);
-    }
+    var inIdle = reason == Activity.states.idle;
 
-    context.endScope();
+    context.endScope(inIdle);
 
     var emit = function()
     {
@@ -123,7 +112,7 @@ Activity.prototype.end = function (context, reason, result)
     }
     else if (inIdle)
     {
-        if (context.processResumeBookmarkQueue(this.id)) return;
+        if (context.processResumeBookmarkQueue()) return;
         emit();
     }
     else
@@ -137,31 +126,32 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     // TODO: Validate callback in scope
 
     var self = this;
+    var scope = context.scope();
 
     if (Array.isArray(obj) && obj.length)
     {
-        context.scope.__argValues = [];
+        scope.__argValues = [];
         var activities = [];
         obj.forEach(function (v)
         {
             if (v instanceof Activity)
             {
-                context.scope.__argValues.push(guids.markers.arg + ":" + v.id);
+                scope.__argValues.push(guids.markers.arg + ":" + v.id);
                 activities.push(v);
             }
             else
             {
-                context.scope.__argValues.push(v);
+                scope.__argValues.push(v);
             }
         });
         if (activities.length)
         {
-            context.scope.__argErrors = [];
-            context.scope.__argCancelCounts = 0;
-            context.scope.__argIdleCounts = 0;
-            context.scope.__argRemaining = activities.length;
-            context.scope.__argEndBookmarkName = self._internalBookmarkName();
-            context.createBookmark(self.id, context.scope.__argEndBookmarkName, endCallback);
+            scope.__argErrors = [];
+            scope.__argCancelCounts = 0;
+            scope.__argIdleCounts = 0;
+            scope.__argRemaining = activities.length;
+            scope.__argEndBookmarkName = self._internalBookmarkName();
+            context.createBookmark(self.id, scope.__argEndBookmarkName, endCallback);
             activities.forEach(
                 function (a)
                 {
@@ -171,9 +161,9 @@ Activity.prototype.schedule = function (context, obj, endCallback)
         }
         else
         {
-            var result = context.scope.__argValues;
-            delete context.scope.__argValues;
-            context.scope[endCallback].call(context.scope, context, Activity.states.complete, result);
+            var result = scope.__argValues;
+            delete scope.__argValues;
+            scope[endCallback].call(scope, context, Activity.states.complete, result);
         }
     }
     else if (obj instanceof Activity)
@@ -183,7 +173,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
     else
     {
-        context.scope[endCallback].call(context.scope, context, Activity.states.complete, obj);
+        scope[endCallback].call(scope, context, Activity.states.complete, obj);
     }
 }
 
@@ -302,17 +292,17 @@ Activity.prototype.emit = function (context)
     state.emit.apply(Array.prototype.splice.call(arguments, 0, 1));
 }
 
-Activity.prototype.createScope = function ()
+Activity.prototype.createScopePart = function ()
 {
-    var scope = { activity: this };
+    var scopePart = {};
     for (var fieldName in this)
     {
         var fieldValue = this[fieldName];
         if (this._nonScoped.indexOf(fieldName) != -1) continue;
         if (Activity.prototype[fieldName]) continue;
-        scope[fieldName] = fieldValue;
+        scopePart[fieldName] = fieldValue;
     }
-    return scope;
+    return scopePart;
 }
 
 Activity.states = enums.ActivityStates;

@@ -105,6 +105,7 @@ module.exports = {
             };
 
             var engine = new WorkflowEngine(fop);
+            //engine.addTracker(new ConsoleTracker());
 
             engine.invoke(fopin).then(
                 function (result)
@@ -360,6 +361,7 @@ module.exports = {
                 });
 
             var engine = new WorkflowEngine(activity);
+            engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
                 function (result)

@@ -1,10 +1,9 @@
 var ScopeNode = require("./scopeNode");
-var InitialScope = require("./initialScope");
 var guids = require("./guids");
 
-function ScopeTree()
+function ScopeTree(initialScope, getActivityById)
 {
-    this._initialNode = new ScopeNode(guids.ids.initialScope, new InitialScope());
+    this._initialNode = new ScopeNode(guids.ids.initialScope, initialScope);
     this._nodes = {};
     this._nodes[this._initialNode.id] = this._initialNode;
     this._currentNode = this._initialNode;
@@ -12,12 +11,19 @@ function ScopeTree()
     this._currentNode.addAllFields(this.currentScope);
     this._currentFields = null;
     this._refreshCurrentFields();
+    this._getActivityById = getActivityById;
 }
 
-ScopeTree.prototype.next = function (activity, id, scopePart)
+ScopeTree.prototype.isOnInitial = function ()
+{
+    return this._currentNode === this._initialNode;
+}
+
+ScopeTree.prototype.next = function (id, scopePart)
 {
     delete this.currentScope["activity"];
 
+    this._leaveCurrentScope();
     this._currentNode.removeAllPrivateFields(this.currentScope);
     var nextNode = new ScopeNode(id, scopePart);
     nextNode.addAllFields(this.currentScope);
@@ -25,49 +31,40 @@ ScopeTree.prototype.next = function (activity, id, scopePart)
     this._currentNode = nextNode;
     this._nodes[id] = nextNode;
     this._refreshCurrentFields();
-
-    this.currentScope["activity"] = activity;
+    this._updateActivityField();
 }
 
-ScopeTree.prototype.back = function(activity, keepItem)
+ScopeTree.prototype.back = function (keepItem)
 {
     delete this.currentScope["activity"];
 
     var self = this;
-    
+
     if (self._currentNode == self._initialNode) throw new Error("Cannot go back.");
 
-    if (keepItem)
-    {
-        // We have to add current node's part all fields that new since it created:
-        for (var fn in self.currentScope)
-        {
-            if (self._currentFields[fn] === undefined)
-            {
-                var fv = self.currentScope[fn];
-                self._currentNode.addField(fn, fv);
-            }
-        }
-    }
+    if (keepItem) self._leaveCurrentScope();
 
     var toRemove = self._currentNode;
     toRemove.removeAllFields(self.currentScope);
     var goTo = toRemove.parent();
-    goTo.forEachToRoot(function(node)
-    {
-        node.addFieldsOf(self.currentScope, toRemove);
-    });
+    var first = true;
+    goTo.forEachToRoot(
+        function (node)
+        {
+            node.addFieldsOf(self.currentScope, toRemove, first);
+            if (first) first = false;
+        });
     self._currentNode = goTo;
     if (!keepItem)
     {
         goTo.removeChild(toRemove);
         delete self._nodes[toRemove.id];
     }
-
-    this.currentScope["activity"] = activity;
+    this._refreshCurrentFields();
+    this._updateActivityField();
 }
 
-ScopeTree.prototype.goTo = function (activity, id)
+ScopeTree.prototype.goTo = function (id)
 {
     delete this.currentScope["activity"];
 
@@ -80,24 +77,45 @@ ScopeTree.prototype.goTo = function (activity, id)
     if (toNode === self._initialNode) throw new Error("Cannot go to id '" + id + "' because that is the initial.");
     toNode.addAllFields(self.currentScope);
     var parent = toNode.parent();
-    parent.forEachToRoot(function(node)
-    {
-        node.addNonExistingAndNonPrivateFields(self.currentScope);
-    });
+    parent.forEachToRoot(
+        function (node)
+        {
+            node.addNonExistingAndNonPrivateFields(self.currentScope);
+        });
     self._currentNode = toNode;
 
     this._refreshCurrentFields();
-
-    this.currentScope["activity"] = activity;
+    this._updateActivityField();
 }
 
-ScopeTree.prototype._refreshCurrentFields = function()
+ScopeTree.prototype._leaveCurrentScope = function ()
+{
+    // We have to add current node's part all fields that new since it created:
+    for (var fn in this.currentScope)
+    {
+        if (this._currentFields[fn] === undefined)
+        {
+            this._currentNode.addField(fn, this.currentScope[fn]);
+        }
+        else
+        {
+            this._currentNode.updateField(fn, this.currentScope[fn]);
+        }
+    }
+}
+
+ScopeTree.prototype._refreshCurrentFields = function ()
 {
     this._currentFields = {};
     for (var fn in this.currentScope)
     {
         this._currentFields[fn] = true;
     }
+}
+
+ScopeTree.prototype._updateActivityField = function ()
+{
+    if (!this.isOnInitial()) this.currentScope["activity"] = this._getActivityById(this._currentNode.id);
 }
 
 module.exports = ScopeTree;

@@ -3,20 +3,18 @@ var _ = require("underscore-node");
 
 function ScopeNode(id, scopePart)
 {
-    TreeNode.call(this);
-
     this.id = id;
-    this._scopePart = {};
+    this._scopePart = scopePart;
     this._parent = null;
     this._children = {};
 }
 
-ScopeNode.prototype.parent = function()
+ScopeNode.prototype.parent = function ()
 {
     return this._parent;
 }
 
-ScopeNode.prototype.forEachToRoot = function(f)
+ScopeNode.prototype.forEachToRoot = function (f)
 {
     var current = this;
     do
@@ -44,12 +42,17 @@ ScopeNode.prototype.removeChild = function (childItem)
     delete this._children[childItem.id];
 }
 
-ScopeNode.prototype.addField = function(name, value)
+ScopeNode.prototype.addField = function (name, value)
 {
     this._scopePart[name] = value;
 }
 
-ScopeNode.prototype.addAllFields = function(to)
+ScopeNode.prototype.updateField = function (name, value)
+{
+    if (this._scopePart[name] !== undefined) this._scopePart[name] = value;
+}
+
+ScopeNode.prototype.addAllFields = function (to)
 {
     _(to).extend(this._scopePart);
 }
@@ -70,19 +73,25 @@ ScopeNode.prototype.removeAllPrivateFields = function (from)
     }
 }
 
-ScopeNode.prototype.addFieldsOf = function (to, otherNode)
+ScopeNode.prototype.addFieldsOf = function (to, otherNode, addPrivates)
 {
     for (var fn in this._scopePart)
     {
-        var ov = otherNode._scopePart[fn];
-        if (ov != undefined)
+        if (fn[0] === "_")
         {
-            to[fn] = ov;
+            if (addPrivates) to[fn] = this._scopePart[fn];
+        }
+        else
+        {
+            if (otherNode._scopePart[fn] != undefined)
+            {
+                to[fn] = this._scopePart[fn];
+            }
         }
     }
 }
 
-ScopeNode.prototype.addNonExistingAndNonPrivateFields = function(to)
+ScopeNode.prototype.addNonExistingAndNonPrivateFields = function (to)
 {
     for (var fn in this._scopePart)
     {
