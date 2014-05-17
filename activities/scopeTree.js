@@ -14,8 +14,10 @@ function ScopeTree()
     this._refreshCurrentFields();
 }
 
-ScopeTree.prototype.next = function (id, scopePart)
+ScopeTree.prototype.next = function (activity, id, scopePart)
 {
+    delete this.currentScope["activity"];
+
     this._currentNode.removeAllPrivateFields(this.currentScope);
     var nextNode = new ScopeNode(id, scopePart);
     nextNode.addAllFields(this.currentScope);
@@ -23,10 +25,14 @@ ScopeTree.prototype.next = function (id, scopePart)
     this._currentNode = nextNode;
     this._nodes[id] = nextNode;
     this._refreshCurrentFields();
+
+    this.currentScope["activity"] = activity;
 }
 
-ScopeTree.prototype.back = function(keepItem)
+ScopeTree.prototype.back = function(activity, keepItem)
 {
+    delete this.currentScope["activity"];
+
     var self = this;
     
     if (self._currentNode == self._initialNode) throw new Error("Cannot go back.");
@@ -57,10 +63,14 @@ ScopeTree.prototype.back = function(keepItem)
         goTo.removeChild(toRemove);
         delete self._nodes[toRemove.id];
     }
+
+    this.currentScope["activity"] = activity;
 }
 
-ScopeTree.prototype.goTo = function (id)
+ScopeTree.prototype.goTo = function (activity, id)
 {
+    delete this.currentScope["activity"];
+
     var self = this;
 
     if (self._currentNode != self._initialNode) throw new Error("Cannot go to id '" + id + "' because current scope is not the initial.");
@@ -77,6 +87,8 @@ ScopeTree.prototype.goTo = function (id)
     self._currentNode = toNode;
 
     this._refreshCurrentFields();
+
+    this.currentScope["activity"] = activity;
 }
 
 ScopeTree.prototype._refreshCurrentFields = function()
