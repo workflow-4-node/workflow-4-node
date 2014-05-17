@@ -118,4 +118,25 @@ ScopeTree.prototype._updateActivityField = function ()
     if (!this.isOnInitial()) this.currentScope["activity"] = this._getActivityById(this._currentNode.id);
 }
 
+ScopeTree.prototype.deleteScopePart = function (id)
+{
+    var self = this;
+    var delNode = self._nodes[id];
+    if (delNode)
+    {
+        if (delNode == self._initialNode) throw new Error("Cannot delete the initial scope.");
+        var found = false;
+        delNode.forEachToRoot(function(node)
+        {
+            if (node == self._currentNode)
+            {
+                found = true;
+                return false;
+            }
+        });
+        if (!found) throw new Error("Cannot delete scope, because current active cope is inside in it.");
+        delNode.parent().removeChild(delNode);
+    }
+}
+
 module.exports = ScopeTree;

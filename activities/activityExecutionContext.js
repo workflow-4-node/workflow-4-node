@@ -58,9 +58,9 @@ function ActivityExecutionContext()
             {
                 self.resumeBookmarkInternal(name, reason, result);
             },
-            argCollected: function (context, reason, result, bookmarkName)
+            resultCollected: function (context, reason, result, bookmarkName)
             {
-                if (this.activity) this.activity.argCollected.call(this, context, reason, result, bookmarkName);
+                if (this.activity) this.activity.resultCollected.call(this, context, reason, result, bookmarkName);
             }
         },
         function(id)
@@ -248,7 +248,7 @@ ActivityExecutionContext.prototype.enterNonPersistZone = function ()
 
 ActivityExecutionContext.prototype.exitNonPersistZone = function ()
 {
-    if (this._nonPersistZoneCounter == 0) throw new Error("Non-persist zone is not reached.");
+    if (this._nonPersistZoneCounter == 0) throw new ex.ActivityRuntimeError("Non-persist zone is not reached.");
 }
 
 ActivityExecutionContext.prototype.createBookmark = function (activityId, name, endCallback)
@@ -261,22 +261,9 @@ ActivityExecutionContext.prototype.createBookmark = function (activityId, name, 
         });
 }
 
-ActivityExecutionContext.prototype.getBookmarksByActivityId = function (id)
-{
-    var self = this;
-
-    var result = [];
-    for (var name in self._bookmarks)
-    {
-        var bm = self._bookmarks[name];
-        if (bm.activityId == id) result.push(bm);
-    }
-    return result;
-}
-
 ActivityExecutionContext.prototype.registerBookmark = function (bookmark)
 {
-    if (this._bookmarks[bookmark.name]) throw new Error("Bookmark '" + bookmark.name + "' already exists.");
+    if (this._bookmarks[bookmark.name]) throw new ex.ActivityRuntimeError("Bookmark '" + bookmark.name + "' already exists.");
     this._bookmarks[bookmark.name] = bookmark;
 }
 
@@ -335,14 +322,14 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function ()
 
     if (!self._scopeTree.isOnInitial())
     {
-        throw new Error("Resume bookmark queue cannot be processed when there is an active scope.");
+        throw new ex.ActivityRuntimeError("Resume bookmark queue cannot be processed when there is an active scope.");
     }
 
     var command = self._resumeBMQueue.dequeueInternal();
     if (command)
     {
         var bm = self._bookmarks[command.name];
-        if (bm == undefined) throw new Error("Internal resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists.");
+        if (bm == undefined) throw new ex.ActivityRuntimeError("Internal resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists.");
         self._restoreScope(bm.activityId);
         self._doResumeBookmark(bm, command.reason, command.result);
         return true;
@@ -353,7 +340,7 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function ()
     {
         var bm = self._bookmarks[command.name];
         if (bm == undefined)
-            throw new Error(
+            throw new ex.ActivityRuntimeError(
                     "External resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists." +
                     " (This ain't possible, dequeueExternals method should return only existing ones.)");
         self._restoreScope(bm.activityId);
@@ -369,16 +356,38 @@ ActivityExecutionContext.prototype._restoreScope = function (activityId)
     this._scopeTree.goTo(activityId);
 }
 
-ActivityExecutionContext.prototype._findChildState = function (currentState, activityId)
+ActivityExecutionContext.prototype.deleteBookmarksOfActivities = function (activityIds)
 {
-    if (currentState.activityId == activityId) return currentState;
-    for (var i = 0; i < currentState.childActivityIds.length; i++)
+    var self = this;
+    var allIds = {};
+    activityIds.forEach(function(id)
     {
-        var childState = this.getState(currentState.childActivityIds[i]);
-        var foundInChild = this._findChildState(childState, activityId);
-        if (foundInChild) return foundInChild;
+        self._getIdsActivityOfSubtree(allIds, id);
+    });
+    for (var bmName in self._bookmarks)
+    {
+        var bm = self._bookmarks[bmName];
+        if (allIds[bm.activityId] !== undefined) delete self._bookmarks[bmName];
     }
-    return null;
+}
+
+ActivityExecutionContext.prototype._getIdsActivityOfSubtree = function (to, activityId)
+{
+    var self = this;
+    to[activityId] = true;
+    self.getState(activityId).childActivityIds.forEach(function (id)
+    {
+        self._getIdsActivityOfSubtree(to, id);
+    });
+}
+
+ActivityExecutionContext.prototype.deleteScopeOfActivities = function(activityIds)
+{
+    var self = this;
+    activityIds.forEach(function(id)
+    {
+        self._scopeTree.deleteScopePart(id);
+    });
 }
 
 module.exports = ActivityExecutionContext;

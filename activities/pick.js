@@ -18,10 +18,10 @@ Pick.prototype.varsDeclared = function (context, args)
     if (args && args.length)
     {
         // Monkeypatching FTW!
-        var prevArgCollected = this.argCollected;
-        this.argCollected = function(context, reason, result, bookmarkName)
+        var prev = this.resultCollected;
+        this.resultCollected = function(context, reason, result, bookmarkName)
         {
-            prevArgCollected.call(this, context, reason, result, bookmarkName);
+            prev.call(this, context, reason, result, bookmarkName);
             if (!this._pickedReason)
             {
                 this._pickedReason = reason;

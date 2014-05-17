@@ -19,7 +19,7 @@ ScopeNode.prototype.forEachToRoot = function (f)
     var current = this;
     do
     {
-        f.call(this, current);
+        if (f.call(this, current) === false) return;
         current = current._parent;
     }
     while (current);
