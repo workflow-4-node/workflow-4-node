@@ -100,17 +100,14 @@ Activity.prototype.end = function (context, reason, result)
         state.emit(Activity.states.end, reason, result);
     }
 
-    if (context.hasScope())
+    var bmName = this._getSpecialBookmarkName(guids.markers.argGotBookmark);
+    if (context.isBookmarkExists(bmName))
     {
-        var bmName = this._internalBookmarkName();
-        if (context.isBookmarkExists(bmName))
-        {
-            emit();
-            context.resumeBookmarkInScope(bmName, reason, result);
-            return;
-        }
+        emit();
+        context.resumeBookmarkInScope(bmName, reason, result);
+        return;
     }
-    else if (inIdle)
+    else if (inIdle && !context.hasScope())
     {
         if (context.processResumeBookmarkQueue()) return;
         emit();
@@ -150,12 +147,12 @@ Activity.prototype.schedule = function (context, obj, endCallback)
             scope.__argCancelCounts = 0;
             scope.__argIdleCounts = 0;
             scope.__argRemaining = activities.length;
-            scope.__argEndBookmarkName = self._internalBookmarkName();
+            scope.__argEndBookmarkName = self._getSpecialBookmarkName(guids.markers.argsGotBookmark);
             context.createBookmark(self.id, scope.__argEndBookmarkName, endCallback);
             activities.forEach(
                 function (a)
                 {
-                    context.createBookmark(self.id, a._internalBookmarkName(), "argCollected");
+                    context.createBookmark(self.id, a._getSpecialBookmarkName(guids.markers.argGotBookmark), "argCollected");
                     a.start(context);
                 });
         }
@@ -168,7 +165,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
     else if (obj instanceof Activity)
     {
-        context.createBookmark(self.id, obj._internalBookmarkName(), endCallback);
+        context.createBookmark(self.id, obj._getSpecialBookmarkName(guids.markers.argGotBookmark), endCallback);
         obj.start(context);
     }
     else
@@ -183,7 +180,7 @@ Activity.prototype.unschedule = function (context)
     var state = context.getState(self.id);
     state.childActivityIds.forEach(function (childId)
     {
-        var ibmName = self._internalBookmarkName(childId);
+        var ibmName = self._getSpecialBookmarkName(guids.markers.argGotBookmark, childId);
         if (context.isBookmarkExists(ibmName))
         {
             context.resumeBookmarkInScope(ibmName, Activity.states.cancel);
@@ -195,7 +192,7 @@ Activity.prototype.argCollected = function (context, reason, result, bookmark)
 {
     var self = this;
 
-    var childId = self.activity._internalBookmarkNameToActivityId(bookmark.name);
+    var childId = self.activity._getActivityIdFromSpecialBookmarkName(bookmark.name);
     var argMarker = guids.markers.arg + ":" + childId;
     var resultIndex = self.__argValues.indexOf(argMarker);
     if (resultIndex == -1)
@@ -260,29 +257,29 @@ Activity.prototype.argCollected = function (context, reason, result, bookmark)
             result = self.__argValues;
         }
 
-//        if (!self.__argRemaining)
-//        {
-//            delete self.__argValues;
-//            delete self.__argRemaining;
-//            delete self.__argIdleCounts;
-//            delete self.__argEndBookmarkName;
-//            delete self.__argCancelCounts;
-//            delete self.__argErrors;
-//        }
+        if (!self.__argRemaining)
+        {
+            delete self.__argValues;
+            delete self.__argRemaining;
+            delete self.__argIdleCounts;
+            delete self.__argEndBookmarkName;
+            delete self.__argCancelCounts;
+            delete self.__argErrors;
+        }
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);
     }
 }
 
-Activity.prototype._internalBookmarkName = function (id)
+Activity.prototype._getSpecialBookmarkName = function (prefix, activityId)
 {
-    id = id || this.id;
-    return "_IBM_" + this.id;
+    activityId = activityId || this.id;
+    return prefix + ":" + activityId;
 }
 
-Activity.prototype._internalBookmarkNameToActivityId = function (bookmarkName)
+Activity.prototype._getActivityIdFromSpecialBookmarkName = function (bookmarkName)
 {
-    return bookmarkName.substr(5);
+    return bookmarkName.substr(guids.markers.argGotBookmark.length + 1);
 }
 
 Activity.prototype.emit = function (context)

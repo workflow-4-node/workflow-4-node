@@ -18,15 +18,15 @@ Pick.prototype.varsDeclared = function (context, args)
     if (args && args.length)
     {
         // Monkeypatching FTW!
-        this._prevArgCollected = this._argCollected;
+        var prevArgCollected = this.argCollected;
         this.argCollected = function(context, reason, result, bookmarkName)
         {
+            prevArgCollected.call(this, context, reason, result, bookmarkName);
             if (!this._pickedReason)
             {
                 this._pickedReason = reason;
                 this._pickedResult = result;
                 this.unschedule();
-                this._prevArgCollected.call(this, context, reason, result, bookmarkName);
             }
         }
         this.schedule(args, "_argsGot");

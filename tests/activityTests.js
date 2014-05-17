@@ -361,7 +361,7 @@ module.exports = {
                 });
 
             var engine = new WorkflowEngine(activity);
-            engine.addTracker(new ConsoleTracker());
+            //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
                 function (result)
@@ -411,13 +411,6 @@ module.exports = {
                 function (result)
                 {
                     test.equals(result, "a");
-
-//                    var context = engine._context;
-//                    test.equals(_(context._activityStates).keys().length, 2);
-//                    test.equals(context._scopeExtenders.length, 0);
-//                    test.equals(_(context._bookmarks).keys().length, 0);
-//                    test.equals(_(context._scopeParts).keys().length, 0);
-//                    test.equals(context._resumeBMQueue.isEmpty(), true);
                 },
                 function (e)
                 {
