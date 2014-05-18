@@ -13,21 +13,25 @@ util.inherits(Pick, Declarator);
 
 Pick.prototype.varsDeclared = function (context, args)
 {
-    this._pickedReason = null;
-    this._pickedResult = null;
     if (args && args.length)
     {
+        this._idleCounts = {};
         // Monkeypatching FTW!
         var prev = this.resultCollected;
-        this.resultCollected = function(context, reason, result, bookmarkName)
+        this.resultCollected = function(context, reason, result, bookmark)
         {
-            prev.call(this, context, reason, result, bookmarkName);
-            if (!this._pickedReason)
+            if (reason === Activity.states.idle)
             {
+                if (!this._idleCounts[bookmark]) this._idleCounts[bookmark] = 0;
+                this._idleCounts[bookmark]++;
+            }
+            if (reason !== Activity.states.idle || this._idleCounts[bookmark] > 1)
+            {
+                this.unschedule(bookmark);
                 this._pickedReason = reason;
                 this._pickedResult = result;
-                this.unschedule();
             }
+            prev.call(this, context, reason, result, bookmark);
         }
         this.schedule(args, "_argsGot");
     }

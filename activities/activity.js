@@ -173,20 +173,26 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
 }
 
-Activity.prototype.unschedule = function (context)
+Activity.prototype.unschedule = function (context, keepBookmark)
 {
     var self = this;
+    var keepChildId = self._getActivityIdFromSpecialBookmarkName(keepBookmark.name);
     var state = context.getState(self.id);
+    var ids = [];
     state.childActivityIds.forEach(function (childId)
     {
-        var ibmName = self._getSpecialBookmarkName(guids.markers.valueCollectedBookmark, childId);
-        if (context.isBookmarkExists(ibmName))
+        if (childId != keepChildId)
         {
-            context.resumeBookmarkInScope(ibmName, Activity.states.cancel);
+            var childState = context.getState(childId);
+            context.deleteScopeOfActivity(childId);
+            --context.scope.__collectRemaining;
+            if (childState.execState == Activity.states.idle) --context.scope.__collectIdleCounts;
+            ids.push(childId);
+            var ibmName = self._getSpecialBookmarkName(guids.markers.valueCollectedBookmark, childId);
+            if (context.isBookmarkExists(ibmName)) context.deleteBookmark(ibmName);
         }
     });
-    context.deleteBookmarksOfActivities(state.childActivityIds);
-    context.deleteScopeOfActivities(state.childActivityIds);
+    context.deleteBookmarksOfActivities(ids);
 }
 
 Activity.prototype.resultCollected = function (context, reason, result, bookmark)

@@ -7,77 +7,70 @@ var _ = require("underscore-node");
 var ConsoleTracker = require("../activities/consoleTracker");
 
 module.exports = {
-    parallelTest: function (test)
+    pickTest: function (test)
     {
         var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
             {
-                parallel: {
-                    var1: "",
-                    displayName: "Root",
+                block: {
+                    var1: 0,
                     args: [
                         {
-                            block: {
-                                displayName: "Wait Block 1",
-                                args: [
-                                    {
-                                        waitForBookmark: {
-                                            displayName: "Wait 1",
-                                            bookmarkName: "bm1"
+                            parallel: [
+                                {
+                                    pick: [
+                                        {
+                                            block: [
+                                                {
+                                                    waitForBookmark: {
+                                                        bookmarkName: "foo"
+                                                    }
+                                                },
+                                                {
+                                                    func: {
+                                                        displayName: "Do Not Do This Func",
+                                                        code: function ()
+                                                        {
+                                                            this.var1 = -1;
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            block: [
+                                                {
+                                                    waitForBookmark: {
+                                                        bookmarkName: "bm"
+                                                    }
+                                                },
+                                                {
+                                                    func: {
+                                                        displayName: "Do This Func",
+                                                        code: function ()
+                                                        {
+                                                            this.var1 = 1;
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
-                                    },
-                                    {
-                                        func: {
-                                            displayName: "Func 1",
-                                            code: function ()
-                                            {
-                                                return this.var1 += "a";
-                                            }
-                                        }
+                                    ]
+                                },
+                                {
+                                    resumeBookmark: {
+                                        bookmarkName: "bm"
                                     }
-                                ]
-                            }
+                                }
+                            ]
                         },
                         {
-                            block: {
-                                displayName: "Wait Block 2",
-                                args: [
-                                    {
-                                        waitForBookmark: {
-                                            displayName: "Wait 2",
-                                            bookmarkName: "bm2"
-                                        }
-                                    },
-                                    {
-                                        func: {
-                                            displayName: "Func 2",
-                                            code: function ()
-                                            {
-                                                return this.var1 += "b";
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            block: {
-                                displayName: "Resume Block",
-                                args: [
-                                    {
-                                        resumeBookmark: {
-                                            displayName: "Resume 1",
-                                            bookmarkName: "bm1"
-                                        }
-                                    },
-                                    {
-                                        resumeBookmark: {
-                                            displayName: "Resume 2",
-                                            bookmarkName: "bm2"
-                                        }
-                                    },
-                                    "bubu"
-                                ]
+                            func: {
+                                displayName: "Final Func",
+                                code: function ()
+                                {
+                                    return this.var1;
+                                }
                             }
                         }
                     ]
@@ -92,11 +85,7 @@ module.exports = {
             {
                 try
                 {
-                    test.ok(_.isArray(result));
-                    test.equals(result.length, 3);
-                    test.equals(result[0], "a");
-                    test.equals(result[1], "ab");
-                    test.equals(result[2], "bubu");
+                    test.equals(result, 1);
                 }
                 catch (e)
                 {

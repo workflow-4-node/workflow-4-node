@@ -46,9 +46,9 @@ function ActivityExecutionContext()
             {
                 if (this.activity) this.activity.schedule.call(this.activity, self, obj, endcallback);
             },
-            unschedule: function ()
+            unschedule: function (keepBookmark)
             {
-                if (this.activity) this.activity.unschedule.call(this.activity, self);
+                if (this.activity) this.activity.unschedule.call(this.activity, self, keepBookmark);
             },
             createBookmark: function (name, callback)
             {
@@ -279,6 +279,11 @@ ActivityExecutionContext.prototype.isBookmarkExists = function (name)
     return this._bookmarks[name] != undefined;
 }
 
+ActivityExecutionContext.prototype.deleteBookmark = function (name)
+{
+    delete this._bookmarks[name];
+}
+
 ActivityExecutionContext.prototype.resumeBookmarkInScope = function (name, reason, result)
 {
     var bm = this._bookmarks[name];
@@ -297,7 +302,10 @@ ActivityExecutionContext.prototype.resumeBookmarkInScope = function (name, reaso
 ActivityExecutionContext.prototype.resumeBookmarkInternal = function (name, reason, result)
 {
     var bm = this._bookmarks[name];
-    if (bm == undefined) throw new Error("Bookmark '" + name + "' doesn't exists.");
+    if (bm == undefined)
+    {
+        throw new Error("Bookmark '" + name + "' doesn't exists.");
+    }
     this._resumeBMQueue.enqueue(name, true, reason, result);
 }
 
@@ -336,7 +344,7 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function ()
     if (command)
     {
         var bm = self._bookmarks[command.name];
-        if (bm == undefined) throw new ex.ActivityRuntimeError("Internal resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists.");
+        if (bm == undefined) throw new ex.ActivityRuntimeError("Internal resume bookmark request cannot be processed because bookmark '" + command.name + "' doesn't exists.");
         self._restoreScope(bm.activityId);
         self._doResumeBookmark(bm, command.reason, command.result);
         return true;
@@ -369,7 +377,7 @@ ActivityExecutionContext.prototype.deleteBookmarksOfActivities = function (activ
     var allIds = {};
     activityIds.forEach(function(id)
     {
-        self._getIdsActivityOfSubtree(allIds, id);
+        self._getActivityIdsOfSubtree(allIds, id);
     });
     for (var bmName in self._bookmarks)
     {
@@ -378,23 +386,19 @@ ActivityExecutionContext.prototype.deleteBookmarksOfActivities = function (activ
     }
 }
 
-ActivityExecutionContext.prototype._getIdsActivityOfSubtree = function (to, activityId)
+ActivityExecutionContext.prototype._getActivityIdsOfSubtree = function (to, activityId)
 {
     var self = this;
     to[activityId] = true;
     self.getState(activityId).childActivityIds.forEach(function (id)
     {
-        self._getIdsActivityOfSubtree(to, id);
+        self._getActivityIdsOfSubtree(to, id);
     });
 }
 
-ActivityExecutionContext.prototype.deleteScopeOfActivities = function(activityIds)
+ActivityExecutionContext.prototype.deleteScopeOfActivity = function(activityId)
 {
-    var self = this;
-    activityIds.forEach(function(id)
-    {
-        self._scopeTree.deleteScopePart(id);
-    });
+    this._scopeTree.deleteScopePart(activityId);
 }
 
 module.exports = ActivityExecutionContext;
