@@ -46,7 +46,7 @@ ScopeTree.prototype.back = function (keepItem)
 
     var toRemove = self._currentNode;
     toRemove.removeAllFields(self.currentScope);
-    var goTo = toRemove.parent();
+    var goTo = toRemove.parent;
     var first = true;
     goTo.forEachToRoot(
         function (node)
@@ -76,7 +76,7 @@ ScopeTree.prototype.goTo = function (id)
     if (toNode === undefined) throw new Error("Node by id '" + id + "' not found.");
     if (toNode === self._initialNode) throw new Error("Cannot go to id '" + id + "' because that is the initial.");
     toNode.addAllFields(self.currentScope);
-    var parent = toNode.parent();
+    var parent = toNode.parent;
     parent.forEachToRoot(
         function (node)
         {
@@ -135,7 +135,7 @@ ScopeTree.prototype.deleteScopePart = function (id)
             }
         });
         if (!found) throw new Error("Cannot delete scope, because current active cope is inside in it.");
-        delNode.parent().removeChild(delNode);
+        delNode.parent.removeChild(delNode);
     }
 }
 

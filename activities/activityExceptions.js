@@ -58,6 +58,15 @@ function ValidationError(message)
 
 util.inherits(ValidationError, Error);
 
+function TimeoutError(message)
+{
+    Error.call(this);
+    Error.captureStackTrace(this, this.constructor);
+    this.message = message;
+}
+
+util.inherits(TimeoutError, Error);
+
 module.exports.ActivityStateExceptionError = ActivityStateExceptionError;
 module.exports.ActivityExceptionError = ActivityStateExceptionError;
 module.exports.Cancelled = Cancelled;
@@ -66,3 +75,4 @@ module.exports.AggregateError = AggregateError;
 module.exports.ActivityMarkupError = ActivityMarkupError;
 module.exports.ActivityRuntimeError = ActivityRuntimeError;
 module.exports.ValidationError = ValidationError;
+module.exports.TimeoutError = TimeoutError;

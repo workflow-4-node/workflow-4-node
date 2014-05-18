@@ -9,10 +9,16 @@ function ScopeNode(id, scopePart)
     this._children = {};
 }
 
-ScopeNode.prototype.parent = function ()
-{
-    return this._parent;
-}
+Object.defineProperties(ScopeNode.prototype,
+    {
+        parent: {
+            get: function()
+            {
+                return this._parent;
+            }
+        }
+    }
+)
 
 ScopeNode.prototype.forEachToRoot = function (f)
 {

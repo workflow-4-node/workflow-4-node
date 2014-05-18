@@ -10,6 +10,7 @@ function Activity()
     this.id = null;
     this.args = null;
     this.displayName = "";
+    this.version = 0;
     this._nonScoped = [
         "activity",
         "_nonScoped",
@@ -26,7 +27,8 @@ function Activity()
         "unschedule",
         "createBookmark",
         "resumeBookmark",
-        "resultCollected"
+        "resultCollected",
+        "version"
     ];
 }
 
@@ -55,7 +57,7 @@ Activity.prototype.start = function (context)
 
     context.beginScope(this.id, this.createScopePart());
     this.emit(context, Activity.states.run);
-    this.run.call(context.scope(), context, args);
+    this.run.call(context.scope, context, args);
 
     return state;
 }
@@ -107,7 +109,7 @@ Activity.prototype.end = function (context, reason, result)
         context.resumeBookmarkInScope(bmName, reason, result);
         return;
     }
-    else if (inIdle && !context.hasScope() && context.processResumeBookmarkQueue())
+    else if (inIdle && !context.hasScope && context.processResumeBookmarkQueue())
     {
         return;
     }
@@ -120,7 +122,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     // TODO: Validate callback in scope
 
     var self = this;
-    var scope = context.scope();
+    var scope = context.scope;
 
     if (Array.isArray(obj) && obj.length)
     {

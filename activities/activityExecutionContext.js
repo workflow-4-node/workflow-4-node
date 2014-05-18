@@ -71,6 +71,23 @@ function ActivityExecutionContext()
 
 util.inherits(ActivityExecutionContext, EventEmitter);
 
+Object.defineProperties(ActivityExecutionContext.prototype,
+    {
+        scope: {
+            get: function()
+            {
+                return this._scopeTree.currentScope;
+            }
+        },
+        hasScope: {
+            get: function()
+            {
+                return !this._scopeTree.isOnInitial();
+            }
+        }
+    }
+)
+
 ActivityExecutionContext.prototype.initialize = function (rootActivity)
 {
     if (this._rootActivity) throw new Error("Context is already initialized.");
@@ -216,11 +233,6 @@ ActivityExecutionContext.prototype._getKnownActivity = function (activityId)
     return activity;
 }
 
-ActivityExecutionContext.prototype.scope = function ()
-{
-    return this._scopeTree.currentScope;
-}
-
 ActivityExecutionContext.prototype.beginScope = function (activityId, scopePart)
 {
     this._scopeTree.next(activityId, scopePart);
@@ -229,11 +241,6 @@ ActivityExecutionContext.prototype.beginScope = function (activityId, scopePart)
 ActivityExecutionContext.prototype.endScope = function (inIdle)
 {
     this._scopeTree.back(inIdle);
-}
-
-ActivityExecutionContext.prototype.hasScope = function ()
-{
-    return !this._scopeTree.isOnInitial();
 }
 
 ActivityExecutionContext.prototype.inNonPersistZone = function ()
@@ -301,7 +308,7 @@ ActivityExecutionContext.prototype.resumeBookmarkExternal = function (name, reas
 
 ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reason, result, noRemove)
 {
-    var scope = this.scope();
+    var scope = this.scope;
     if (!noRemove) delete this._bookmarks[bookmark.name];
     if (scope[bookmark.endCallback] == undefined)
     {
@@ -312,7 +319,7 @@ ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reaso
 
 ActivityExecutionContext.prototype._getActivityIdOfCurrentScope = function ()
 {
-    var scope = this.scope();
+    var scope = this.scope;
     return scope && scope.activity ? scope.activity.id : null;
 }
 

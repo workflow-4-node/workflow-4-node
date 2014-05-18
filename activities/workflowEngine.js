@@ -14,12 +14,29 @@ function WorkflowEngine(rootActivity)
     if (!(rootActivity instanceof Activity)) throw new TypeError("Argument 'rootActivity' is not an activity.");
     this._rootActivity = rootActivity;
     this._context = new ActivityExecutionContext();
-    this._context.initialize(this._rootActivity);
     this._rootState = null;
     this._trackers = [];
     this._hookContext();
-    this.resumeTimeout = 3000;
+    this.commandTimeout = 3000;
 }
+
+WorkflowEngine.prototype = {
+    get execState()
+    {
+        if (this._rootState)
+        {
+            return this._rootState.execState;
+        }
+        else
+        {
+            return null;
+        }
+    },
+    get version()
+    {
+        return this._rootActivity.version;
+    }
+};
 
 util.inherits(WorkflowEngine, EventEmitter);
 
@@ -93,20 +110,31 @@ WorkflowEngine.prototype.addTracker = function (tracker)
 
 WorkflowEngine.prototype.start = function ()
 {
+    this._verifyNotStarted();
+
+    this._context.initialize(this._rootActivity);
+
     var args = [ this._context ];
     Array.prototype.forEach.call(
         arguments, function (a)
         {
             args.push(a);
         });
+
     this._setRootState(this._rootActivity.start.apply(this._rootActivity, args));
 }
 
 WorkflowEngine.prototype.invoke = function ()
 {
+    this._verifyNotStarted();
+
+    var self = this;
     var defer = Q.defer();
     try
     {
+        this._context.initialize(this._rootActivity);
+
+        var startTime = new Date().getTime();
         var argRemoveToken = null;
         var args = [];
         Array.prototype.forEach.call(
@@ -114,39 +142,49 @@ WorkflowEngine.prototype.invoke = function ()
             {
                 args.push(a);
             });
-        if (args.length) argRemoveToken = this._context.appendToContext(args);
-        args.unshift(this._context);
+        if (args.length) argRemoveToken = self._context.appendToContext(args);
+        args.unshift(self._context);
 
-        this._setRootState(this._context.getState(this._rootActivity.id));
-        this.once(
-            Activity.states.end, function (reason, result)
-            {
-                try
+        self._setRootState(self._context.getState(self._rootActivity.id));
+        var wait = function ()
+        {
+            self.once(
+                Activity.states.end, function (reason, result)
                 {
-                    switch (reason)
+                    try
                     {
-                        case Activity.states.complete:
-                            defer.resolve(result);
-                            break;
-                        case Activity.states.cancel:
-                            defer.reject(new ex.Cancelled());
-                            break;
-                        case Activity.states.idle:
-                            defer.reject(new ex.Idle());
-                            break;
-                        default :
-                            result = result || new ex.ActivityStateExceptionError("Unknonw error.");
-                            defer.reject(result);
-                            break;
+                        switch (reason)
+                        {
+                            case Activity.states.complete:
+                                defer.resolve(result);
+                                break;
+                            case Activity.states.cancel:
+                                defer.reject(new ex.Cancelled());
+                                break;
+                            case Activity.states.idle:
+                                if (new Date().getTime() - startTime > self.commandTimeout)
+                                {
+                                    defer.reject(new ex.Idle());
+                                }
+                                else
+                                {
+                                    process.nextTick(wait);
+                                }
+                                break;
+                            default :
+                                result = result || new ex.ActivityRuntimeError("Unknown error.");
+                                defer.reject(result);
+                                break;
+                        }
                     }
-                }
-                finally
-                {
-                    if (argRemoveToken) this._context.removeFromContext(argRemoveToken);
-                }
-            });
-
-        this._rootActivity.start.apply(this._rootActivity, args);
+                    finally
+                    {
+                        if (argRemoveToken) self._context.removeFromContext(argRemoveToken);
+                    }
+                });
+        }
+        wait();
+        self._rootActivity.start.apply(self._rootActivity, args);
     }
     catch (e)
     {
@@ -155,16 +193,9 @@ WorkflowEngine.prototype.invoke = function ()
     return defer.promise;
 }
 
-WorkflowEngine.prototype.execState = function ()
+WorkflowEngine.prototype._verifyNotStarted = function ()
 {
-    if (this._rootState)
-    {
-        return this._rootState.execState;
-    }
-    else
-    {
-        return null;
-    }
+    if (this.execState != null) throw new ex.ActivityStateExceptionError("Workflow has been started already.");
 }
 
 WorkflowEngine.prototype.resumeBookmark = function (name, reason, result)
@@ -177,57 +208,96 @@ WorkflowEngine.prototype.resumeBookmark = function (name, reason, result)
         if (self.execState() == enums.ActivityStates.idle)
         {
             var timedOut = false;
-            self._context.resumeBookmarkExternal(name, reason, result);
+            var resolved = false;
+            var startTime = new Date().getTime();
+
+            var rejectWithTimeout = function ()
+            {
+                try
+                {
+                    self._context.cancelResumingExternalBookmark(name);
+                    defer.reject(new ex.TimeoutError("Bookmark '" + name + "' cannot be resumed in time."));
+                }
+                catch (e)
+                {
+                    defer.reject(e);
+                }
+            }
+
             var toId = setTimeout(
                 function ()
                 {
                     timedOut = true;
+                    if (!resolved) rejectWithTimeout();
                 },
-                self.resumeTimeout);
-            var wait = function()
+                self.commandTimeout);
+            var wait = function ()
             {
                 self.once(
                     Activity.states.end, function (reason, result)
                     {
-                        try
+                        if (!timedOut)
                         {
-                            switch (reason)
+                            try
                             {
-                                // complete, idle: meg kell nezni, hogy a bookmark el-e meg, ha nem, akkor ok,
-                                // ha igen, es complete, akkor fail,
-                                // ha meg idle, akkor meg kell nezni, hogy lejart-e az ido, ha nem, akkor wait,
-                                // egyebken fail, torolni kell a bookmark folytatast a kjkubol
-
-                                // Cancel, Fail: elszall hibaval
-
-                                // Ha nem waitot hivaunk, akkor torolni kell a timeoutot, ha nem timeout a hiba
-
-//                                case Activity.states.complete:
-//                                    defer.resolve(result);
-//                                    break;
-//                                case Activity.states.cancel:
-//                                    defer.reject(new ex.Cancelled());
-//                                    break;
-//                                case Activity.states.idle:
-//                                    defer.reject(new ex.Idle());
-//                                    break;
-//                                default :
-//                                    result = result || new ex.ActivityStateExceptionError("Unknonw error.");
-//                                    defer.reject(result);
-//                                    break;
+                                if (reason === enums.ActivityStates.complete || reason === enums.ActivityStates.idle)
+                                {
+                                    if (self._context.isBookmarkExists(name))
+                                    {
+                                        if (reason === enums.ActivityStates.complete)
+                                        {
+                                            resolved = true;
+                                            clearTimeout(toId);
+                                            defer.reject(new ex.ActivityRuntimeError("Workflow has been completed before bookmark '" + name + "' reached."));
+                                        }
+                                        else
+                                        {
+                                            // Idle
+                                            if (new Date().getTime() - startTime > self.commandTimeout)
+                                            {
+                                                resolved = true;
+                                                clearTimeout(toId);
+                                                rejectWithTimeout();
+                                            }
+                                            else
+                                            {
+                                                process.nextTick(wait);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        resolved = true;
+                                        clearTimeout(toId);
+                                        defer.resolve();
+                                    }
+                                }
+                                else if (reason === enums.ActivityStates.cancel)
+                                {
+                                    resolved = true;
+                                    clearTimeout(toId);
+                                    defer.reject(new ex.ActivityRuntimeError("Workflow has been cancelled before bookmark '" + name + "' reached."));
+                                }
+                                else if (reason === enums.ActivityStates.fail)
+                                {
+                                    resolved = true;
+                                    clearTimeout(toId);
+                                    defer.reject(new ex.ActivityRuntimeError("Workflow execution has been failed before bookmark '" + name + "' reached."));
+                                }
                             }
-                        }
-                        finally
-                        {
-                            if (argRemoveToken) self._context.removeFromContext(argRemoveToken);
+                            catch (e)
+                            {
+                                defer.reject(e);
+                            }
                         }
                     });
             };
             wait();
+            self._context.resumeBookmarkExternal(name, reason, result);
         }
         else
         {
-            throw new Error("Cannot resume bookmark, while the workflow is not in the idle state.");
+            throw new ex.ActivityRuntimeError("Cannot resume bookmark, while the workflow is not in the idle state.");
         }
     }
     catch (e)
