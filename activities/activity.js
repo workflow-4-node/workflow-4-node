@@ -47,7 +47,7 @@ Activity.prototype.start = function (context)
 
     var state = context.getState(this.id);
 
-    if (state.isRunning()) throw new Error("Activity is already running.");
+    if (state.isRunning) throw new Error("Activity is already running.");
 
     var args = this.args;
     if (arguments.length > 1)

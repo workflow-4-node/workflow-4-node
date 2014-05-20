@@ -5,6 +5,7 @@ var enums = require("./enums");
 function ActivityExecutionState(activityId)
 {
     this.activityId = activityId;
+    this.instanceId = null;
     this.execState = null;
     this.parentActivityId = null;
     this.childActivityIds = [];
@@ -12,14 +13,13 @@ function ActivityExecutionState(activityId)
 
 util.inherits(ActivityExecutionState, EventEmitter);
 
-ActivityExecutionState.prototype.isRoot = function()
-{
-    return this.parentActivityId == null;
-}
-
-ActivityExecutionState.prototype.isRunning = function()
-{
-    return this.execState == enums.ActivityStates.run;
-}
+Object.defineProperties(ActivityExecutionState.prototype, {
+    isRunning: {
+        get: function()
+        {
+            return this.execState == enums.ActivityStates.run;
+        }
+    }
+});
 
 module.exports = ActivityExecutionState;
