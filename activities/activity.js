@@ -3,6 +3,7 @@ var guids = require("./guids");
 var ex = require("./ActivityExceptions");
 var enums = require("./enums");
 var ActivityExecutionContext = require("./activityExecutionContext");
+var _ = require("underscore-node");
 
 function Activity()
 {
@@ -142,6 +143,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
         });
         if (activities.length)
         {
+            scope.__collectPickRound2 = false;
             scope.__collectErrors = [];
             scope.__collectCancelCounts = 0;
             scope.__collectIdleCounts = 0;
@@ -202,66 +204,100 @@ Activity.prototype.resultCollected = function (context, reason, result, bookmark
     var childId = self.activity._getActivityIdFromSpecialBookmarkName(bookmark.name);
     var argMarker = guids.markers.valueToCollect + ":" + childId;
     var resultIndex = self.__collectValues.indexOf(argMarker);
+    var pickCurrent = false;
     if (resultIndex == -1)
     {
         self.__collectErrors.push(new ex.ActivityStateExceptionError("Activity '" + childId + "' is not found in __collectValues."));
     }
     else
     {
-        switch (reason)
+        if (self.__collectPick && (reason != Activity.states.idle || self.__collectPickRound2))
         {
-            case Activity.states.complete:
-                self.__collectValues[resultIndex] = result;
-                break;
-            case Activity.states.cancel:
-                self.__collectCancelCounts++;
-                self.__collectValues[resultIndex] = null;
-                break;
-            case Activity.states.idle:
-                self.__collectIdleCounts++;
-                break;
-            case Activity.states.fail:
-                result = result || new ex.ActivityStateExceptionError("Unknown error.");
-                self.__collectErrors.push(result);
-                self.__collectValues[resultIndex] = null;
-                break;
-            default:
-                self.__collectErrors.push(new ex.ActivityStateExceptionError("Bookmark should not be continued with reason '" + reason + "'."));
-                self.__collectValues[resultIndex] = null;
-                break;
-        }
-    }
-    if (--self.__collectRemaining == 0)
-    {
-        var endBookmarkName = self.__collectEndBookmarkName;
-        var reason;
-        var result = null;
-        if (self.__collectErrors.length)
-        {
-            reason = Activity.states.fail;
-            if (self.__collectErrors.length == 1)
+            // We should pick current result, and shut down others:
+            var ids = [];
+            self.__collectValues.forEach(function(cv)
             {
-                result = self.__collectErrors[0];
-            }
-            else
-            {
-                result = new ex.AggregateError(self.__collectErrors);
-            }
-        }
-        else if (self.__collectCancelCounts)
-        {
-            reason = Activity.states.cancel;
-        }
-        else if (self.__collectIdleCounts)
-        {
-            reason = Activity.states.idle;
-            self.__collectRemaining = 1;
-            self.__collectIdleCounts--;
+                if (_.isString(cv) && cv.indexOf(guids.markers.valueToCollect + ":") != -1)
+                {
+                    var id = cv.substr(guids.markers.valueToCollect.length + 1);
+                    if (id != childId)
+                    {
+                        ids.push(id);
+                        context.deleteScopeOfActivity(id);
+                        var ibmName = self.activity._getSpecialBookmarkName(guids.markers.valueCollectedBookmark, id);
+                        if (context.isBookmarkExists(ibmName)) context.deleteBookmark(ibmName);
+                    }
+                }
+            });
+            context.deleteBookmarksOfActivities(ids);
+            pickCurrent = true;
         }
         else
         {
-            reason = Activity.states.complete;
-            result = self.__collectValues;
+            switch (reason)
+            {
+                case Activity.states.complete:
+                    self.__collectValues[resultIndex] = result;
+                    break;
+                case Activity.states.cancel:
+                    self.__collectCancelCounts++;
+                    self.__collectValues[resultIndex] = null;
+                    break;
+                case Activity.states.idle:
+                    self.__collectIdleCounts++;
+                    break;
+                case Activity.states.fail:
+                    result = result || new ex.ActivityStateExceptionError("Unknown error.");
+                    self.__collectErrors.push(result);
+                    self.__collectValues[resultIndex] = null;
+                    break;
+                default:
+                    self.__collectErrors.push(new ex.ActivityStateExceptionError("Bookmark should not be continued with reason '" + reason + "'."));
+                    self.__collectValues[resultIndex] = null;
+                    break;
+            }
+        }
+    }
+    if (--self.__collectRemaining == 0 || pickCurrent)
+    {
+        var endBookmarkName = self.__collectEndBookmarkName;
+
+        if (!pickCurrent)
+        {
+            var reason;
+            var result = null;
+            if (self.__collectErrors.length)
+            {
+                reason = Activity.states.fail;
+                if (self.__collectErrors.length == 1)
+                {
+                    result = self.__collectErrors[0];
+                }
+                else
+                {
+                    result = new ex.AggregateError(self.__collectErrors);
+                }
+            }
+            else if (self.__collectCancelCounts)
+            {
+                reason = Activity.states.cancel;
+            }
+            else if (self.__collectIdleCounts)
+            {
+                reason = Activity.states.idle;
+                self.__collectRemaining = 1;
+                self.__collectIdleCounts--;
+                if (self.__collectPick)
+                {
+                    // We're in pick mode, and all result was idle
+                    self.__collectPickRound2 = true;
+                }
+            }
+            else
+            {
+                reason = Activity.states.complete;
+                result = self.__collectValues;
+            }
         }
 
         if (!self.__collectRemaining)
@@ -272,6 +308,8 @@ Activity.prototype.resultCollected = function (context, reason, result, bookmark
             delete self.__collectEndBookmarkName;
             delete self.__collectCancelCounts;
             delete self.__collectErrors;
+            delete self.__collectPick;
+            delete self.__collectPickRound2;
         }
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);

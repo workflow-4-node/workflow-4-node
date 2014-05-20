@@ -26,7 +26,7 @@ ResumeBookmarkQueue.prototype.enqueue = function(bookmarkName, internalRequest, 
     }
     else
     {
-        throw new ex.ActivityRuntimeError(bookmarkName + " already enqueued.");
+        throw new ex.ActivityRuntimeError("The '" + bookmarkName + "' bookmark continuation already enqueued.");
     }
 }
 
