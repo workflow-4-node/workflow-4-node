@@ -162,7 +162,14 @@ ActivityExecutionContext.prototype._initialize = function (parent, activity, idC
 {
     var self = this;
 
-    activity.id = (idCounter.id++).toString();
+    if (activity.id === null)
+    {
+        activity.id = (idCounter.id++).toString();
+    }
+    else if (activity.id != (idCounter.id++).toString())
+    {
+        throw new Error("Activity " + id + " has been assigned to an other context in a different tree which is not allowed.");
+    }
     self._nextActivityId = idCounter.id;
     var state = self.getState(activity.id);
     state.parentActivityId = parent ? parent.id : null;

@@ -11,31 +11,24 @@ function Activity()
     this.id = null;
     this.args = null;
     this.displayName = "";
-    this.version = 0;
-    this._nonScoped = [
-        "activity",
-        "_nonScoped",
-        "id",
-        "args",
-        "__typeTag",
-        "displayName",
-        "complete",
-        "cancel",
-        "idle",
-        "fail",
-        "end",
-        "schedule",
-        "unschedule",
-        "createBookmark",
-        "resumeBookmark",
-        "resultCollected",
-        "version"
-    ];
-}
-
-Activity.prototype.asNonScoped = function (fieldName)
-{
-    this._nonScoped.push(fieldName);
+    this._nonScoped = {
+        activity: true,
+        _nonScoped: true,
+        id: true,
+        args: true,
+        __typeTag: true,
+        displayName: true,
+        complete: true,
+        cancel: true,
+        idle: true,
+        fail: true,
+        end: true,
+        schedule: true,
+        unschedule: true,
+        createBookmark: true,
+        resumeBookmark: true,
+        resultCollected: true
+    };
 }
 
 Activity.prototype.start = function (context)
@@ -340,7 +333,7 @@ Activity.prototype.createScopePart = function ()
     for (var fieldName in this)
     {
         var fieldValue = this[fieldName];
-        if (this._nonScoped.indexOf(fieldName) != -1) continue;
+        if (this._nonScoped[fieldName]) continue;
         if (Activity.prototype[fieldName]) continue;
         scopePart[fieldName] = fieldValue;
     }

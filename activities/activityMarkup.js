@@ -10,26 +10,40 @@ function ActivityMarkup()
 
 ActivityMarkup.prototype._registerSystemTypes = function()
 {
-    this.registerType("func", require("./func"));
-    this.registerType("block", require("./block"));
-    this.registerType("parallel", require("./parallel"));
-    this.registerType("pick", require("./pick"));
-    this.registerType("resumeBookmark", require("./resumeBookmark"));
-    this.registerType("waitForBookmark", require("./waitForBookmark"));
+    this.registerType("workflow", function() { return require("./workflow"); });
+    this.registerType("func", function() { return require("./func"); });
+    this.registerType("block", function() { return require("./block"); });
+    this.registerType("parallel", function() { return require("./parallel"); });
+    this.registerType("pick", function() { return require("./pick"); });
+    this.registerType("resumeBookmark", function() { return require("./resumeBookmark"); });
+    this.registerType("waitForBookmark", function() { return require("./waitForBookmark"); });
 }
 
 ActivityMarkup.prototype.registerType = function (alias, type)
 {
     if (!_.isString(alias)) throw new TypeError("Parameter 'alias' is not a string.");
+    if (!_.isFunction(type)) this._verifyIsActivityType(type);
+    this._knonwTypes[alias] = type;
+}
+
+ActivityMarkup.prototype._verifyIsActivityType = function (type)
+{
     var sup = type.super_;
-    var isA = sup.name == Activity.name;
-    while (sup && !isA)
+    var isA;
+    if (sup)
     {
-        sup = sup.super_;
         isA = sup.name == Activity.name;
+        while (sup && !isA)
+        {
+            sup = sup.super_;
+            isA = sup.name == Activity.name;
+        }
+    }
+    else
+    {
+        isA = false;
     }
     if (!isA) throw new TypeError("Parameter 'type' is not an activity type.");
-    this._knonwTypes[alias] = type;
 }
 
 ActivityMarkup.prototype.parse = function (markup)
@@ -54,6 +68,11 @@ ActivityMarkup.prototype._createActivityInstance = function (alias, markup)
 {
     var type = this._knonwTypes[alias];
     if (type == undefined) throw new ex.ActivityMarkupError("Unknown activity alias '" + alias + "'." + this._errorHint(markup));
+    if (_.isFunction(type))
+    {
+        type = type();
+        this._verifyIsActivityType(type);
+    }
     var activity = new type();
     var pars = markup[alias];
     if (pars) this._setupActivity(activity, pars);

@@ -9,7 +9,7 @@ var _ = require("underscore-node");
 var TrackingParticipant = require("./TrackingParticipant");
 var enums = require("./enums");
 
-function WorkflowEngine(rootActivity)
+function ActivityExecutionEngine(rootActivity)
 {
     if (!(rootActivity instanceof Activity)) throw new TypeError("Argument 'rootActivity' is not an activity.");
     this._rootActivity = rootActivity;
@@ -20,7 +20,7 @@ function WorkflowEngine(rootActivity)
     this.commandTimeout = 3000;
 }
 
-WorkflowEngine.prototype = {
+ActivityExecutionEngine.prototype = {
     get execState()
     {
         if (this._rootState)
@@ -38,9 +38,9 @@ WorkflowEngine.prototype = {
     }
 };
 
-util.inherits(WorkflowEngine, EventEmitter);
+util.inherits(ActivityExecutionEngine, EventEmitter);
 
-WorkflowEngine.prototype._setRootState = function (state)
+ActivityExecutionEngine.prototype._setRootState = function (state)
 {
     var self = this;
     if (!self._rootState)
@@ -79,7 +79,7 @@ WorkflowEngine.prototype._setRootState = function (state)
     }
 }
 
-WorkflowEngine.prototype._hookContext = function ()
+ActivityExecutionEngine.prototype._hookContext = function ()
 {
     var self = this;
     self._context.on(
@@ -102,13 +102,13 @@ WorkflowEngine.prototype._hookContext = function ()
         });
 }
 
-WorkflowEngine.prototype.addTracker = function (tracker)
+ActivityExecutionEngine.prototype.addTracker = function (tracker)
 {
     if (!_.isObject(tracker)) throw new TypeError("Parameter is not an object.");
     this._trackers.push(new TrackingParticipant(tracker));
 }
 
-WorkflowEngine.prototype.start = function ()
+ActivityExecutionEngine.prototype.start = function ()
 {
     this._verifyNotStarted();
 
@@ -124,7 +124,7 @@ WorkflowEngine.prototype.start = function ()
     this._setRootState(this._rootActivity.start.apply(this._rootActivity, args));
 }
 
-WorkflowEngine.prototype.invoke = function ()
+ActivityExecutionEngine.prototype.invoke = function ()
 {
     this._verifyNotStarted();
 
@@ -193,12 +193,12 @@ WorkflowEngine.prototype.invoke = function ()
     return defer.promise;
 }
 
-WorkflowEngine.prototype._verifyNotStarted = function ()
+ActivityExecutionEngine.prototype._verifyNotStarted = function ()
 {
     if (this.execState != null) throw new ex.ActivityStateExceptionError("Workflow has been started already.");
 }
 
-WorkflowEngine.prototype.resumeBookmark = function (name, reason, result)
+ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, result)
 {
     var self = this;
     var defer = Q.defer();
@@ -308,4 +308,4 @@ WorkflowEngine.prototype.resumeBookmark = function (name, reason, result)
     return defer.promise;
 }
 
-module.exports = WorkflowEngine;
+module.exports = ActivityExecutionEngine;

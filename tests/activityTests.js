@@ -1,7 +1,7 @@
 var Func = require("../activities/func");
 var Block = require("../activities/block");
 var ActivityMarkup = require("../activities/activityMarkup");
-var WorkflowEngine = require("../activities/workflowEngine");
+var ActivityExecutionEngine = require("../activities/activityExecutionEngine");
 var Q = require("q");
 var _ = require("underscore-node");
 var ConsoleTracker = require("../activities/consoleTracker");
@@ -16,7 +16,7 @@ module.exports = {
                 return obj.name;
             };
 
-            var engine = new WorkflowEngine(fop);
+            var engine = new ActivityExecutionEngine(fop);
 
             engine.invoke({ name: "Gabor" }).then(
                 function (result)
@@ -46,7 +46,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(fop);
+            var engine = new ActivityExecutionEngine(fop);
 
             engine.invoke({ name: "Gabor" }).then(
                 function (result)
@@ -73,7 +73,7 @@ module.exports = {
                 return d.promise;
             };
 
-            var engine = new WorkflowEngine(fop);
+            var engine = new ActivityExecutionEngine(fop);
 
             engine.invoke({ name: "Mezo" }).then(
                 function (result)
@@ -104,7 +104,7 @@ module.exports = {
                 return expected;
             };
 
-            var engine = new WorkflowEngine(fop);
+            var engine = new ActivityExecutionEngine(fop);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke(fopin).then(
@@ -145,7 +145,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(fop);
+            var engine = new ActivityExecutionEngine(fop);
 
             engine.invoke().then(
                 function (result)
@@ -187,7 +187,7 @@ module.exports = {
                 return this.var3 * 4;
             }
 
-            var engine = new WorkflowEngine(block);
+            var engine = new ActivityExecutionEngine(block);
 
             engine.invoke(f1, f2, f3).then(
                 function (result)
@@ -248,7 +248,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(block);
+            var engine = new ActivityExecutionEngine(block);
 
             engine.invoke().then(
                 function (result)
@@ -312,7 +312,7 @@ module.exports = {
             var markupString = activityMarkup.stringify(markup);
             var block = activityMarkup.parse(markupString);
 
-            var engine = new WorkflowEngine(block);
+            var engine = new ActivityExecutionEngine(block);
 
             engine.invoke().then(
                 function (result)
@@ -360,7 +360,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(activity);
+            var engine = new ActivityExecutionEngine(activity);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
@@ -405,7 +405,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(activity);
+            var engine = new ActivityExecutionEngine(activity);
 
             engine.invoke().then(
                 function (result)
@@ -501,7 +501,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(activity);
+            var engine = new ActivityExecutionEngine(activity);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
@@ -600,7 +600,7 @@ module.exports = {
                     }
                 });
 
-            var engine = new WorkflowEngine(activity);
+            var engine = new ActivityExecutionEngine(activity);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(

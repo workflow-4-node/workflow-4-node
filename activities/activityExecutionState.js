@@ -5,7 +5,6 @@ var enums = require("./enums");
 function ActivityExecutionState(activityId)
 {
     this.activityId = activityId;
-    this.instanceId = null;
     this.execState = null;
     this.parentActivityId = null;
     this.childActivityIds = [];

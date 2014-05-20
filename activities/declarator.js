@@ -4,20 +4,15 @@ var util = require("util");
 function Declarator()
 {
     Activity.call(this);
-    this._reserved = [
-        "varsDeclared",
-        "_activityVariableFieldNames",
-        "_varsGot"
-    ];
-    this.asNonScoped("asReserved");
-    this.asNonScoped("_reserved");
+    this._reserved = {};
 }
 
 util.inherits(Declarator, Activity);
 
-Declarator.prototype.asReserved = function(fieldName)
+Declarator.prototype.reserved = function (name, value)
 {
-    this._reserved.push(fieldName);
+    this[name] = value;
+    this._reserved[name] = true;
 }
 
 Declarator.prototype.run = function (context, args)
@@ -26,7 +21,7 @@ Declarator.prototype.run = function (context, args)
     this._activityVariableFieldNames = [];
     for (var fieldName in this)
     {
-        if (this.activity._reserved.indexOf(fieldName) == -1 && this.activity._nonScoped.indexOf(fieldName) == -1)
+        if (this.activity.constructor.prototype[fieldName] === undefined && !this._reserved[fieldName] && !this.activity._nonScoped[fieldName])
         {
             var fieldValue = this[fieldName];
             if (fieldValue instanceof Activity)
