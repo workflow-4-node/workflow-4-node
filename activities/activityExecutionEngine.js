@@ -17,7 +17,7 @@ function ActivityExecutionEngine(rootActivity)
     this._rootState = null;
     this._trackers = [];
     this._hookContext();
-    this.commandTimeout = 3000;
+    this.commandTimeout = 10000;
 }
 
 ActivityExecutionEngine.prototype = {

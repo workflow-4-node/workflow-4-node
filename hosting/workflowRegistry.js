@@ -21,8 +21,8 @@ WorkflowRegistry.prototype.register = function(workflow)
         var entry = this._workflows[name];
         if (entry)
         {
-            var inner = entry[version];
-            if (inner)
+            var desc = entry[version];
+            if (desc)
             {
                 throw new Error("Workflow " + name + " " + version + " already registered.");
             }
@@ -42,6 +42,30 @@ WorkflowRegistry.prototype.register = function(workflow)
     {
         throw  new TypeError("Workflow instance argument expected.");
     }
+}
+
+WorkflowRegistry.prototype.getDesc = function(name, version)
+{
+    var entry = this._workflows[name];
+    if (entry)
+    {
+        if (version !== undefined)
+        {
+            var desc = entry[version];
+            if (desc) return desc;
+            throw new Error("Workflow " + name + " " + version + " has not been registered.");
+        }
+        else
+        {
+            // Get top version
+            var maxV = -10000000;
+            var desc = null;
+            for (var cv in entry) if (cv > maxV) desc = entry[maxV = cv];
+            if (desc) return desc;
+            throw new Error("Workflow " + name + " has not been registered.");
+        }
+    }
+
 }
 
 WorkflowRegistry.prototype._createDesc = function (workflow, name, version)
@@ -64,7 +88,7 @@ WorkflowRegistry.prototype._collectCreateInstanceMethods = function (workflow)
         {
             var methodName = _(child.methodName).isString() ? child.methodName.trim() : null;
             var instanceIdPath = _(child.instanceIdPath).isString() ? child.instanceIdPath.trim() : null;
-            if (methodName && instanceIdPath)
+            if (methodName)
             {
                 var entry = result[methodName];
                 if (!entry)
