@@ -7,7 +7,7 @@ var ex = require("./ActivityExceptions");
 var Q = require("q");
 var _ = require("underscore-node");
 var TrackingParticipant = require("./TrackingParticipant");
-var enums = require("./enums");
+var enums = require("./../common/enums");
 
 function ActivityExecutionEngine(rootActivity)
 {

@@ -1,4 +1,4 @@
-var guids = require("./guids");
+var guids = require("./../common/guids");
 var _ = require("underscore-node");
 
 function ScopeExtender(originalScope)

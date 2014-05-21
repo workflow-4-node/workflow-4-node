@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter;
 var util = require("util");
-var enums = require("./enums");
+var enums = require("./../common/enums");
 
 function ActivityExecutionState(activityId)
 {

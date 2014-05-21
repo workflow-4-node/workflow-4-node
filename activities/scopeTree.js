@@ -1,5 +1,5 @@
 var ScopeNode = require("./scopeNode");
-var guids = require("./guids");
+var guids = require("./../common/guids");
 
 function ScopeTree(initialScope, getActivityById)
 {

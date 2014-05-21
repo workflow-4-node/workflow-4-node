@@ -1,13 +1,16 @@
 var Q = require("q");
-var guids = require("./guids");
+var guids = require("./../common/guids");
+var Guid = require("guid");
 var ex = require("./ActivityExceptions");
-var enums = require("./enums");
+var enums = require("./../common/enums");
 var ActivityExecutionContext = require("./activityExecutionContext");
 var _ = require("underscore-node");
+var specStrings = require("../common/specStrings");
 
 function Activity()
 {
     this.__typeTag = guids.types.activity;
+    this._instanceId = Guid.create().toString();
     this.id = null;
     this.args = null;
     this.displayName = "";
@@ -29,6 +32,79 @@ function Activity()
         resumeBookmark: true,
         resultCollected: true
     };
+}
+
+Activity.prototype.forEach = function (f)
+{
+    var visited = {};
+    return this._forEach(f, visited, null);
+}
+
+Activity.prototype.forEachChild = function (f)
+{
+    var visited = {};
+    return this._forEach(f, visited, this);
+}
+
+Activity.prototype.forEachImmediateChild = function (f)
+{
+    var self = this;
+    for (var fieldName in self)
+    {
+        var fieldValue = self[fieldName];
+        if (fieldValue)
+        {
+            if (_.isArray(fieldValue))
+            {
+                fieldValue.forEach(
+                    function (obj)
+                    {
+                        if (obj instanceof Activity)
+                        {
+                            f(obj);
+                        }
+                    });
+            }
+            else if (fieldValue instanceof Activity)
+            {
+                f(fieldValue);
+            }
+        }
+    }
+}
+
+Activity.prototype._forEach = function (f, visited, except)
+{
+    var self = this;
+    if (visited[self._instanceId] === undefined)
+    {
+        visited[self._instanceId] = true;
+
+        if (self !== except) f(self);
+
+        for (var fieldName in self)
+        {
+            var fieldValue = self[fieldName];
+            if (fieldValue)
+            {
+                if (_.isArray(fieldValue))
+                {
+                    fieldValue.forEach(
+                        function (obj)
+                        {
+                            if (obj instanceof Activity)
+                            {
+                                obj._forEach(f, visited, except);
+                            }
+                        });
+                }
+                else if (fieldValue instanceof Activity)
+                {
+                    fieldValue._forEach(f, visited, except);
+                }
+            }
+        }
+    }
 }
 
 Activity.prototype.start = function (context)
@@ -96,7 +172,7 @@ Activity.prototype.end = function (context, reason, result)
         state.emit(Activity.states.end, reason, result);
     }
 
-    var bmName = this._getSpecialBookmarkName(guids.markers.valueCollectedBookmark);
+    var bmName = specStrings.activities.createValueCollectedBMName(this);
     if (context.isBookmarkExists(bmName))
     {
         emit();
@@ -126,7 +202,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
         {
             if (v instanceof Activity)
             {
-                scope.__collectValues.push(guids.markers.valueToCollect + ":" + v.id);
+                scope.__collectValues.push(specStrings.activities.asValueToCollect(v));
                 activities.push(v);
             }
             else
@@ -141,12 +217,12 @@ Activity.prototype.schedule = function (context, obj, endCallback)
             scope.__collectCancelCounts = 0;
             scope.__collectIdleCounts = 0;
             scope.__collectRemaining = activities.length;
-            scope.__collectEndBookmarkName = self._getSpecialBookmarkName(guids.markers.collectingCompletedBookmark);
+            scope.__collectEndBookmarkName = specStrings.activities.createCollectingCompletedBMName(self);
             context.createBookmark(self.id, scope.__collectEndBookmarkName, endCallback);
             activities.forEach(
                 function (a)
                 {
-                    context.createBookmark(self.id, a._getSpecialBookmarkName(guids.markers.valueCollectedBookmark), "resultCollected");
+                    context.createBookmark(self.id, specStrings.activities.createValueCollectedBMName(a), "resultCollected");
                     a.start(context);
                 });
         }
@@ -159,7 +235,7 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
     else if (obj instanceof Activity)
     {
-        context.createBookmark(self.id, obj._getSpecialBookmarkName(guids.markers.valueCollectedBookmark), endCallback);
+        context.createBookmark(self.id, specStrings.activities.createValueCollectedBMName(obj), endCallback);
         obj.start(context);
     }
     else
@@ -168,34 +244,12 @@ Activity.prototype.schedule = function (context, obj, endCallback)
     }
 }
 
-Activity.prototype.unschedule = function (context, keepBookmark)
-{
-    var self = this;
-    var keepChildId = self._getActivityIdFromSpecialBookmarkName(keepBookmark.name);
-    var state = context.getState(self.id);
-    var ids = [];
-    state.childActivityIds.forEach(function (childId)
-    {
-        if (childId != keepChildId)
-        {
-            var childState = context.getState(childId);
-            context.deleteScopeOfActivity(childId);
-            --context.scope.__collectRemaining;
-            if (childState.execState == Activity.states.idle) --context.scope.__collectIdleCounts;
-            ids.push(childId);
-            var ibmName = self._getSpecialBookmarkName(guids.markers.valueCollectedBookmark, childId);
-            if (context.isBookmarkExists(ibmName)) context.deleteBookmark(ibmName);
-        }
-    });
-    context.deleteBookmarksOfActivities(ids);
-}
-
 Activity.prototype.resultCollected = function (context, reason, result, bookmark)
 {
     var self = this;
 
-    var childId = self.activity._getActivityIdFromSpecialBookmarkName(bookmark.name);
-    var argMarker = guids.markers.valueToCollect + ":" + childId;
+    var childId = specStrings.activities.getActivityIdFromSpecString(bookmark.name);
+    var argMarker = specStrings.activities.asValueToCollect(childId);
     var resultIndex = self.__collectValues.indexOf(argMarker);
     var pickCurrent = false;
     if (resultIndex == -1)
@@ -210,14 +264,14 @@ Activity.prototype.resultCollected = function (context, reason, result, bookmark
             var ids = [];
             self.__collectValues.forEach(function(cv)
             {
-                if (_.isString(cv) && cv.indexOf(guids.markers.valueToCollect + ":") != -1)
+                if (specStrings.activities.isActivitySpecString(cv))
                 {
-                    var id = cv.substr(guids.markers.valueToCollect.length + 1);
+                    var id = specStrings.activities.getActivityIdFromSpecString(cv);
                     if (id != childId)
                     {
                         ids.push(id);
                         context.deleteScopeOfActivity(id);
-                        var ibmName = self.activity._getSpecialBookmarkName(guids.markers.valueCollectedBookmark, id);
+                        var ibmName = specStrings.activities.createValueCollectedBMName(id);
                         if (context.isBookmarkExists(ibmName)) context.deleteBookmark(ibmName);
                     }
                 }
@@ -307,17 +361,6 @@ Activity.prototype.resultCollected = function (context, reason, result, bookmark
 
         context.resumeBookmarkInScope(endBookmarkName, reason, result);
     }
-}
-
-Activity.prototype._getSpecialBookmarkName = function (prefix, activityId)
-{
-    activityId = activityId || this.id;
-    return prefix + ":" + activityId;
-}
-
-Activity.prototype._getActivityIdFromSpecialBookmarkName = function (bookmarkName)
-{
-    return bookmarkName.substr(guids.markers.valueCollectedBookmark.length + 1);
 }
 
 Activity.prototype.emit = function (context)

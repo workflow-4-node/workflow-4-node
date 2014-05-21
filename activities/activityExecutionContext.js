@@ -1,12 +1,12 @@
 var ScopeExtender = require("./scopeExtender");
 var ActivityExecutionState = require("./activityExecutionState");
 var ResumeBookmarkQueue = require("./resumeBookmarkQueue");
-var enums = require("./enums");
+var enums = require("./../common/enums");
 var ex = require("./activityExceptions");
 var util = require("util");
 var EventEmitter = require('events').EventEmitter;
 var _ = require("underscore-node");
-var guids = require("./guids");
+var guids = require("./../common/guids");
 var ScopeTree = require("./scopeTree");
 
 function ActivityExecutionContext()
@@ -63,7 +63,7 @@ function ActivityExecutionContext()
                 if (this.activity) this.activity.resultCollected.call(this, context, reason, result, bookmarkName);
             }
         },
-        function(id)
+        function (id)
         {
             return self._getKnownActivity(id);
         });
@@ -71,16 +71,17 @@ function ActivityExecutionContext()
 
 util.inherits(ActivityExecutionContext, EventEmitter);
 
-Object.defineProperties(ActivityExecutionContext.prototype,
+Object.defineProperties(
+    ActivityExecutionContext.prototype,
     {
         scope: {
-            get: function()
+            get: function ()
             {
                 return this._scopeTree.currentScope;
             }
         },
         hasScope: {
-            get: function()
+            get: function ()
             {
                 return !this._scopeTree.isOnInitial();
             }
@@ -168,37 +169,19 @@ ActivityExecutionContext.prototype._initialize = function (parent, activity, idC
     }
     else if (activity.id != (idCounter.id++).toString())
     {
-        throw new Error("Activity " + id + " has been assigned to an other context in a different tree which is not allowed.");
+        throw new Error("Activity " + activity.id + " has been assigned to an other context in a different tree which is not allowed.");
     }
     self._nextActivityId = idCounter.id;
     var state = self.getState(activity.id);
     state.parentActivityId = parent ? parent.id : null;
     self._knownActivities[activity.id] = activity;
 
-    for (var fieldName in activity)
-    {
-        var fieldValue = activity[fieldName];
-        if (fieldValue)
+    activity.forEachImmediateChild(
+        function (child)
         {
-            if (_.isArray(fieldValue))
-            {
-                fieldValue.forEach(
-                    function (obj)
-                    {
-                        if (self._isActivity(obj))
-                        {
-                            self._initialize(activity, obj, idCounter);
-                            state.childActivityIds.push(obj.id);
-                        }
-                    });
-            }
-            else if (self._isActivity(fieldValue))
-            {
-                self._initialize(activity, fieldValue, idCounter);
-                state.childActivityIds.push(fieldValue.id);
-            }
-        }
-    }
+            self._initialize(activity, child, idCounter);
+            state.childActivityIds.push(child.id);
+        });
 }
 
 ActivityExecutionContext.prototype._isActivity = function (obj)
@@ -382,10 +365,11 @@ ActivityExecutionContext.prototype.deleteBookmarksOfActivities = function (activ
 {
     var self = this;
     var allIds = {};
-    activityIds.forEach(function(id)
-    {
-        self._getActivityIdsOfSubtree(allIds, id);
-    });
+    activityIds.forEach(
+        function (id)
+        {
+            self._getActivityIdsOfSubtree(allIds, id);
+        });
     for (var bmName in self._bookmarks)
     {
         var bm = self._bookmarks[bmName];
@@ -397,13 +381,14 @@ ActivityExecutionContext.prototype._getActivityIdsOfSubtree = function (to, acti
 {
     var self = this;
     to[activityId] = true;
-    self.getState(activityId).childActivityIds.forEach(function (id)
-    {
-        self._getActivityIdsOfSubtree(to, id);
-    });
+    self.getState(activityId).childActivityIds.forEach(
+        function (id)
+        {
+            self._getActivityIdsOfSubtree(to, id);
+        });
 }
 
-ActivityExecutionContext.prototype.deleteScopeOfActivity = function(activityId)
+ActivityExecutionContext.prototype.deleteScopeOfActivity = function (activityId)
 {
     this._scopeTree.deleteScopePart(activityId);
 }
