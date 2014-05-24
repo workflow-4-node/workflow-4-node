@@ -108,6 +108,12 @@ ActivityExecutionEngine.prototype.addTracker = function (tracker)
     this._trackers.push(new TrackingParticipant(tracker));
 }
 
+ActivityExecutionEngine.prototype.addTracker = function (tracker)
+{
+    var idx = this._trackers.indexOf(tracker);
+    if (idx != -1) this._trackers.splice(idx, 1);
+}
+
 ActivityExecutionEngine.prototype.start = function ()
 {
     this._verifyNotStarted();
@@ -124,7 +130,7 @@ ActivityExecutionEngine.prototype.start = function ()
     this._setRootState(this._rootActivity.start.apply(this._rootActivity, args));
 }
 
-ActivityExecutionEngine.prototype.invoke = function ()
+ActivityExecutionEngine.prototype.invoke = function (returnIdle)
 {
     this._verifyNotStarted();
 
@@ -162,13 +168,13 @@ ActivityExecutionEngine.prototype.invoke = function ()
                                 defer.reject(new ex.Cancelled());
                                 break;
                             case Activity.states.idle:
-                                if (new Date().getTime() - startTime > self.commandTimeout)
+                                if (returnIdle || new Date().getTime() - startTime > self.commandTimeout)
                                 {
                                     defer.reject(new ex.Idle());
                                 }
                                 else
                                 {
-                                    process.nextTick(wait);
+                                    wait();
                                 }
                                 break;
                             default :
@@ -261,7 +267,7 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
                                             }
                                             else
                                             {
-                                                process.nextTick(wait);
+                                                wait();
                                             }
                                         }
                                     }

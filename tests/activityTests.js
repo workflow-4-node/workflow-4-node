@@ -1,3 +1,4 @@
+var Expression = require("../activities/expression");
 var Func = require("../activities/func");
 var Block = require("../activities/block");
 var ActivityMarkup = require("../activities/activityMarkup");
@@ -411,6 +412,60 @@ module.exports = {
                 function (result)
                 {
                     test.equals(result, "a");
+                },
+                function (e)
+                {
+                    test.ifError(e);
+                }).finally(
+                function ()
+                {
+                    test.done();
+                });
+        },
+
+        exprTest: function (test)
+        {
+            var expr = new Expression();
+            expr.expr = "this.v * this.v";
+            var block = new Block();
+            block.v = 2;
+            block.args = [ expr ];
+
+            var engine = new ActivityExecutionEngine(block);
+
+            engine.invoke().then(
+                function (result)
+                {
+                    test.equals(result, 4);
+                },
+                function (e)
+                {
+                    test.ifError(e);
+                }).finally(
+                function ()
+                {
+                    test.done();
+                });
+        },
+
+        exprMarkupTest: function (test)
+        {
+            var block = new ActivityMarkup().parse(
+                {
+                    block: {
+                        v: 2,
+                        args: [
+                            "{this.v * this.v}"
+                        ]
+                    }
+                });
+
+            var engine = new ActivityExecutionEngine(block);
+
+            engine.invoke().then(
+                function (result)
+                {
+                    test.equals(result, 4);
                 },
                 function (e)
                 {

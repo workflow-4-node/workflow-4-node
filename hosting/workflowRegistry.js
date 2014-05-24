@@ -84,31 +84,10 @@ WorkflowRegistry.prototype._collectCreateInstanceMethods = function (workflow)
     var result = {};
     workflow.forEachChild(function(child)
     {
-        if (child instanceof BeginMethod)
+        if (child instanceof BeginMethod && child.canCreateInstance)
         {
             var methodName = _(child.methodName).isString() ? child.methodName.trim() : null;
-            var instanceIdPath = _(child.instanceIdPath).isString() ? child.instanceIdPath.trim() : null;
-            if (methodName)
-            {
-                var entry = result[methodName];
-                if (!entry)
-                {
-                    entry = {
-                        activityIds: [ child.id ],
-                        methodName: methodName,
-                        instanceIdPath: instanceIdPath
-                    };
-                    result[methodName] = entry;
-                }
-                else
-                {
-                    if (entry.instanceIdPath != instanceIdPath)
-                    {
-                        throw new Error("There are BeginMethod activities those doesn't agree in their instanceIdPath property values.");
-                    }
-                    entry.activityIds.push(child.id);
-                }
-            }
+            if (methodName) result[methodName] = true;
         }
     });
     return result;

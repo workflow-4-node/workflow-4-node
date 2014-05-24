@@ -33,6 +33,12 @@ var specStrings = {
             var id = _.isString(activityOrId) ? activityOrId : activityOrId.id;
             return prefix + ":" + id;
         }
+    },
+    hosting: {
+        createBeginMethodBMName: function(methodName)
+        {
+            return methodName + "@" + guids.markers.beginMethodBookmark;
+        }
     }
 }
 

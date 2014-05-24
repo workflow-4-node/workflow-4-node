@@ -5,14 +5,16 @@ function WorkflowPersistence(impl)
 {
     if (!_(impl).isObject()) throw new TypeError("Object argument expected.");
 
-    this.impl = impl;
+    this._impl = impl;
 }
 
 WorkflowPersistence.prototype.getRunningInstanceIdPaths = function (workflowName, methodName)
 {
-    var result = impl.getRunningInstanceIdPaths(workflowName, methodName);
+    var result = this._impl.getRunningInstanceIdPaths(workflowName, methodName);
     if (Q.isPromise(result)) return result;
-    return Q.defer().resolve(result).promise;
+    var d = Q.defer();
+    d.resolve(result);
+    return d.promise;
 }
 
 module.exports = WorkflowPersistence;

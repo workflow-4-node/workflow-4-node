@@ -10,6 +10,8 @@ function WorkflowHost(persistence)
     this._registry = new WorkflowRegistry();
     this._persistence = persistence ? persistence : null;
     this.commandTimeout = 10000;
+    this._trackers = [];
+    this._isInitialized = false;
 }
 
 Object.defineProperties(
@@ -17,7 +19,7 @@ Object.defineProperties(
         isInitialized: {
             get: function ()
             {
-                return false;
+                return this._isInitialized;
             }
         },
 
@@ -29,7 +31,7 @@ Object.defineProperties(
             },
             set: function (value)
             {
-                if (this.isInitialize) throw new Error("Cannot set persistence after the host is initialized.");
+                if (this.isInitialized) throw new Error("Cannot set persistence after the host is initialized.");
                 this._persistence = new WorkflowPersistence(value);
             }
         }
@@ -50,6 +52,15 @@ WorkflowHost.prototype.registerActivity = function (activity, name, version)
     this._registry.register(wf);
 }
 
+WorkflowHost.prototype._initialize = function()
+{
+    if (!this._isInitialized)
+    {
+        // Do init here ...
+        this._isInitialized = true;
+    }
+}
+
 WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
 {
     if (!_(workflowName).isString()) throw new TypeError("Argument 'workflowName' is not a string.");
@@ -58,6 +69,9 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
     methodName = methodName.trim();
 
     var self = this;
+
+    self._initialize();
+
     return this.persistence.getRunningInstanceIdPaths(workflowName, methodName).then(
         function(paths)
         {
@@ -75,27 +89,20 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
             }
             if (runningInstanceId)
             {
-                return self.invokeMethodOnRunningInstance(runningInstanceId, workflowName, methodName, args);
+                return self._invokeMethodOnRunningInstance(runningInstanceId, workflowName, methodName, args);
             }
             else
             {
-                return self.createInstanceAndInvokeMethod(workflowName, methodName, args);
+                return self._createInstanceAndInvokeMethod(workflowName, methodName, args);
             }
         });
 }
 
-WorkflowHost.prototype.createInstanceAndInvokeMethod = function(workflowName, methodName, args)
+WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, methodName, args)
 {
     var wfDesc = this._registry.getDesc(workflowName);
-    var entry = wfDesc.createInstanceMethods[methodName];
-    if (!entry) throw Error("Workflow '" + workflowName + "' cannot be created by invoking method '" + methodName + "'.");
-    var instanceId = null;
-    if (entry.instanceIdPath)
-    {
-        // This means Workflow instance's ID will be determined form args.
-        // Otherwise it will be given in the workflow and is gonna be available after idle through getting it from a tracker
-        instanceId = new InstanceIdParser(entry.instanceIdPath).parse(args);
-    }
+    if (!wfDesc.createInstanceMethods[methodName]) throw Error("Workflow '" + workflowName + "' cannot be created by invoking method '" + methodName + "'.");
+
     // Create an engine
     // Add trackers
     // Run WF
@@ -103,10 +110,17 @@ WorkflowHost.prototype.createInstanceAndInvokeMethod = function(workflowName, me
     // Save engine
 }
 
-WorkflowHost.prototype.invokeMethodOnRunningInstance = function(runningInstanceId, workflowName, methodName, args)
+WorkflowHost.prototype._invokeMethodOnRunningInstance = function(runningInstanceId, workflowName, methodName, args)
 {
     // Engine reuse should be implemented, we can replace state of an instance if it continues
     // Or, if it hasn't changed, state can be as is.
+}
+
+WorkflowHost.prototype.addTracker = function (tracker)
+{
+    if (!_(tracker).isObject()) throw new TypeError("Argument is not an object.");
+    this._trackers.push(tracker);
+    // TODO: add tracker to all instances
 }
 
 module.exports = WorkflowHost;

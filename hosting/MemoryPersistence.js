@@ -2,7 +2,7 @@ function MemoryPersistence()
 {
 }
 
-MemoryPersistence.prototype.getRunningInstanceIdPaths()
+MemoryPersistence.prototype.getRunningInstanceIdPaths = function ()
 {
     return [];
 }

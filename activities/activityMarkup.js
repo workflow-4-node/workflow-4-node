@@ -10,19 +10,23 @@ function ActivityMarkup()
 
 ActivityMarkup.prototype._registerSystemTypes = function()
 {
-    this.registerType("workflow", function() { return require("./workflow"); });
-    this.registerType("func", function() { return require("./func"); });
-    this.registerType("block", function() { return require("./block"); });
-    this.registerType("parallel", function() { return require("./parallel"); });
-    this.registerType("pick", function() { return require("./pick"); });
-    this.registerType("resumeBookmark", function() { return require("./resumeBookmark"); });
-    this.registerType("waitForBookmark", function() { return require("./waitForBookmark"); });
+    this.registerType("workflow", "./workflow");
+    this.registerType("expression", "./expression");
+    this.registerType("func", "./func");
+    this.registerType("block", "./block");
+    this.registerType("parallel", "./parallel");
+    this.registerType("pick", "./pick");
+    this.registerType("resumeBookmark", "./resumeBookmark");
+    this.registerType("waitForBookmark", "./waitForBookmark");
+    this.registerType("beginMethod", "./beginMethod");
+    this.registerType("endMethod", "./endMethod");
+    this.registerType("assign", "./assign");
 }
 
 ActivityMarkup.prototype.registerType = function (alias, type)
 {
     if (!_.isString(alias)) throw new TypeError("Parameter 'alias' is not a string.");
-    if (!_.isFunction(type)) this._verifyIsActivityType(type);
+    if (!_.isFunction(type) && !_.isString(type)) this._verifyIsActivityType(type);
     this._knonwTypes[alias] = type;
 }
 
@@ -71,6 +75,11 @@ ActivityMarkup.prototype._createActivityInstance = function (alias, markup)
     if (_.isFunction(type))
     {
         type = type();
+        this._verifyIsActivityType(type);
+    }
+    else if (_.isString(type))
+    {
+        type = require(type);
         this._verifyIsActivityType(type);
     }
     var activity = new type();
@@ -149,21 +158,33 @@ ActivityMarkup.prototype._createValue = function (markup, canBeArray)
             }
         }
     }
-    else if (_.isString(markup) && markup.match(/^\s*function\s*\w*\s*\((?:\w+,)*(?:\w+)?\)\s*\{/))
+    else if (_.isString(markup))
     {
-        try
+        var trimmed = markup.trim();
+        if (trimmed.match(/^\s*function\s*\w*\s*\((?:\w+,)*(?:\w+)?\)\s*\{/))
         {
-            var f;
-            eval("f = " + markup);
-            if (_.isFunction(f)) return f;
+            try
+            {
+                var f;
+                eval("f = " + trimmed);
+                if (_.isFunction(f)) return f;
+            }
+            catch (e)
+            {
+                // It's not a function
+            }
         }
-        catch (e)
+        else if (trimmed.length > 2 && trimmed[0] == "{" && trimmed[trimmed.length - 1] == "}" && trimmed[1] != "{" && trimmed[trimmed.length - 2] != "}")
         {
-            // It's not a function
+            // Expression
+            return self._createActivityInstance("expression",
+                {
+                    expression: {
+                        expr: trimmed.substr(1, trimmed.length - 2)
+                    }
+                });
         }
     }
-
-    // TODO: Expression handling ...
 
     return markup;
 }

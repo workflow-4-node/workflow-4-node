@@ -34,6 +34,11 @@ function Activity()
     };
 }
 
+Activity.prototype.toString = function()
+{
+    return (this.displayName ? (this.displayName + " ") : "") + "(" + this.constructor.name + ":" + this.id + ")";
+}
+
 Activity.prototype.forEach = function (f)
 {
     var visited = {};
@@ -134,7 +139,7 @@ Activity.prototype.start = function (context)
 
 Activity.prototype.run = function (context, args)
 {
-    this.complete(context);
+    this.complete(context, args);
 }
 
 Activity.prototype.complete = function (context, result)
