@@ -6,6 +6,8 @@ var ex = require("../activities/activityExceptions");
 var hex = require("./hostingExceptions");
 var enums = require("../common/enums");
 var specStrings = require("../common/specStrings");
+var _ = require("underscore-node");
+var guids = require("../common/guids");
 
 function WorkflowInstance(host)
 {
@@ -15,7 +17,7 @@ function WorkflowInstance(host)
     this._myTrackers = [];
 }
 
-WorkflowInstance.prototype.create = function (workflowName, methodName, args)
+WorkflowInstance.prototype.create = function (workflow, methodName, args)
 {
     var self = this;
     
@@ -30,13 +32,13 @@ WorkflowInstance.prototype.create = function (workflowName, methodName, args)
         if (mn == methodName)
         {
             createMethodReached = true;
-            if (ip) instanceIdPath = ip;
+            instanceIdPath = ip;
         }
     }
 
     self._addCreateHelperTracker(createMethodFound);
 
-    return self._engine.invoke(true).then(
+    return self._engine.invoke().then(
         function ()
         {
             // Completed:
@@ -44,23 +46,26 @@ WorkflowInstance.prototype.create = function (workflowName, methodName, args)
         },
         function (e)
         {
-            if (e instanceof ex.Idle)
+            if (e.__typeTag == guids.types.idleException)
             {
                 if (createMethodReached)
                 {
                     self._removeMyTrackers();
 
                     var createEndMethodReached = false;
-                    var createEndMethodFound = function(mn, ip)
+                    var result = null;
+                    var endInstanceIdPath = null;
+                    var createEndMethodFound = function(mn, ip, r)
                     {
                         if (mn == methodName)
                         {
                             createEndMethodReached = true;
-                            if (ip) instanceIdPath = ip;
+                            endInstanceIdPath = ip;
+                            result = r;
                         }
                     }
 
-                    self._addCreateHelperTracker(createMethodFound);
+                    self._addCreateEndHelperTracker(createEndMethodFound);
 
                     return self._engine.resumeBookmark(specStrings.hosting.createBeginMethodBMName(methodName), enums.ActivityStates.complete, args).then(
                         function()
@@ -69,7 +74,11 @@ WorkflowInstance.prototype.create = function (workflowName, methodName, args)
                             {
                                 if (instanceIdPath)
                                 {
-                                    self.id = new InstanceIdParser(instanceIdPath).parse(args);
+                                    self.id = self._host.instanceIdParser.parse(instanceIdPath, args);
+                                }
+                                else if (endInstanceIdPath)
+                                {
+                                    self.id = self._host.instanceIdParser.parse(endInstanceIdPath, result);
                                 }
                                 else
                                 {
@@ -80,6 +89,8 @@ WorkflowInstance.prototype.create = function (workflowName, methodName, args)
                             {
                                 throw hex.WorkflowException("Workflow has been completed or gone to idle without reaching an EndMethod activity of method name '" + methodName + "'.");
                             }
+
+                            return result;
                         });
                 }
                 else
@@ -120,7 +131,7 @@ WorkflowInstance.prototype._addCreateHelperTracker = function(callback)
                 (!activity.instanceIdPath || _(activity.instanceIdPath).isString()) &&
                 reason == enums.ActivityStates.idle;
         },
-        activityStateChanged: function(activitt, reason, result)
+        activityStateChanged: function(activity, reason, result)
         {
             var methodName = activity.methodName.trim();
             var instanceIdPath = activity.instanceIdPath ? activity.instanceIdPath.trim() : null;
@@ -142,11 +153,11 @@ WorkflowInstance.prototype._addCreateEndHelperTracker = function(callback)
                 (!activity.instanceIdPath || _(activity.instanceIdPath).isString()) &&
                 reason == enums.ActivityStates.complete;
         },
-        activityStateChanged: function(activitt, reason, result)
+        activityStateChanged: function(activity, reason, result)
         {
             var methodName = activity.methodName.trim();
             var instanceIdPath = activity.instanceIdPath ? activity.instanceIdPath.trim() : null;
-            callback(methodName, instanceIdPath);
+            callback(methodName, instanceIdPath, result);
         }
     };
     self._engine.addTracker(tracker);

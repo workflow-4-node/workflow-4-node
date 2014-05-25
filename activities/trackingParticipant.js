@@ -13,9 +13,9 @@ TrackingParticipant.prototype.activityStateChanged = function (activity, reason,
 
 TrackingParticipant.prototype.activityStateFilter = function (activity, reason)
 {
-    if (typeof this.impl.activityStateFilter == "function")
+    if (typeof this._impl.activityStateFilter == "function")
     {
-        return this.impl.activityStateFilter(activity, reason);
+        return this._impl.activityStateFilter(activity, reason);
     }
     else
     {

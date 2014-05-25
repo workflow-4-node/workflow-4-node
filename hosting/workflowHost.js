@@ -4,6 +4,8 @@ var Activity = require("../activities/activity");
 var Workflow = require("../activities/workflow");
 var WorkflowPersistence = require("./workflowPersistence");
 var MemoryPersistence = require("./memoryPersistence");
+var WorkflowInstance = require("./workflowInstance");
+var InstanceIdParser = require("./instanceIdParser");
 
 function WorkflowHost(persistence)
 {
@@ -12,6 +14,8 @@ function WorkflowHost(persistence)
     this.commandTimeout = 10000;
     this._trackers = [];
     this._isInitialized = false;
+    this._runningInstances = {};
+    this.instanceIdParser = new InstanceIdParser();
 }
 
 Object.defineProperties(
@@ -80,7 +84,7 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
             {
                 paths.forEach(function(path)
                 {
-                    if (new InstanceIdParser(path.value).parse(args) == path.id)
+                    if (self.instanceIdParser.parse(path.value, args) == path.id)
                     {
                         runningInstanceId = path.id;
                         return false;
@@ -102,6 +106,9 @@ WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, m
 {
     var wfDesc = this._registry.getDesc(workflowName);
     if (!wfDesc.createInstanceMethods[methodName]) throw Error("Workflow '" + workflowName + "' cannot be created by invoking method '" + methodName + "'.");
+
+    var insta = new WorkflowInstance(this);
+    return insta.create(wfDesc.workflow, methodName, args);
 
     // Create an engine
     // Add trackers

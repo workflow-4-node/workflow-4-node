@@ -6,6 +6,7 @@ var ex = require("./activityExceptions");
 
 function BeginMethod()
 {
+    Activity.call(this);
     this.canCreateInstance = false;
     this.methodName = "";
     this.instanceIdPath = "";

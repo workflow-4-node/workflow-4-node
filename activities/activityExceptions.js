@@ -1,4 +1,5 @@
 var util = require("util");
+var guids = require("../common/guids");
 
 function ActivityStateExceptionError(message)
 {
@@ -19,6 +20,7 @@ util.inherits(Cancelled, ActivityStateExceptionError);
 function Idle()
 {
     ActivityStateExceptionError.call(this, "Activity is idle.");
+    this.__typeTag = guids.types.idleException;
 }
 
 util.inherits(Idle, ActivityStateExceptionError);

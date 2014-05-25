@@ -20,25 +20,29 @@ function ActivityExecutionEngine(rootActivity)
     this.commandTimeout = 10000;
 }
 
-ActivityExecutionEngine.prototype = {
-    get execState()
-    {
-        if (this._rootState)
+util.inherits(ActivityExecutionEngine, EventEmitter);
+
+Object.defineProperties(ActivityExecutionEngine.prototype, {
+    execState: {
+        get: function()
         {
-            return this._rootState.execState;
-        }
-        else
-        {
-            return null;
+            if (this._rootState)
+            {
+                return this._rootState.execState;
+            }
+            else
+            {
+                return null;
+            }
         }
     },
-    get version()
-    {
-        return this._rootActivity.version;
+    version: {
+        get: function()
+        {
+            return this._rootActivity.version;
+        }
     }
-};
-
-util.inherits(ActivityExecutionEngine, EventEmitter);
+})
 
 ActivityExecutionEngine.prototype._setRootState = function (state)
 {
@@ -108,7 +112,7 @@ ActivityExecutionEngine.prototype.addTracker = function (tracker)
     this._trackers.push(new TrackingParticipant(tracker));
 }
 
-ActivityExecutionEngine.prototype.addTracker = function (tracker)
+ActivityExecutionEngine.prototype.removeTracker = function (tracker)
 {
     var idx = this._trackers.indexOf(tracker);
     if (idx != -1) this._trackers.splice(idx, 1);
@@ -130,7 +134,7 @@ ActivityExecutionEngine.prototype.start = function ()
     this._setRootState(this._rootActivity.start.apply(this._rootActivity, args));
 }
 
-ActivityExecutionEngine.prototype.invoke = function (returnIdle)
+ActivityExecutionEngine.prototype.invoke = function ()
 {
     this._verifyNotStarted();
 
@@ -140,7 +144,6 @@ ActivityExecutionEngine.prototype.invoke = function (returnIdle)
     {
         this._context.initialize(this._rootActivity);
 
-        var startTime = new Date().getTime();
         var argRemoveToken = null;
         var args = [];
         Array.prototype.forEach.call(
@@ -152,44 +155,33 @@ ActivityExecutionEngine.prototype.invoke = function (returnIdle)
         args.unshift(self._context);
 
         self._setRootState(self._context.getState(self._rootActivity.id));
-        var wait = function ()
-        {
-            self.once(
-                Activity.states.end, function (reason, result)
+        self.once(
+            Activity.states.end, function (reason, result)
+            {
+                try
                 {
-                    try
+                    switch (reason)
                     {
-                        switch (reason)
-                        {
-                            case Activity.states.complete:
-                                defer.resolve(result);
-                                break;
-                            case Activity.states.cancel:
-                                defer.reject(new ex.Cancelled());
-                                break;
-                            case Activity.states.idle:
-                                if (returnIdle || new Date().getTime() - startTime > self.commandTimeout)
-                                {
-                                    defer.reject(new ex.Idle());
-                                }
-                                else
-                                {
-                                    wait();
-                                }
-                                break;
-                            default :
-                                result = result || new ex.ActivityRuntimeError("Unknown error.");
-                                defer.reject(result);
-                                break;
-                        }
+                        case Activity.states.complete:
+                            defer.resolve(result);
+                            break;
+                        case Activity.states.cancel:
+                            defer.reject(new ex.Cancelled());
+                            break;
+                        case Activity.states.idle:
+                            defer.reject(new ex.Idle());
+                            break;
+                        default :
+                            result = result || new ex.ActivityRuntimeError("Unknown error.");
+                            defer.reject(result);
+                            break;
                     }
-                    finally
-                    {
-                        if (argRemoveToken) self._context.removeFromContext(argRemoveToken);
-                    }
-                });
-        }
-        wait();
+                }
+                finally
+                {
+                    if (argRemoveToken) self._context.removeFromContext(argRemoveToken);
+                }
+            });
         self._rootActivity.start.apply(self._rootActivity, args);
     }
     catch (e)
@@ -211,7 +203,7 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
 
     try
     {
-        if (self.execState() == enums.ActivityStates.idle)
+        if (self.execState == enums.ActivityStates.idle)
         {
             var timedOut = false;
             var resolved = false;
@@ -288,7 +280,7 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
                                 {
                                     resolved = true;
                                     clearTimeout(toId);
-                                    defer.reject(new ex.ActivityRuntimeError("Workflow execution has been failed before bookmark '" + name + "' reached."));
+                                    defer.reject(result);
                                 }
                             }
                             catch (e)

@@ -5,7 +5,6 @@ var Declarator = require("./declarator");
 function Block()
 {
     Declarator.call(this);
-    this.bubu = "kaka";
 }
 
 util.inherits(Block, Declarator);

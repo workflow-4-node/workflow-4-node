@@ -10,4 +10,22 @@ function Assign()
 
 util.inherits(Assign, Activity);
 
+Assign.prototype.run = function (context, args)
+{
+    if (this.to)
+    {
+        this.schedule(this.value, "_valueGot");
+    }
+    else
+    {
+        this.complete();
+    }
+}
+
+Assign.prototype._valueGot = function(context, reason, result)
+{
+    if (reason == Activity.states.complete) this[this.to] = result;
+    this.end(reason, result);
+}
+
 module.exports = Assign;

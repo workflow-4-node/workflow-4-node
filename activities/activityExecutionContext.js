@@ -302,6 +302,12 @@ ActivityExecutionContext.prototype.resumeBookmarkInternal = function (name, reas
 ActivityExecutionContext.prototype.resumeBookmarkExternal = function (name, reason, result)
 {
     this._resumeBMQueue.enqueue(name, false, reason, result);
+    this.processResumeBookmarkQueue();
+}
+
+ActivityExecutionContext.prototype.cancelResumingExternalBookmark = function(name)
+{
+    this._resumeBMQueue.remove(name);
 }
 
 ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reason, result, noRemove)

@@ -1,9 +1,11 @@
 var Activity = require("./activity");
 var util = require("util");
 var ex = require("./activityExceptions");
+var _ = require("underscore-node");
 
 function EndMethod()
 {
+    Activity.call(this);
     this.methodName = "";
     this.instanceIdPath = "";
     this.result = null;

@@ -6,6 +6,8 @@ var ActivityExecutionEngine = require("../activities/activityExecutionEngine");
 var Q = require("q");
 var _ = require("underscore-node");
 var ConsoleTracker = require("../activities/consoleTracker");
+var WorkflowHost = require("../hosting/workflowHost");
+var InstanceIdParser = require("../hosting/instanceIdParser");
 
 module.exports = {
     basic: {
@@ -678,6 +680,28 @@ module.exports = {
                 {
                     test.done();
                 });
+        }
+    },
+
+    hosting: {
+        instanceIdParserTests: function (test)
+        {
+            try
+            {
+                var p = new InstanceIdParser();
+                test.equals(p.parse("[0]", [1]), 1);
+                test.equals(p.parse("[0]", [4,5]), 4);
+                test.equals(p.parse("[1].id", [{ id: 1 }, { id: 2 }]), 2);
+                test.equals(p.parse("id[0].a", { id: [ { a: "foo" } ] }), "foo");
+            }
+            catch (e)
+            {
+                test.ifError(e);
+            }
+            finally
+            {
+                test.done();
+            }
         }
     }
 }

@@ -7,8 +7,10 @@ var Q = require("q");
 var _ = require("underscore-node");
 var ConsoleTracker = require("../activities/consoleTracker");
 var WorkflowHost = require("../hosting/workflowHost");
+var InstanceIdParser = require("../hosting/instanceIdParser");
 
 module.exports = {
+
     hostTest: function (test)
     {
         var workflow = new ActivityMarkup().parse(
