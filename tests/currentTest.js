@@ -32,9 +32,26 @@ module.exports = {
                             }
                         },
                         {
+                            assign: {
+                                value: {
+                                    endMethod: {
+                                        methodName: "foo",
+                                        result: "{this.v[0] * this.v[0]}"
+                                    }
+                                },
+                                to: "v"
+                            }
+                        },
+                        {
+                            beginMethod: {
+                                methodName: "bar",
+                                instanceIdPath: "[0]"
+                            }
+                        },
+                        {
                             endMethod: {
-                                methodName: "foo",
-                                result: "{this.v[0] * this.v[0]}"
+                                methodName: "bar",
+                                result: "{this.v}"
                             }
                         },
                         "some string for wf result but not for the method result"

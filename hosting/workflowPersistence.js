@@ -26,7 +26,7 @@ WorkflowPersistence.prototype.persistState = function (instance)
     if (!(instance instanceof WorkflowInstance)) throw new TypeError("WorkflowInstance argument expected.");
 
     var data = instance.getPersistData();
-    var result = this._impl.persistState(instance.id, data.timestamp, data.state, data.promotions);
+    var result = this._impl.persistState(data);
     if (Q.isPromise(result)) return result;
     var d = Q.defer();
     d.resolve(result);

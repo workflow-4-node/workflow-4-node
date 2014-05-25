@@ -13,7 +13,7 @@ function WorkflowInstance(host)
 {
     this._host = host;
     this.id = null;
-    this.idleMethods = [];
+    this._idleMethods = [];
     this._engine = null;
     this._myTrackers = [];
 }
@@ -37,16 +37,14 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
 
     var createMethodReached = false;
     var instanceIdPath = null;
-    var createMethodFound = function(mn, ip)
+    self._addCreateHelperTracker(function(mn, ip)
     {
         if (mn == methodName)
         {
             createMethodReached = true;
             instanceIdPath = ip;
         }
-    }
-
-    self._addCreateHelperTracker(createMethodFound);
+    });
 
     return self._engine.invoke().then(
         function ()
@@ -65,7 +63,7 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
                     var createEndMethodReached = false;
                     var result = null;
                     var endInstanceIdPath = null;
-                    var createEndMethodFound = function(mn, ip, r)
+                    self._addCreateEndHelperTracker(function(mn, ip, r)
                     {
                         if (mn == methodName)
                         {
@@ -73,14 +71,12 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
                             endInstanceIdPath = ip;
                             result = r;
                         }
-                    }
+                    });
 
-                    self._addCreateEndHelperTracker(createEndMethodFound);
-
-                    self.idleMethods.length = 0;
+                    self._idleMethods.length = 0;
                     self._addIdleInstanceIdPathTracker(function(mn, ip)
                     {
-                        self.idleMethods.push({
+                        self._idleMethods.push({
                             methodName: mn,
                             instanceIdPath: ip
                         });
@@ -111,14 +107,14 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
 
                             if (self._engine.execState == enums.ActivityStates.idle)
                             {
-                                if (self.idleMethods.length == 0)
+                                if (self._idleMethods.length == 0)
                                 {
                                     throw hex.WorkflowException("Workflow has gone to idle, but there is no active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
                                 }
                             }
                             else
                             {
-                                if (self.idleMethods.length != 0)
+                                if (self._idleMethods.length != 0)
                                 {
                                     throw hex.WorkflowException("Workflow has completed, but there is active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
                                 }
@@ -146,7 +142,6 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
 WorkflowInstance.prototype._copyParsFromHost = function()
 {
     var self = this;
-    self._engine.commandTimeout = self._host.commandTimeout;
     self._host._trackers.forEach(function(t)
     {
         self._engine.addTracker(t);
@@ -232,12 +227,14 @@ WorkflowInstance.prototype._removeMyTrackers = function()
 
 WorkflowInstance.prototype.getPersistData = function()
 {
+    var sp = this._engine.getStateAndPromotionsToPersist();
     return {
+        instanceId: this.id,
+        workflow: this._engine.rootActivity,
+        idleMethods: this._idleMethods,
         timestamp: this._engine.timestamp,
-        state: "foo",
-        promotions: {
-            bar: "baz"
-        }
+        state: sp.state,
+        promotions: sp.promotions
     };
 }
 

@@ -7,7 +7,7 @@ MemoryPersistence.prototype.getRunningInstanceIdPaths = function (workflowName, 
     return [];
 }
 
-MemoryPersistence.prototype.persistState = function (instanceId, timestamp, state, promotions)
+MemoryPersistence.prototype.persistState = function (data)
 {
 }
 

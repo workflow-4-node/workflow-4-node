@@ -13,7 +13,6 @@ function ActivityExecutionContext()
 {
     this._activityStates = {};
     this._bookmarks = {};
-    this._nonPersistZoneCounter = 0;
     this._resumeBMQueue = new ResumeBookmarkQueue();
     this._rootActivity = null;
     this._knownActivities = {};
@@ -52,11 +51,11 @@ function ActivityExecutionContext()
             },
             createBookmark: function (name, callback)
             {
-                if (this.activity) self.createBookmark(this.activity.id, name, callback);
+                if (this.activity) self.createBookmark.call(self, this.activity.id, name, callback);
             },
             resumeBookmark: function (name, reason, result)
             {
-                self.resumeBookmarkInternal(name, reason, result);
+                self.resumeBookmarkInternal.call(self, name, reason, result);
             },
             resultCollected: function (context, reason, result, bookmarkName)
             {
@@ -233,21 +232,6 @@ ActivityExecutionContext.prototype.endScope = function (inIdle)
     this._scopeTree.back(inIdle);
 }
 
-ActivityExecutionContext.prototype.inNonPersistZone = function ()
-{
-    return this._nonPersistZoneCounter > 0;
-}
-
-ActivityExecutionContext.prototype.enterNonPersistZone = function ()
-{
-    this._nonPersistZoneCounter++;
-}
-
-ActivityExecutionContext.prototype.exitNonPersistZone = function ()
-{
-    if (this._nonPersistZoneCounter == 0) throw new ex.ActivityRuntimeError("Non-persist zone is not reached.");
-}
-
 ActivityExecutionContext.prototype.createBookmark = function (activityId, name, endCallback)
 {
     this.registerBookmark(
@@ -266,7 +250,7 @@ ActivityExecutionContext.prototype.registerBookmark = function (bookmark)
 
 ActivityExecutionContext.prototype.isBookmarkExists = function (name)
 {
-    return this._bookmarks[name] != undefined;
+    return this._bookmarks.hasOwnProperty(name);
 }
 
 ActivityExecutionContext.prototype.deleteBookmark = function (name)
@@ -296,18 +280,22 @@ ActivityExecutionContext.prototype.resumeBookmarkInternal = function (name, reas
     {
         throw new Error("Bookmark '" + name + "' doesn't exists.");
     }
-    this._resumeBMQueue.enqueue(name, true, reason, result);
+    this._resumeBMQueue.enqueue(name, reason, result);
 }
 
 ActivityExecutionContext.prototype.resumeBookmarkExternal = function (name, reason, result)
 {
-    this._resumeBMQueue.enqueue(name, false, reason, result);
-    this.processResumeBookmarkQueue();
-}
+    var self = this;
 
-ActivityExecutionContext.prototype.cancelResumingExternalBookmark = function(name)
-{
-    this._resumeBMQueue.remove(name);
+    if (!self._scopeTree.isOnInitial())
+    {
+        throw new ex.ActivityRuntimeError("Resume bookmark queue cannot be processed when there is an active scope.");
+    }
+
+    var bm = self._bookmarks[name];
+    if (bm == undefined) throw new ex.ActivityRuntimeError("Internal resume bookmark request cannot be processed because bookmark '" + command.name + "' doesn't exists.");
+    self._restoreScope(bm.activityId);
+    self._doResumeBookmark(bm, reason, result);
 }
 
 ActivityExecutionContext.prototype._doResumeBookmark = function (bookmark, reason, result, noRemove)
@@ -336,24 +324,11 @@ ActivityExecutionContext.prototype.processResumeBookmarkQueue = function ()
         throw new ex.ActivityRuntimeError("Resume bookmark queue cannot be processed when there is an active scope.");
     }
 
-    var command = self._resumeBMQueue.dequeueInternal();
+    var command = self._resumeBMQueue.dequeue();
     if (command)
     {
         var bm = self._bookmarks[command.name];
         if (bm == undefined) throw new ex.ActivityRuntimeError("Internal resume bookmark request cannot be processed because bookmark '" + command.name + "' doesn't exists.");
-        self._restoreScope(bm.activityId);
-        self._doResumeBookmark(bm, command.reason, command.result);
-        return true;
-    }
-
-    command = self._resumeBMQueue.dequeueExternal(self._bookmarks);
-    if (command)
-    {
-        var bm = self._bookmarks[command.name];
-        if (bm == undefined)
-            throw new ex.ActivityRuntimeError(
-                    "External resume bookmark request cannot be processed because bookmark '" + name + "' doesn't exists." +
-                    " (This ain't possible, dequeueExternals method should return only existing ones.)");
         self._restoreScope(bm.activityId);
         self._doResumeBookmark(bm, command.reason, command.result);
         return true;
@@ -397,6 +372,14 @@ ActivityExecutionContext.prototype._getActivityIdsOfSubtree = function (to, acti
 ActivityExecutionContext.prototype.deleteScopeOfActivity = function (activityId)
 {
     this._scopeTree.deleteScopePart(activityId);
+}
+
+ActivityExecutionContext.prototype.getStateAndPromotionsToPersist = function()
+{
+    return {
+        state: {},
+        promotions: {}
+    };
 }
 
 module.exports = ActivityExecutionContext;

@@ -18,13 +18,18 @@ function ActivityExecutionEngine(rootActivity)
     this._rootState = null;
     this._trackers = [];
     this._hookContext();
-    this.commandTimeout = 10000;
     this.timestamp = new Date().getTime();
 }
 
 util.inherits(ActivityExecutionEngine, EventEmitter);
 
 Object.defineProperties(ActivityExecutionEngine.prototype, {
+    rootActivity: {
+        get: function()
+        {
+            return this._rootActivity;
+        }
+    },
     execState: {
         get: function()
         {
@@ -218,93 +223,43 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
         if (self.execState == enums.ActivityStates.idle)
         {
             this._initialize();
-
-            var timedOut = false;
-            var resolved = false;
-            var startTime = new Date().getTime();
-
-            var rejectWithTimeout = function ()
-            {
-                try
+            self.once(
+                Activity.states.end, function (reason, result)
                 {
-                    self._context.cancelResumingExternalBookmark(name);
-                    defer.reject(new ex.TimeoutError("Bookmark '" + name + "' cannot be resumed in time."));
-                }
-                catch (e)
-                {
-                    defer.reject(e);
-                }
-            }
-
-            var toId = setTimeout(
-                function ()
-                {
-                    timedOut = true;
-                    if (!resolved) rejectWithTimeout();
-                },
-                self.commandTimeout);
-            var wait = function ()
-            {
-                self.once(
-                    Activity.states.end, function (reason, result)
+                    try
                     {
-                        if (!timedOut)
+                        if (reason === enums.ActivityStates.complete || reason === enums.ActivityStates.idle)
                         {
-                            try
+                            if (self._context.isBookmarkExists(name))
                             {
-                                if (reason === enums.ActivityStates.complete || reason === enums.ActivityStates.idle)
+                                if (reason === enums.ActivityStates.complete)
                                 {
-                                    if (self._context.isBookmarkExists(name))
-                                    {
-                                        if (reason === enums.ActivityStates.complete)
-                                        {
-                                            resolved = true;
-                                            clearTimeout(toId);
-                                            defer.reject(new ex.ActivityRuntimeError("Workflow has been completed before bookmark '" + name + "' reached."));
-                                        }
-                                        else
-                                        {
-                                            // Idle
-                                            if (new Date().getTime() - startTime > self.commandTimeout)
-                                            {
-                                                resolved = true;
-                                                clearTimeout(toId);
-                                                rejectWithTimeout();
-                                            }
-                                            else
-                                            {
-                                                wait();
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        resolved = true;
-                                        clearTimeout(toId);
-                                        defer.resolve();
-                                    }
+                                    defer.reject(new ex.ActivityRuntimeError("Workflow has been completed before bookmark '" + name + "' reached."));
                                 }
-                                else if (reason === enums.ActivityStates.cancel)
+                                else
                                 {
-                                    resolved = true;
-                                    clearTimeout(toId);
-                                    defer.reject(new ex.ActivityRuntimeError("Workflow has been cancelled before bookmark '" + name + "' reached."));
-                                }
-                                else if (reason === enums.ActivityStates.fail)
-                                {
-                                    resolved = true;
-                                    clearTimeout(toId);
-                                    defer.reject(result);
+                                    defer.reject(new ex.Idle("Workflow has been completed before bookmark '" + name + "' reached."));
                                 }
                             }
-                            catch (e)
+                            else
                             {
-                                defer.reject(e);
+                                defer.resolve();
                             }
                         }
-                    });
-            };
-            wait();
+                        else if (reason === enums.ActivityStates.cancel)
+                        {
+                            defer.reject(new ex.ActivityRuntimeError("Workflow has been cancelled before bookmark '" + name + "' reached."));
+                        }
+                        else if (reason === enums.ActivityStates.fail)
+                        {
+                            defer.reject(result);
+                        }
+                    }
+                    catch (e)
+                    {
+                        defer.reject(e);
+                    }
+                });
             self._context.resumeBookmarkExternal(name, reason, result);
         }
         else
@@ -318,6 +273,11 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
     }
 
     return defer.promise;
+}
+
+ActivityExecutionEngine.prototype.getStateAndPromotionsToPersist = function()
+{
+    return this._context.getStateAndPromotionsToPersist();
 }
 
 module.exports = ActivityExecutionEngine;

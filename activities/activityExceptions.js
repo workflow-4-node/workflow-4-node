@@ -17,9 +17,9 @@ function Cancelled()
 
 util.inherits(Cancelled, ActivityStateExceptionError);
 
-function Idle()
+function Idle(message)
 {
-    ActivityStateExceptionError.call(this, "Activity is idle.");
+    ActivityStateExceptionError.call(this, message || "Activity is idle.");
     this.__typeTag = guids.types.idleException;
 }
 

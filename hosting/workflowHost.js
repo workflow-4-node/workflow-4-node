@@ -115,7 +115,7 @@ WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, m
         {
             if (insta.execState == enums.ActivityStates.idle)
             {
-                self.persistence.persistState(insta).then(
+                return self.persistence.persistState(insta).then(
                     function ()
                     {
                         self._knownRunningInstances[insta.id] = insta;
