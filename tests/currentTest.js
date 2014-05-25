@@ -8,78 +8,94 @@ var _ = require("underscore-node");
 var ConsoleTracker = require("../activities/consoleTracker");
 var WorkflowHost = require("../hosting/workflowHost");
 var InstanceIdParser = require("../hosting/instanceIdParser");
+var MemoryPersistence = require("../hosting/memoryPersistence");
+
+function doHostTest(test, usePersistence)
+{
+    var workflow = new ActivityMarkup().parse(
+        {
+            workflow: {
+                name: "wf",
+                v: null,
+                args: [
+                    {
+                        assign: {
+                            value: {
+                                beginMethod: {
+                                    methodName: "foo",
+                                    canCreateInstance: true,
+                                    instanceIdPath: "[0]"
+                                }
+                            },
+                            to: "v"
+                        }
+                    },
+                    {
+                        assign: {
+                            value: {
+                                endMethod: {
+                                    methodName: "foo",
+                                    result: "{this.v[0] * this.v[0]}"
+                                }
+                            },
+                            to: "v"
+                        }
+                    },
+                    {
+                        beginMethod: {
+                            methodName: "bar",
+                            instanceIdPath: "[0]"
+                        }
+                    },
+                    {
+                        endMethod: {
+                            methodName: "bar",
+                            result: "{this.v * 2}"
+                        }
+                    },
+                    "some string for wf result but not for the method result"
+                ]
+            }
+        });
+
+    var host = new WorkflowHost();
+    if (usePersistence) host.persistence = new MemoryPersistence();
+    host.registerWorkflow(workflow);
+    host.invokeMethod("wf", "foo", [5]).then(
+        function (result)
+        {
+            try
+            {
+                test.equals(result, 25);
+                return host.invokeMethod("wf", "bar", [5]).then(
+                    function (result)
+                    {
+                        test.equals(result, 50);
+                    });
+            }
+            catch (e)
+            {
+                test.ifError(e);
+            }
+        }).fail(function (e)
+        {
+            test.ifError(e);
+        }).finally(
+        function ()
+        {
+            test.done();
+        });
+}
 
 module.exports = {
 
-    hostTest: function (test)
+    hostTestWOPersistence: function (test)
     {
-        var workflow = new ActivityMarkup().parse(
-            {
-                workflow: {
-                    name: "wf",
-                    v: null,
-                    args: [
-                        {
-                            assign: {
-                                value: {
-                                    beginMethod: {
-                                        methodName: "foo",
-                                        canCreateInstance: true,
-                                        instanceIdPath: "[0]"
-                                    }
-                                },
-                                to: "v"
-                            }
-                        },
-                        {
-                            assign: {
-                                value: {
-                                    endMethod: {
-                                        methodName: "foo",
-                                        result: "{this.v[0] * this.v[0]}"
-                                    }
-                                },
-                                to: "v"
-                            }
-                        },
-                        {
-                            beginMethod: {
-                                methodName: "bar",
-                                instanceIdPath: "[0]"
-                            }
-                        },
-                        {
-                            endMethod: {
-                                methodName: "bar",
-                                result: "{this.v}"
-                            }
-                        },
-                        "some string for wf result but not for the method result"
-                    ]
-                }
-            });
+        doHostTest(test, false);
+    },
 
-        var host = new WorkflowHost();
-        host.registerWorkflow(workflow);
-        host.invokeMethod("wf", "foo", [5]).then(
-            function (result)
-            {
-                try
-                {
-                    test.equals(result, 25);
-                }
-                catch (e)
-                {
-                    test.ifError(e);
-                }
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
+    hostTestWPersistence: function (test)
+    {
+        doHostTest(test, true);
     }
 }

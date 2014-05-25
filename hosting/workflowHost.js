@@ -7,6 +7,7 @@ var MemoryPersistence = require("./memoryPersistence");
 var WorkflowInstance = require("./workflowInstance");
 var InstanceIdParser = require("./instanceIdParser");
 var enums = require("../common/enums");
+var Q = require("q");
 
 function WorkflowHost()
 {
@@ -30,7 +31,6 @@ Object.defineProperties(
         persistence: {
             get: function ()
             {
-                if (!this._persistence) this._persistence = new WorkflowPersistence(new MemoryPersistence());
                 return this._persistence;
             },
             set: function (value)
@@ -76,7 +76,7 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
 
     self._initialize();
 
-    return this.persistence.getRunningInstanceIdPaths(workflowName, methodName).then(
+    return self._getRunningInstanceIdPaths(workflowName, methodName).then(
         function(paths)
         {
             var runningInstanceId = null;
@@ -102,6 +102,44 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
         });
 }
 
+WorkflowHost.prototype._getRunningInstanceIdPaths = function (workflowName, methodName)
+{
+    if (this._persistence)
+    {
+        return this._persistence.getRunningInstanceIdPaths(workflowName, methodName);
+    }
+    else
+    {
+        var defer = Q.defer();
+        try
+        {
+            var result = [];
+            for (var n in this._knownRunningInstances)
+            {
+                var insta = this._knownRunningInstances[n];
+                if (insta.workflowName === workflowName)
+                {
+                    insta.idleMethods.forEach(function(mi)
+                    {
+                        if (mi.methodName == methodName)
+                            result.push(
+                            {
+                                id: insta.id,
+                                value: mi.instanceIdPath
+                            });
+                    });
+                }
+            }
+            defer.resolve(result);
+        }
+        catch (e)
+        {
+            defer.reject(e);
+        }
+        return defer.promise;
+    }
+}
+
 WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, methodName, args)
 {
     var self = this;
@@ -115,12 +153,20 @@ WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, m
         {
             if (insta.execState == enums.ActivityStates.idle)
             {
-                return self.persistence.persistState(insta).then(
-                    function ()
-                    {
-                        self._knownRunningInstances[insta.id] = insta;
-                        return result;
-                    });
+                if (self._persistence)
+                {
+                    return self.persistence.persistState(insta).then(
+                        function ()
+                        {
+                            self._knownRunningInstances[insta.id] = insta;
+                            return result;
+                        });
+                }
+                else
+                {
+                    self._knownRunningInstances[insta.id] = insta;
+                    return result;
+                }
             }
             else
             {
@@ -131,8 +177,7 @@ WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, m
 
 WorkflowHost.prototype._invokeMethodOnRunningInstance = function(runningInstanceId, workflowName, methodName, args)
 {
-    // Engine reuse should be implemented, we can replace state of an instance if it continues
-    // Or, if it hasn't changed, state can be as is.
+    throw new Error("Not implemented.");
 }
 
 WorkflowHost.prototype.addTracker = function (tracker)

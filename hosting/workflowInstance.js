@@ -13,7 +13,7 @@ function WorkflowInstance(host)
 {
     this._host = host;
     this.id = null;
-    this._idleMethods = [];
+    this.idleMethods = [];
     this._engine = null;
     this._myTrackers = [];
 }
@@ -23,6 +23,12 @@ Object.defineProperties(WorkflowInstance.prototype, {
         get: function()
         {
             return this._engine.execState;
+        }
+    },
+    workflowName: {
+        get: function()
+        {
+            return this._engine.rootActivity.name.trim();
         }
     }
 });
@@ -73,10 +79,10 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
                         }
                     });
 
-                    self._idleMethods.length = 0;
+                    self.idleMethods.length = 0;
                     self._addIdleInstanceIdPathTracker(function(mn, ip)
                     {
-                        self._idleMethods.push({
+                        self.idleMethods.push({
                             methodName: mn,
                             instanceIdPath: ip
                         });
@@ -107,14 +113,14 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
 
                             if (self._engine.execState == enums.ActivityStates.idle)
                             {
-                                if (self._idleMethods.length == 0)
+                                if (self.idleMethods.length == 0)
                                 {
                                     throw hex.WorkflowException("Workflow has gone to idle, but there is no active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
                                 }
                             }
                             else
                             {
-                                if (self._idleMethods.length != 0)
+                                if (self.idleMethods.length != 0)
                                 {
                                     throw hex.WorkflowException("Workflow has completed, but there is active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
                                 }
@@ -231,7 +237,7 @@ WorkflowInstance.prototype.getPersistData = function()
     return {
         instanceId: this.id,
         workflow: this._engine.rootActivity,
-        idleMethods: this._idleMethods,
+        idleMethods: this.idleMethods,
         timestamp: this._engine.timestamp,
         state: sp.state,
         promotions: sp.promotions
