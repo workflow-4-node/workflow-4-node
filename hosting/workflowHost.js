@@ -6,16 +6,16 @@ var WorkflowPersistence = require("./workflowPersistence");
 var MemoryPersistence = require("./memoryPersistence");
 var WorkflowInstance = require("./workflowInstance");
 var InstanceIdParser = require("./instanceIdParser");
+var enums = require("../common/enums");
 
-function WorkflowHost(persistence)
+function WorkflowHost()
 {
     this._registry = new WorkflowRegistry();
-    this._persistence = persistence ? persistence : null;
     this.commandTimeout = 10000;
     this._trackers = [];
     this._isInitialized = false;
-    this._runningInstances = {};
     this.instanceIdParser = new InstanceIdParser();
+    this._knownRunningInstances = {};
 }
 
 Object.defineProperties(
@@ -104,17 +104,29 @@ WorkflowHost.prototype.invokeMethod = function (workflowName, methodName, args)
 
 WorkflowHost.prototype._createInstanceAndInvokeMethod = function(workflowName, methodName, args)
 {
-    var wfDesc = this._registry.getDesc(workflowName);
+    var self = this;
+    
+    var wfDesc = self._registry.getDesc(workflowName);
     if (!wfDesc.createInstanceMethods[methodName]) throw Error("Workflow '" + workflowName + "' cannot be created by invoking method '" + methodName + "'.");
 
     var insta = new WorkflowInstance(this);
-    return insta.create(wfDesc.workflow, methodName, args);
-
-    // Create an engine
-    // Add trackers
-    // Run WF
-    // If idle: save state
-    // Save engine
+    return insta.create(wfDesc.workflow, methodName, args).then(
+        function(result)
+        {
+            if (insta.execState == enums.ActivityStates.idle)
+            {
+                self.persistence.persistState(insta).then(
+                    function ()
+                    {
+                        self._knownRunningInstances[insta.id] = insta;
+                        return result;
+                    });
+            }
+            else
+            {
+                return result;
+            }
+        });
 }
 
 WorkflowHost.prototype._invokeMethodOnRunningInstance = function(runningInstanceId, workflowName, methodName, args)

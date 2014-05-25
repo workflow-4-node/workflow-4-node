@@ -14,10 +14,12 @@ function ActivityExecutionEngine(rootActivity)
     if (!(rootActivity instanceof Activity)) throw new TypeError("Argument 'rootActivity' is not an activity.");
     this._rootActivity = rootActivity;
     this._context = new ActivityExecutionContext();
+    this._isInitialized = false;
     this._rootState = null;
     this._trackers = [];
     this._hookContext();
     this.commandTimeout = 10000;
+    this.timestamp = new Date().getTime();
 }
 
 util.inherits(ActivityExecutionEngine, EventEmitter);
@@ -44,6 +46,15 @@ Object.defineProperties(ActivityExecutionEngine.prototype, {
     }
 })
 
+ActivityExecutionEngine.prototype._initialize = function()
+{
+    if (!this._isInitialized)
+    {
+        this._context.initialize(this._rootActivity);
+        this._isInitialized = true;
+    }
+}
+
 ActivityExecutionEngine.prototype._setRootState = function (state)
 {
     var self = this;
@@ -63,6 +74,7 @@ ActivityExecutionEngine.prototype._setRootState = function (state)
         self._rootState.on(
             Activity.states.end, function (reason, result)
             {
+                this.timestamp = new Date().getTime();
                 self.emit(Activity.states.end, reason, result);
             });
         self._rootState.on(
@@ -122,7 +134,7 @@ ActivityExecutionEngine.prototype.start = function ()
 {
     this._verifyNotStarted();
 
-    this._context.initialize(this._rootActivity);
+    this._initialize();
 
     var args = [ this._context ];
     Array.prototype.forEach.call(
@@ -142,7 +154,7 @@ ActivityExecutionEngine.prototype.invoke = function ()
     var defer = Q.defer();
     try
     {
-        this._context.initialize(this._rootActivity);
+        this._initialize();
 
         var argRemoveToken = null;
         var args = [];
@@ -205,6 +217,8 @@ ActivityExecutionEngine.prototype.resumeBookmark = function (name, reason, resul
     {
         if (self.execState == enums.ActivityStates.idle)
         {
+            this._initialize();
+
             var timedOut = false;
             var resolved = false;
             var startTime = new Date().getTime();

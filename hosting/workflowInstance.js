@@ -13,9 +13,19 @@ function WorkflowInstance(host)
 {
     this._host = host;
     this.id = null;
+    this.idleMethods = [];
     this._engine = null;
     this._myTrackers = [];
 }
+
+Object.defineProperties(WorkflowInstance.prototype, {
+    execState: {
+        get: function()
+        {
+            return this._engine.execState;
+        }
+    }
+});
 
 WorkflowInstance.prototype.create = function (workflow, methodName, args)
 {
@@ -67,6 +77,15 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
 
                     self._addCreateEndHelperTracker(createEndMethodFound);
 
+                    self.idleMethods.length = 0;
+                    self._addIdleInstanceIdPathTracker(function(mn, ip)
+                    {
+                        self.idleMethods.push({
+                            methodName: mn,
+                            instanceIdPath: ip
+                        });
+                    });
+
                     return self._engine.resumeBookmark(specStrings.hosting.createBeginMethodBMName(methodName), enums.ActivityStates.complete, args).then(
                         function()
                         {
@@ -88,6 +107,21 @@ WorkflowInstance.prototype.create = function (workflow, methodName, args)
                             else
                             {
                                 throw hex.WorkflowException("Workflow has been completed or gone to idle without reaching an EndMethod activity of method name '" + methodName + "'.");
+                            }
+
+                            if (self._engine.execState == enums.ActivityStates.idle)
+                            {
+                                if (self.idleMethods.length == 0)
+                                {
+                                    throw hex.WorkflowException("Workflow has gone to idle, but there is no active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
+                                }
+                            }
+                            else
+                            {
+                                if (self.idleMethods.length != 0)
+                                {
+                                    throw hex.WorkflowException("Workflow has completed, but there is active BeginMethod activities to wait for (TODO: Timer support errors might be causes this error.).");
+                                }
                             }
 
                             return result;
@@ -164,6 +198,28 @@ WorkflowInstance.prototype._addCreateEndHelperTracker = function(callback)
     self._myTrackers.push(tracker);
 }
 
+WorkflowInstance.prototype._addIdleInstanceIdPathTracker = function(callback)
+{
+    var self = this;
+    var tracker = {
+        activityStateFilter: function(activity, reason, result)
+        {
+            return activity instanceof BeginMethod &&
+                _(activity.methodName).isString() &&
+                _(activity.instanceIdPath).isString() &&
+                reason == enums.ActivityStates.idle;
+        },
+        activityStateChanged: function(activity, reason, result)
+        {
+            var methodName = activity.methodName.trim();
+            var instanceIdPath = activity.instanceIdPath.trim();
+            callback(methodName, instanceIdPath);
+        }
+    };
+    self._engine.addTracker(tracker);
+    self._myTrackers.push(tracker);
+}
+
 WorkflowInstance.prototype._removeMyTrackers = function()
 {
     var self = this;
@@ -172,6 +228,17 @@ WorkflowInstance.prototype._removeMyTrackers = function()
         self._engine.removeTracker(t);
     });
     self._myTrackers.length = 0;
+}
+
+WorkflowInstance.prototype.getPersistData = function()
+{
+    return {
+        timestamp: this._engine.timestamp,
+        state: "foo",
+        promotions: {
+            bar: "baz"
+        }
+    };
 }
 
 module.exports = WorkflowInstance;

@@ -22,11 +22,12 @@ InstanceIdParser.prototype._createParser = function(fragments)
     {
         var top = fragments.shift();
         var idx = top.indexOf("[");
-        if (idx != -1 && idx != 0)
+        if (idx > 0)
         {
             fragments.unshift(top.substr(idx));
             top = top.substr(0, idx);
         }
+
         var code;
         if (top.length > 2 && top[0] == "[" && top[top.length - 1] == "]")
         {
