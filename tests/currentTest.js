@@ -9,6 +9,7 @@ var ConsoleTracker = require("../activities/consoleTracker");
 var WorkflowHost = require("../hosting/workflowHost");
 var InstanceIdParser = require("../hosting/instanceIdParser");
 var MemoryPersistence = require("../hosting/memoryPersistence");
+var NodeSerializer = require("../common/nodeSerializer");
 
 function doHostTest(test, usePersistence)
 {
@@ -89,6 +90,22 @@ function doHostTest(test, usePersistence)
 
 module.exports = {
 
+    serializationTests: function(test)
+    {
+        var ser = new NodeSerializer();
+
+        var a = new Func();
+        a.code = function() { return "poo" }
+
+        var s = ser.stringify(a);
+        console.log(s);
+
+        var a2 = ser.parse(s);
+        //a2.__proto__ = Func.prototype;
+
+        test.done();
+    }/*,
+
     hostTestWOPersistence: function (test)
     {
         doHostTest(test, false);
@@ -97,5 +114,5 @@ module.exports = {
     hostTestWPersistence: function (test)
     {
         doHostTest(test, true);
-    }
+    }*/
 }
