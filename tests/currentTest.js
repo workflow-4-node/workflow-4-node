@@ -93,9 +93,11 @@ module.exports = {
     serializationTests: function(test)
     {
         var ser = new NodeSerializer();
+        ser.registerKnownType("workflow-4-node.Func", Func);
 
         var a = new Func();
-        a.code = function() { return "poo" }
+        a.code = function() { return "poo" };
+        a.pupu = a;
 
         var s = ser.stringify(a);
         console.log(s);

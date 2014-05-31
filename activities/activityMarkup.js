@@ -26,7 +26,7 @@ ActivityMarkup.prototype._registerSystemTypes = function()
 ActivityMarkup.prototype.registerType = function (alias, type)
 {
     if (!_.isString(alias)) throw new TypeError("Parameter 'alias' is not a string.");
-    if (!_.isFunction(type) && !_.isString(type)) this._verifyIsActivityType(type);
+    if (!_.isString(type)) this._verifyIsActivityType(type);
     this._knonwTypes[alias] = type;
 }
 
@@ -72,12 +72,7 @@ ActivityMarkup.prototype._createActivityInstance = function (alias, markup)
 {
     var type = this._knonwTypes[alias];
     if (type == undefined) throw new ex.ActivityMarkupError("Unknown activity alias '" + alias + "'." + this._errorHint(markup));
-    if (_.isFunction(type))
-    {
-        type = type();
-        this._verifyIsActivityType(type);
-    }
-    else if (_.isString(type))
+    if (_.isString(type))
     {
         type = require(type);
         this._verifyIsActivityType(type);

@@ -4,39 +4,54 @@ function NodeSerializer(ignoreNativeFunc)
     this._knonwTypes = {};
 }
 
-NodeSerializer.prototype.addKnownType = function (typeName, type)
+NodeSerializer.prototype.registerKnownType = function (typeName, type)
 {
     if (typeof typeName !== "string") throw new TypeError("Parameter 'alias' is not a string.");
     if (!type) throw new Error("Argument 'type' is expected.");
     var typeOfType = typeof type;
-    if (typeOfType === "string" || typeOfType === "object" || typeOfType === "function")
+    switch  (typeOfType)
     {
-        this._knonwTypes[typeName] = type;
+        case "string":
+            type = require(type);
+            break;
+        case "function":
+            break;
+        default :
+            throw new TypeError("Argument 'type' value is unrecognised.");
     }
-    else
+    if (type.prototype === undefined) throw new TypeError("Argument 'type' is not a constructor.");
+    this._knonwTypes[typeName] = type.prototype;
+}
+
+NodeSerializer.prototype._setTypeTag = function (outputObj, obj)
+{
+    if (obj.constructor && obj.constructor !== Object)
     {
-        throw new TypeError("Argument 'type' value is unrecognised.");
+        for (var n in this._knonwTypes)
+        {
+            if (this._knonwTypes.hasOwnProperty(n))
+            {
+                var v = this._knonwTypes[n];
+                if (v === obj.constructor.prototype)
+                {
+                    outputObj[NodeSerializer.TYPETAG] = n;
+                    return;
+                }
+            }
+        }
     }
 }
 
-NodeSerializer.prototype._setupPrototype = function (obj, typeName)
+NodeSerializer.prototype._setProto = function (obj)
 {
-    var type = this._knonwTypes[typeName];
-    if (type == undefined) throw new Error("Cannot create instance of type '" + typeName + "' because it is not known. Consider using of addKnownType method for type registration.");
-    var typeOfType = typeof type;
-    if (typeOfType === "function")
+    var typeTag = obj[NodeSerializer.TYPETAG];
+    if (typeTag)
     {
-        type = type();
+        var type = this._knonwTypes[typeTag];
+        if (type == undefined) throw new Error("Type '" + typeTag + "' has not been registered.");
+        obj.__proto__ = type;
+        delete obj[NodeSerializer.TYPETAG];
     }
-    else if (typeOfType === "string")
-    {
-        type = require(type);
-    }
-    obj.__proto__ = type.prototype;
-}
-
-NodeSerializer.prototype._setProtoTag = function (obj, outputObj)
-{
 }
 
 NodeSerializer.prototype.stringify = function (obj)
@@ -81,9 +96,7 @@ NodeSerializer.prototype._serialize = function (obj, outputObj, cache, path)
                 }
                 if (!found)
                 {
-                    var serializedSubObject = this._serialize(subObject, {}, cache, path + NodeSerializer.KEYPATHSEPARATOR + key);
-                    
-                    outputObj[key] = serializedSubObject;
+                    outputObj[key] = this._serialize(subObject, {}, cache, path + NodeSerializer.KEYPATHSEPARATOR + key);
                 }
             }
             else if (typeOfSubObject === "function")
@@ -91,13 +104,13 @@ NodeSerializer.prototype._serialize = function (obj, outputObj, cache, path)
                 var funcStr = subObject.toString();
                 if (NodeSerializer.ISNATIVEFUNC.test(funcStr))
                 {
-                    if (ignoreNativeFunc)
+                    if (this.ignoreNativeFunc)
                     {
                         funcStr = "function() {throw new Error('Call a native function unserialized')}";
                     }
                     else
                     {
-                        throw new Error("Can't serialize a object with a native function property. Use serialize(obj, true) to ignore the error.");
+                        throw new Error("Can't serialize a object with a native function property.");
                     }
                 }
                 outputObj[key] = NodeSerializer.FUNCFLAG + funcStr;
@@ -109,6 +122,8 @@ NodeSerializer.prototype._serialize = function (obj, outputObj, cache, path)
         }
     }
 
+    this._setTypeTag(outputObj, obj);
+
     return outputObj;
 };
 
@@ -118,7 +133,7 @@ NodeSerializer.prototype.parse = function (str)
     if (str === null) return null;
     if (typeof str !== "string") throw new TypeError("Argument is not a string.");
 
-    return this._unserialize(JSON.parse(str));
+    return this.fromJSON(JSON.parse(str));
 }
 
 NodeSerializer.prototype.fromJSON = function (json)
@@ -133,27 +148,39 @@ NodeSerializer.prototype._unserialize = function (obj, originObj)
 {
     originObj = originObj || obj;
 
+    var result = null;
     var circularTasks = [];
     var key;
     for (key in obj)
     {
+        if (result === null) result = {};
         if (obj.hasOwnProperty(key))
         {
-            if (typeof obj[key] === "object")
+            var subObject = obj[key];
+            var typeOfSubObj = typeof subObject;
+            if (typeOfSubObj === "object")
             {
-                obj[key] = this._unserialize(obj[key], originObj);
+                result[key] = this._unserialize(subObject, originObj);
             }
-            else if (typeof obj[key] === "string")
+            else if (typeOfSubObj === "string")
             {
-                if (obj[key].indexOf(NodeSerializer.FUNCFLAG) === 0)
+                if (subObject.indexOf(NodeSerializer.FUNCFLAG) === 0)
                 {
-                    obj[key] = eval("(" + obj[key].substring(NodeSerializer.FUNCFLAG.length) + ")");
+                    result[key] = eval("(" + subObject.substring(NodeSerializer.FUNCFLAG.length) + ")");
                 }
-                else if (obj[key].indexOf(NodeSerializer.CIRCULARFLAG) === 0)
+                else if (subObject.indexOf(NodeSerializer.CIRCULARFLAG) === 0)
                 {
-                    obj[key] = obj[key].substring(NodeSerializer.CIRCULARFLAG.length);
-                    circularTasks.push({obj: obj, key: key});
+                    result[key] = subObject.substring(NodeSerializer.CIRCULARFLAG.length);
+                    circularTasks.push({obj: result, key: key});
                 }
+                else
+                {
+                    result[key] = subObject;
+                }
+            }
+            else
+            {
+                result[key] = subObject;
             }
         }
     }
@@ -163,17 +190,19 @@ NodeSerializer.prototype._unserialize = function (obj, originObj)
         circularTasks.forEach(
             function (task)
             {
-                task.obj[task.key] = NodeSerializer._getKeyPath(originObj, task.obj[task.key]);
+                task.obj[task.key] = NodeSerializer._getKeyPath(result, task.obj[task.key]);
             });
     }
 
-    return obj;
+    if (result && typeof result == "object") this._setProto(result);
+
+    return result;
 };
 
-NodeSerializer._getKeyPath = function (obj, path)
+NodeSerializer._getKeyPath = function (originObj, path)
 {
-    path = path.split(KEYPATHSEPARATOR);
-    var currentObj = obj;
+    path = path.split(NodeSerializer.KEYPATHSEPARATOR);
+    var currentObj = originObj;
     path.forEach(
         function (p, index)
         {
@@ -188,6 +217,7 @@ NodeSerializer._getKeyPath = function (obj, path)
 NodeSerializer.FUNCFLAG = "_$$ND_FUNC$$_";
 NodeSerializer.CIRCULARFLAG = "_$$ND_CC$$_";
 NodeSerializer.KEYPATHSEPARATOR = "_$$.$$_";
+NodeSerializer.TYPETAG = "_$$TAG_TYPE$$_";
 NodeSerializer.ISNATIVEFUNC = /^function\s*[^(]*\(.*\)\s*\{\s*\[native code\]\s*\}$/;
 
 module.exports = NodeSerializer;
