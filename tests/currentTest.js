@@ -1,15 +1,14 @@
-var Func = require("../activities/func");
-var Block = require("../activities/block");
-var Expression = require("../activities/expression");
-var ActivityMarkup = require("../activities/activityMarkup");
-var ActivityExecutionEngine = require("../activities/activityExecutionEngine");
+var Expression = require("../../").activities.Expression;
+var Func = require("../../").activities.Func;
+var Block = require("../../").activities.Block;
+var ActivityMarkup = require("../../").activities.ActivityMarkup;
+var ActivityExecutionEngine = require("../../").activities.ActivityExecutionEngine;
 var Q = require("q");
 var _ = require("underscore-node");
-var ConsoleTracker = require("../activities/consoleTracker");
-var WorkflowHost = require("../hosting/workflowHost");
-var InstanceIdParser = require("../hosting/instanceIdParser");
-var MemoryPersistence = require("../hosting/memoryPersistence");
-var NodeSerializer = require("../common/nodeSerializer");
+var ConsoleTracker = require("../../").activities.ConsoleTracker;
+var WorkflowHost = require("../../").hosting.WorkflowHost;
+var InstanceIdParser = require("../../").hosting.InstanceIdParser;
+var MemoryPersistence = require("../../").hosting.MemoryPersistence;
 
 function doHostTest(test, usePersistence)
 {
@@ -89,25 +88,6 @@ function doHostTest(test, usePersistence)
 }
 
 module.exports = {
-
-    serializationTests: function(test)
-    {
-        var ser = new NodeSerializer();
-        ser.registerKnownType("workflow-4-node.Func", Func);
-
-        var a = new Func();
-        a.code = function() { return "poo" };
-        a.pupu = a;
-
-        var s = ser.stringify(a);
-        console.log(s);
-
-        var a2 = ser.parse(s);
-        //a2.__proto__ = Func.prototype;
-
-        test.done();
-    }/*,
-
     hostTestWOPersistence: function (test)
     {
         doHostTest(test, false);
@@ -116,5 +96,5 @@ module.exports = {
     hostTestWPersistence: function (test)
     {
         doHostTest(test, true);
-    }*/
+    }
 }
