@@ -15,7 +15,7 @@ Expression.prototype.run = function (context, args)
     {
         try
         {
-            var f = new Function("return (" + this.expr + ")");
+            var f = new Function("return (" + this.expr + ")"); //  TODO: Cache this function in a private field.
             this.complete(f.call(this));
         }
         catch (e)
