@@ -6,6 +6,7 @@ module.exports = {
         try
         {
             var p = new InstanceIdParser();
+            test.equals(p.parse("this", 1), 1);
             test.equals(p.parse("[0]", [1]), 1);
             test.equals(p.parse("[0]", [4,5]), 4);
             test.equals(p.parse("[1].id", [{ id: 1 }, { id: 2 }]), 2);
