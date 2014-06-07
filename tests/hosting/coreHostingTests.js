@@ -74,7 +74,7 @@ function doBasicHostTest(test, usePersistence)
             {
                 test.ifError(e);
             }
-        }).fail(function (e)
+        }).catch(function (e)
         {
             test.ifError(e);
         }).finally(
