@@ -35,14 +35,9 @@ function doBasicHostTest(test, usePersistence)
                         }
                     },
                     {
-                        beginMethod: {
+                        method: {
                             methodName: "bar",
-                            instanceIdPath: "[0]"
-                        }
-                    },
-                    {
-                        endMethod: {
-                            methodName: "bar",
+                            instanceIdPath: "[0]",
                             result: "{this.v * 2}"
                         }
                     },
