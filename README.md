@@ -5,7 +5,7 @@ Workflow 4 Node is (gonna be) a [.NET Workflow Foundation](http://msdn.microsoft
 
 ## Milestone 1
 
-Being able to implement Correlated Calculator in Workflow 4 Node by using MondgoDb persistence:
+Being able to implement Correlated Calculator in Workflow 4 Node by using MongoDb persistence:
 
 http://msdn.microsoft.com/en-us/library/dd807391(v=vs.110).aspx
 
