@@ -12,26 +12,18 @@ function doBasicHostTest(test, usePersistence)
                 v: null,
                 args: [
                     {
-                        assign: {
-                            value: {
-                                beginMethod: {
-                                    methodName: "foo",
-                                    canCreateInstance: true,
-                                    instanceIdPath: "[0]"
-                                }
-                            },
-                            to: "v"
+                        beginMethod: {
+                            methodName: "foo",
+                            canCreateInstance: true,
+                            instanceIdPath: "[0]",
+                            "@to": "v"
                         }
                     },
                     {
-                        assign: {
-                            value: {
-                                endMethod: {
-                                    methodName: "foo",
-                                    result: "{this.v[0] * this.v[0]}"
-                                }
-                            },
-                            to: "v"
+                        endMethod: {
+                            methodName: "foo",
+                            result: "{this.v[0] * this.v[0]}",
+                            "@to": "v"
                         }
                     },
                     {

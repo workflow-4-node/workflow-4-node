@@ -481,5 +481,46 @@ module.exports = {
             {
                 test.done();
             });
+    },
+
+    whileTest: function (test)
+    {
+        var block = new ActivityMarkup().parse(
+        {
+            block: {
+                i: 10,
+                j: 0,
+                z: 0,
+                args: [
+                    {
+                        while: {
+                            predicate: "{this.j < this.i}",
+                            body: "{this.j++}",
+                            "@to": "z"
+                        }
+                    },
+                    "{ { j: this.j, z: this.z } }"
+                ]
+            }
+        });
+
+        var engine = new ActivityExecutionEngine(block);
+        engine.addTracker(new ConsoleTracker());
+
+        engine.invoke().then(
+            function (result)
+            {
+                test.ok(_.isObject(result));
+                test.equals(result.j, 10);
+                test.equals(result.z, 9);
+            },
+            function (e)
+            {
+                test.ifError(e);
+            }).finally(
+            function ()
+            {
+                test.done();
+            });
     }
 }
