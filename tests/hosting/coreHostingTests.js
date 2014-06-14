@@ -2,6 +2,7 @@ var ActivityMarkup = require("../../").activities.ActivityMarkup;
 var WorkflowHost = require("../../").hosting.WorkflowHost;
 var InstanceIdParser = require("../../").hosting.InstanceIdParser;
 var MemoryPersistence = require("../../").hosting.MemoryPersistence;
+var _ = require("lodash");
 
 function doBasicHostTest(test, usePersistence)
 {
@@ -9,7 +10,8 @@ function doBasicHostTest(test, usePersistence)
         {
             workflow: {
                 name: "wf",
-                v: null,
+                "!v": null,
+                "!x": 0,
                 args: [
                     {
                         beginMethod: {
@@ -27,6 +29,12 @@ function doBasicHostTest(test, usePersistence)
                         }
                     },
                     {
+                        assign: {
+                            value: 666,
+                            to: "x"
+                        }
+                    },
+                    {
                         method: {
                             methodName: "bar",
                             instanceIdPath: "[0]",
@@ -38,10 +46,11 @@ function doBasicHostTest(test, usePersistence)
             }
         });
 
+    var persistence = usePersistence ? new MemoryPersistence() : null;
     var host = new WorkflowHost(
         {
             alwaysLoadState: true,
-            persistence: usePersistence ? new MemoryPersistence() : null
+            persistence: persistence
         });
 
     host.registerWorkflow(workflow);
@@ -51,6 +60,18 @@ function doBasicHostTest(test, usePersistence)
             try
             {
                 test.equals(result, 25);
+
+                // Verify promotions:
+                if (persistence)
+                {
+                    var state = persistence.loadState("wf", 5);
+                    test.ok(state);
+                    test.ok(state.promotions);
+                    test.equals(state.promotions.v, 25);
+                    test.equals(state.promotions.x, 666);
+                    test.equals(_.keys(state.promotions).length, 2);
+                }
+
                 return host.invokeMethod("wf", "bar", [5]).then(
                     function (result)
                     {

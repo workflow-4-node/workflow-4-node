@@ -505,7 +505,7 @@ module.exports = {
         });
 
         var engine = new ActivityExecutionEngine(block);
-        engine.addTracker(new ConsoleTracker());
+        //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
             function (result)
