@@ -25,6 +25,8 @@
   "dependencies": {
     "backpack-node": "*",
     "date-utils": "^1.2.15",
-    "guid": "^0.0.12"
+    "guid": "^0.0.12",
+    "mongoose": "^3.8.12",
+    "mongoose-q": "0.0.10"
   }
 }

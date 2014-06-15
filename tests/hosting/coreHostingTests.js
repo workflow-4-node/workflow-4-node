@@ -61,15 +61,15 @@ function doBasicHostTest(test, usePersistence)
             {
                 test.equals(result, 25);
 
-                // Verify promotions:
+                // Verify promotedProperties:
                 if (persistence)
                 {
                     var state = persistence.loadState("wf", 5);
                     test.ok(state);
-                    test.ok(state.promotions);
-                    test.equals(state.promotions.v, 25);
-                    test.equals(state.promotions.x, 666);
-                    test.equals(_.keys(state.promotions).length, 2);
+                    test.ok(state.promotedProperties);
+                    test.equals(state.promotedProperties.v, 25);
+                    test.equals(state.promotedProperties.x, 666);
+                    test.equals(_.keys(state.promotedProperties).length, 2);
                 }
 
                 return host.invokeMethod("wf", "bar", [5]).then(
