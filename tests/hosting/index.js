@@ -1,3 +1,4 @@
 module.exports = {
-    coreHostingTests: require("./coreHostingTests")
+    coreHostingTests: require("./coreHostingTests"),
+    mongoDBTests: require("./mongoDB/")
 }
