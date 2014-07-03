@@ -1,7 +1,15 @@
 var tests = function()
 {
+    var mongoose = require('mongoose');
     return {
-        mongoDbPresistence: require("./mongoDbPersistenceTests")
+        mongoDbPresistence: require("./mongoDbPersistenceTests"),
+        tearDown: function(done)
+        {
+            mongoose.disconnect(function ()
+            {
+                done();
+            });
+        }
     };
 }
 

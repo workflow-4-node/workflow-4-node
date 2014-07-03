@@ -1,12 +1,13 @@
 var MongoDDPersistence = require("../../../").hosting.mongoDB.MongoDDPersistence;
 var hostingTestCommon = require("../hostingTestCommon");
 
+var persistence = new MongoDDPersistence({
+    connection: "mongodb://localhost/workflow"
+});
+
 module.exports = {
     basicHostTestWMongoDbPersistence: function (test)
     {
-        var options = {
-            connection: "mongodb://localhost/workflow"
-        };
-        hostingTestCommon.doBasicHostTest(test, new MongoDDPersistence(options));
+        hostingTestCommon.doBasicHostTest(test, persistence);
     }
 }
