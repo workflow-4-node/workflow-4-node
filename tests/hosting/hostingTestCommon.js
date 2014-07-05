@@ -1,5 +1,6 @@
 var ActivityMarkup = require("../../").activities.ActivityMarkup;
 var WorkflowHost = require("../../").hosting.WorkflowHost;
+var ConsoleTracker = require("../../").activities.ConsoleTracker;
 var _ = require("lodash");
 var asyncHelpers = require("../../lib/common/asyncHelpers");
 var async = asyncHelpers.async;
@@ -93,125 +94,139 @@ module.exports = {
             try
             {
                 var workflow = new ActivityMarkup().parse(
-                {
-                    workflow: {
-                        name: "calculator",
-                        running: true,
-                        inputArgs: 0,
-                        currentValue: 0,
-                        args: [
-                            {
-                                while: {
-                                    condition: "{ this.running }",
-                                    body: {
-                                        pick: [
-                                            {
-                                                block: [
-                                                    {
-                                                        method: {
-                                                            displayName: "Add method",
-                                                            methodName: "add",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        assign: {
-                                                            value: "{ this.currentValue + this.inputArgs[0].value }",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                block: [
-                                                    {
-                                                        method: {
-                                                            displayName: "Subtract method",
-                                                            methodName: "subtract",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        assign: {
-                                                            value: "{ this.currentValue - this.inputArgs[0].value }",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                block: [
-                                                    {
-                                                        method: {
-                                                            displayName: "Multiply method",
-                                                            methodName: "multiply",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        assign: {
-                                                            value: "{ this.currentValue * this.inputArgs[0].value }",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                block: [
-                                                    {
-                                                        method: {
-                                                            displayName: "Divide method",
-                                                            methodName: "divide",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        assign: {
-                                                            value: "{ this.currentValue / this.inputArgs[0].value }",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                method: {
-                                                    displayName: "Equals method",
-                                                    methodName: "equals",
-                                                    instanceIdPath: "[0].id",
-                                                    canCreateInstance: true,
-                                                    result: "{ this.currentValue }"
-                                                }
-                                            },
-                                            {
-                                                block: [
-                                                    {
-                                                        method: {
-                                                            displayName: "Reset method",
-                                                            methodName: "reset",
-                                                            instanceIdPath: "[0].id"
+                    {
+                        workflow: {
+                            name: "calculator",
+                            running: true,
+                            inputArgs: 0,
+                            currentValue: 0,
+                            args: [
+                                {
+                                    while: {
+                                        condition: "{ this.running }",
+                                        body: {
+                                            pick: [
+                                                {
+                                                    block: [
+                                                        {
+                                                            method: {
+                                                                displayName: "Add method",
+                                                                methodName: "add",
+                                                                instanceIdPath: "[0].id",
+                                                                canCreateInstance: true,
+                                                                "@to": "inputArgs"
+                                                            }
                                                         },
-                                                        assign: {
-                                                            value: false,
-                                                            to: "running"
+                                                        {
+                                                            assign: {
+                                                                value: "{ this.currentValue + this.inputArgs[0].value }",
+                                                                to: "currentValue"
+                                                            }
                                                         }
+                                                    ]
+                                                },
+                                                {
+                                                    block: [
+                                                        {
+                                                            method: {
+                                                                displayName: "Subtract method",
+                                                                methodName: "subtract",
+                                                                instanceIdPath: "[0].id",
+                                                                canCreateInstance: true,
+                                                                "@to": "inputArgs"
+                                                            }
+                                                        },
+                                                        {
+                                                            assign: {
+                                                                value: "{ this.currentValue - this.inputArgs[0].value }",
+                                                                to: "currentValue"
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    block: [
+                                                        {
+                                                            method: {
+                                                                displayName: "Multiply method",
+                                                                methodName: "multiply",
+                                                                instanceIdPath: "[0].id",
+                                                                canCreateInstance: true,
+                                                                "@to": "inputArgs"
+                                                            }
+                                                        },
+                                                        {
+                                                            assign: {
+                                                                value: "{ this.currentValue * this.inputArgs[0].value }",
+                                                                to: "currentValue"
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    block: [
+                                                        {
+                                                            method: {
+                                                                displayName: "Divide method",
+                                                                methodName: "divide",
+                                                                instanceIdPath: "[0].id",
+                                                                canCreateInstance: true,
+                                                                "@to": "inputArgs"
+                                                            }
+                                                        },
+                                                        {
+                                                            assign: {
+                                                                value: "{ this.currentValue / this.inputArgs[0].value }",
+                                                                to: "currentValue"
+                                                            }
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    method: {
+                                                        displayName: "Equals method",
+                                                        methodName: "equals",
+                                                        instanceIdPath: "[0].id",
+                                                        canCreateInstance: true,
+                                                        result: "{ this.currentValue }"
                                                     }
-                                                ]
-                                            }
-                                        ]
+                                                },
+                                                {
+                                                    block: [
+                                                        {
+                                                            method: {
+                                                                displayName: "Reset method",
+                                                                methodName: "reset",
+                                                                instanceIdPath: "[0].id"
+                                                            }
+                                                        },
+                                                        {
+                                                            assign: {
+                                                                value: false,
+                                                                to: "running"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
                                     }
                                 }
-                            }
-                        ]
-                    }
-                });
+                            ]
+                        }
+                    });
+
+                var host = new WorkflowHost(
+                    {
+                        alwaysLoadState: true,
+                        persistence: persistence
+                    });
+
+                host.registerWorkflow(workflow);
+                host.addTracker(new ConsoleTracker());
+
+                var id = 1;
+                var result = await(host.invokeMethod("calculator", "equals", [ id ]));
             }
             catch (e)
             {

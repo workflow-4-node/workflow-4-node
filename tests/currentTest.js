@@ -8,6 +8,11 @@ var ConsoleTracker = require("../").activities.ConsoleTracker;
 var WorkflowHost = require("../").hosting.WorkflowHost;
 var InstanceIdParser = require("../").hosting.InstanceIdParser;
 var MemoryPersistence = require("../").hosting.MemoryPersistence;
+var hostingTestCommon = require("./hosting/hostingTestCommon");
 
 module.exports = {
+    test: function(test)
+    {
+        hostingTestCommon.doCalculatorTest(test, null);
+    }
 }
