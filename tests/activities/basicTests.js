@@ -494,7 +494,7 @@ module.exports = {
                 args: [
                     {
                         while: {
-                            predicate: "{this.j < this.i}",
+                            condition: "{this.j < this.i}",
                             body: "{this.j++}",
                             "@to": "z"
                         }
