@@ -107,80 +107,92 @@ module.exports = {
                                         body: {
                                             pick: [
                                                 {
-                                                    block: [
-                                                        {
-                                                            method: {
-                                                                displayName: "Add method",
-                                                                methodName: "add",
-                                                                instanceIdPath: "[0].id",
-                                                                canCreateInstance: true,
-                                                                "@to": "inputArgs"
+                                                    block: {
+                                                        displayName: "Add block",
+                                                        args: [
+                                                            {
+                                                                method: {
+                                                                    displayName: "Add method",
+                                                                    methodName: "add",
+                                                                    instanceIdPath: "[0].id",
+                                                                    canCreateInstance: true,
+                                                                    "@to": "inputArgs"
+                                                                }
+                                                            },
+                                                            {
+                                                                assign: {
+                                                                    value: "{ this.currentValue + this.inputArgs[0].value }",
+                                                                    to: "currentValue"
+                                                                }
                                                             }
-                                                        },
-                                                        {
-                                                            assign: {
-                                                                value: "{ this.currentValue + this.inputArgs[0].value }",
-                                                                to: "currentValue"
-                                                            }
-                                                        }
-                                                    ]
+                                                        ]
+                                                    }
                                                 },
                                                 {
-                                                    block: [
-                                                        {
-                                                            method: {
-                                                                displayName: "Subtract method",
-                                                                methodName: "subtract",
-                                                                instanceIdPath: "[0].id",
-                                                                canCreateInstance: true,
-                                                                "@to": "inputArgs"
+                                                    block: {
+                                                        displayName: "Subtract block",
+                                                        args: [
+                                                            {
+                                                                method: {
+                                                                    displayName: "Subtract method",
+                                                                    methodName: "subtract",
+                                                                    instanceIdPath: "[0].id",
+                                                                    canCreateInstance: true,
+                                                                    "@to": "inputArgs"
+                                                                }
+                                                            },
+                                                            {
+                                                                assign: {
+                                                                    value: "{ this.currentValue - this.inputArgs[0].value }",
+                                                                    to: "currentValue"
+                                                                }
                                                             }
-                                                        },
-                                                        {
-                                                            assign: {
-                                                                value: "{ this.currentValue - this.inputArgs[0].value }",
-                                                                to: "currentValue"
-                                                            }
-                                                        }
-                                                    ]
+                                                        ]
+                                                    }
                                                 },
                                                 {
-                                                    block: [
-                                                        {
-                                                            method: {
-                                                                displayName: "Multiply method",
-                                                                methodName: "multiply",
-                                                                instanceIdPath: "[0].id",
-                                                                canCreateInstance: true,
-                                                                "@to": "inputArgs"
+                                                    block: {
+                                                        displayName: "Multiply block",
+                                                        args: [
+                                                            {
+                                                                method: {
+                                                                    displayName: "Multiply method",
+                                                                    methodName: "multiply",
+                                                                    instanceIdPath: "[0].id",
+                                                                    canCreateInstance: true,
+                                                                    "@to": "inputArgs"
+                                                                }
+                                                            },
+                                                            {
+                                                                assign: {
+                                                                    value: "{ this.currentValue * this.inputArgs[0].value }",
+                                                                    to: "currentValue"
+                                                                }
                                                             }
-                                                        },
-                                                        {
-                                                            assign: {
-                                                                value: "{ this.currentValue * this.inputArgs[0].value }",
-                                                                to: "currentValue"
-                                                            }
-                                                        }
-                                                    ]
+                                                        ]
+                                                    }
                                                 },
                                                 {
-                                                    block: [
-                                                        {
-                                                            method: {
-                                                                displayName: "Divide method",
-                                                                methodName: "divide",
-                                                                instanceIdPath: "[0].id",
-                                                                canCreateInstance: true,
-                                                                "@to": "inputArgs"
+                                                    block: {
+                                                        displayName: "Divide block",
+                                                        args: [
+                                                            {
+                                                                method: {
+                                                                    displayName: "Divide method",
+                                                                    methodName: "divide",
+                                                                    instanceIdPath: "[0].id",
+                                                                    canCreateInstance: true,
+                                                                    "@to": "inputArgs"
+                                                                }
+                                                            },
+                                                            {
+                                                                assign: {
+                                                                    value: "{ this.currentValue / this.inputArgs[0].value }",
+                                                                    to: "currentValue"
+                                                                }
                                                             }
-                                                        },
-                                                        {
-                                                            assign: {
-                                                                value: "{ this.currentValue / this.inputArgs[0].value }",
-                                                                to: "currentValue"
-                                                            }
-                                                        }
-                                                    ]
+                                                        ]
+                                                    }
                                                 },
                                                 {
                                                     method: {
@@ -192,21 +204,24 @@ module.exports = {
                                                     }
                                                 },
                                                 {
-                                                    block: [
-                                                        {
-                                                            method: {
-                                                                displayName: "Reset method",
-                                                                methodName: "reset",
-                                                                instanceIdPath: "[0].id"
+                                                    block: {
+                                                        displayName: "Reset block",
+                                                        args: [
+                                                            {
+                                                                method: {
+                                                                    displayName: "Reset method",
+                                                                    methodName: "reset",
+                                                                    instanceIdPath: "[0].id"
+                                                                }
+                                                            },
+                                                            {
+                                                                assign: {
+                                                                    value: false,
+                                                                    to: "running"
+                                                                }
                                                             }
-                                                        },
-                                                        {
-                                                            assign: {
-                                                                value: false,
-                                                                to: "running"
-                                                            }
-                                                        }
-                                                    ]
+                                                        ]
+                                                    }
                                                 }
                                             ]
                                         }
