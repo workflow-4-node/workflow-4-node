@@ -272,6 +272,11 @@ module.exports = {
                 await(host.invokeMethod("calculator", "multiply", [ arg ]));
                 result = await(host.invokeMethod("calculator", "equals", [ arg ]));
                 test.equals(result, 1000);
+
+                delete arg.value;
+                await(host.invokeMethod("calculator", "reset", [ arg ]));
+                result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 0);
             }
             catch (e)
             {
