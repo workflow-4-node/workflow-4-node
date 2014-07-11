@@ -33,10 +33,15 @@ module.exports = {
     basicHostTestWPersistence: function (test)
     {
         hostingTestCommon.doBasicHostTest(test, new MemoryPersistence());
-    }/*,
+    },
 
     calculatorTestWOPersistence: function (test)
     {
         hostingTestCommon.doCalculatorTest(test, null);
-    }*/
+    },
+
+    calculatorTestWPersistence: function (test)
+    {
+        hostingTestCommon.doCalculatorTest(test, new MemoryPersistence());
+    }
 }
