@@ -98,7 +98,7 @@ module.exports = {
                         workflow: {
                             name: "calculator",
                             running: true,
-                            inputArgs: 0,
+                            inputArgs: null,
                             currentValue: 0,
                             args: [
                                 {
@@ -117,6 +117,14 @@ module.exports = {
                                                                     instanceIdPath: "[0].id",
                                                                     canCreateInstance: true,
                                                                     "@to": "inputArgs"
+                                                                }
+                                                            },
+                                                            {
+                                                                func: {
+                                                                    code: function()
+                                                                    {
+                                                                        debugger;
+                                                                    }
                                                                 }
                                                             },
                                                             {
@@ -238,10 +246,32 @@ module.exports = {
                     });
 
                 host.registerWorkflow(workflow);
-                host.addTracker(new ConsoleTracker());
+                //host.addTracker(new ConsoleTracker());
 
-                var id = 1;
-                var result = await(host.invokeMethod("calculator", "equals", [ id ]));
+                var arg = { id: Math.floor((Math.random() * 1000000000) + 1) };
+
+                var result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 0);
+
+                arg.value = 55;
+                await(host.invokeMethod("calculator", "add", [ arg ]));
+                result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 55);
+
+                arg.value = 5;
+                await(host.invokeMethod("calculator", "divide", [ arg ]));
+                result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 11);
+
+                arg.value = 1;
+                await(host.invokeMethod("calculator", "subtract", [ arg ]));
+                result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 10);
+
+                arg.value = 100;
+                await(host.invokeMethod("calculator", "multiply", [ arg ]));
+                result = await(host.invokeMethod("calculator", "equals", [ arg ]));
+                test.equals(result, 1000);
             }
             catch (e)
             {
