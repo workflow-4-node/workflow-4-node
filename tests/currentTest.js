@@ -13,6 +13,10 @@ var hostingTestCommon = require("./hosting/hostingTestCommon");
 module.exports = {
     test: function(test)
     {
-        hostingTestCommon.doCalculatorTest(test, null);
+        var MongoDDPersistence = require("../").hosting.mongoDB.MongoDDPersistence;
+        var persistence = new MongoDDPersistence({
+            connection: "mongodb://localhost/workflow"
+        });
+        hostingTestCommon.doCalculatorTest(test, persistence);
     }
 }
