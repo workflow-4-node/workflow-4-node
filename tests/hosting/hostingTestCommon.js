@@ -120,14 +120,6 @@ module.exports = {
                                                                 }
                                                             },
                                                             {
-                                                                func: {
-                                                                    code: function()
-                                                                    {
-                                                                        debugger;
-                                                                    }
-                                                                }
-                                                            },
-                                                            {
                                                                 assign: {
                                                                     value: "{ this.currentValue + this.inputArgs[0].value }",
                                                                     to: "currentValue"
@@ -277,6 +269,9 @@ module.exports = {
                 await(host.invokeMethod("calculator", "reset", [ arg ]));
                 result = await(host.invokeMethod("calculator", "equals", [ arg ]));
                 test.equals(result, 0);
+
+                delete arg.value;
+                await(host.invokeMethod("calculator", "reset", [ arg ]));
             }
             catch (e)
             {
