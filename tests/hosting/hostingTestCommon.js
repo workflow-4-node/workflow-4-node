@@ -247,6 +247,14 @@ module.exports = {
 
                 arg.value = 55;
                 await(host.invokeMethod("calculator", "add", [ arg ]));
+
+                var host = new WorkflowHost(
+                    {
+                        alwaysLoadState: true,
+                        persistence: persistence
+                    });
+                host.registerWorkflow(workflow);
+
                 result = await(host.invokeMethod("calculator", "equals", [ arg ]));
                 test.equals(result, 55);
 
