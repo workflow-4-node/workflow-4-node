@@ -5,7 +5,7 @@ module.exports = {
     basicHostTestWMongoDbPersistence: function (test)
     {
         var persistence = new MongoDDPersistence({
-            connection: "mongodb://localhost/workflow"
+            connection: "mongodb://swiiis01/workflow"
         });
 
         hostingTestCommon.doBasicHostTest(test, persistence);
@@ -14,7 +14,7 @@ module.exports = {
     calculatorTestWMongoDbPersistence: function(test)
     {
         var persistence = new MongoDDPersistence({
-            connection: "mongodb://localhost/workflow"
+            connection: "mongodb://swiiis01/workflow"
         });
 
         hostingTestCommon.doCalculatorTest(test, persistence);
