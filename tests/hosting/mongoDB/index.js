@@ -1,19 +1,22 @@
-var tests = function()
-{
-    var mongoose = require('mongoose');
-    return {
-        mongoDbPresistence: require("./mongoDbPersistenceTests"),
-        tearDown: function(done)
-        {
-            mongoose.disconnect(function ()
-            {
-                done();
-            });
-        }
-    };
-}
+var MongoDDPersistence = require("../../../").hosting.mongoDB.MongoDDPersistence;
+var hostingTestCommon = require("../hostingTestCommon");
 
-if (process.env.WF_TEST_MONGODB)
+var connStr = process.env.TEST_MONGODB_CONN;
+
+describe("WorkflowHost", function()
 {
-    module.exports = tests();
-}
+    describe("With MongoDBPersistence", function()
+    {
+        it("should run basic hosting example", function(done)
+        {
+            var persistence = connStr ? new MongoDDPersistence({ connection: connStr }) : null;
+            if (persistence) hostingTestCommon.doBasicHostTest(persistence).nodeify(done); else done();
+        });
+
+        it("should run correlated calculator example", function(done)
+        {
+            var persistence = connStr ? new MongoDDPersistence({ connection: connStr }) : null;
+            if (persistence) hostingTestCommon.doCalculatorTest(persistence).nodeify(done); else done();
+        });
+    });
+});

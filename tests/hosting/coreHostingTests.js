@@ -29,6 +29,11 @@ describe("WorkflowHost", function()
         {
             hostingTestCommon.doBasicHostTest(null).nodeify(done);
         });
+
+        it("should run correlated calculator example", function(done)
+        {
+            hostingTestCommon.doCalculatorTest(null).nodeify(done);
+        });
     });
 
     describe("With MemoryPersistence", function()
@@ -37,28 +42,10 @@ describe("WorkflowHost", function()
         {
             hostingTestCommon.doBasicHostTest(new MemoryPersistence()).nodeify(done);
         });
+
+        it("should run correlated calculator example", function(done)
+        {
+            hostingTestCommon.doCalculatorTest(new MemoryPersistence()).nodeify(done);
+        });
     });
 });
-
-module.exports = {
-
-    basicHostTestWOPersistence: function (test)
-    {
-        hostingTestCommon.doBasicHostTest(test, null);
-    },
-
-    basicHostTestWPersistence: function (test)
-    {
-        hostingTestCommon.doBasicHostTest(test, new MemoryPersistence());
-    },
-
-    calculatorTestWOPersistence: function (test)
-    {
-        hostingTestCommon.doCalculatorTest(test, null);
-    },
-
-    calculatorTestWPersistence: function (test)
-    {
-        hostingTestCommon.doCalculatorTest(test, new MemoryPersistence());
-    }
-}
