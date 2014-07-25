@@ -9,8 +9,11 @@ var WorkflowHost = require("../../").hosting.WorkflowHost;
 var InstanceIdParser = require("../../").hosting.InstanceIdParser;
 var Promise = require("bluebird");
 
-module.exports = {
-    funcSyncTest: function (test)
+var assert = require("assert");
+
+describe("Func", function()
+{
+    it("should run with a synchronous code", function (done)
     {
         var fop = new Func();
         fop.code = function (obj)
@@ -23,19 +26,11 @@ module.exports = {
         engine.invoke({ name: "Gabor" }).then(
             function (result)
             {
-                test.equals(result, "Gabor");
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, "Gabor");
+            }).nodeify(done);
+    });
 
-    funcSyncFromMarkupTest: function (test)
+    it("should run when created from markup", function (done)
     {
         var activityMarkup = new ActivityMarkup();
         var fop = activityMarkup.parse(
@@ -53,19 +48,11 @@ module.exports = {
         engine.invoke({ name: "Gabor" }).then(
             function (result)
             {
-                test.equals(result, "Gabor");
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, "Gabor");
+            }).nodeify(done);
+    });
 
-    funcAsyncTest: function (test)
+    it("should run when code is asynchronous", function (done)
     {
         var fop = new Func();
         fop.code = function (obj)
@@ -78,19 +65,11 @@ module.exports = {
         engine.invoke({ name: "Mezo" }).then(
             function (result)
             {
-                test.equals(result, "Mezo");
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, "Mezo");
+            }).nodeify(done);
+    });
 
-    funcEmbeddedTest: function (test)
+    it("should accept external parameters those are functions also", function (done)
     {
         var expected = { name: "Gabor" };
         var fop = new Func();
@@ -110,19 +89,11 @@ module.exports = {
         engine.invoke(fopin).then(
             function (result)
             {
-                test.equals(result, expected.name);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, expected.name);
+            }).nodeify(done);
+    });
 
-    funcEmbeddedFromMarkupTest: function (test)
+    it("should work as an agument", function (done)
     {
         var activityMarkup = new ActivityMarkup();
         var expected = { name: "Gabor" };
@@ -150,19 +121,14 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(result, expected.name);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, expected.name);
+            }).nodeify(done);
+    });
+});
 
-    blockTest: function (test)
+describe("Block", function()
+{
+    it("should handle variables well", function (done)
     {
         var block = new Block();
         block.var1 = 1;
@@ -198,19 +164,11 @@ module.exports = {
                 x3 += x1 * 2;
                 x3 += x2 * 3;
                 var r = x3 * 4;
-                test.equals(result, r);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, r);
+            }).nodeify(done);
+    });
 
-    blockFromMarkupTest: function (test)
+    it("can be generated from markup", function (done)
     {
         var activityMarkup = new ActivityMarkup();
         var block = activityMarkup.parse(
@@ -266,19 +224,11 @@ module.exports = {
                 x3 += x1 * 2;
                 x3 += x2 * 3;
                 var r = x3 * 4;
-                test.equals(result, r);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, r);
+            }).nodeify(done);
+    });
 
-    blockFromStringMarkupTest: function (test)
+    it("can be generated from markup string", function (done)
     {
         var activityMarkup = new ActivityMarkup();
 
@@ -317,6 +267,7 @@ module.exports = {
         };
 
         var markupString = activityMarkup.stringify(markup);
+        assert.ok(_.isString(markupString));
         var block = activityMarkup.parse(markupString);
 
         var engine = new ActivityExecutionEngine(block);
@@ -330,19 +281,14 @@ module.exports = {
                 x3 += x1 * 2;
                 x3 += x2 * 3;
                 var r = x3 * 4;
-                test.equals(result, r);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, r);
+            }).nodeify(done);
+    });
+});
 
-    parallelTest: function (test)
+describe("Parallel", function()
+{
+    it("should work as expected", function (done)
     {
         var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
@@ -373,21 +319,16 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(result.length, 2);
-                test.equals(result[0], "a");
-                test.equals(result[1], "ab");
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result.length, 2);
+                assert.equal(result[0], "a");
+                assert.equal(result[1], "ab");
+            }).nodeify(done);
+    });
+});
 
-    pickTest: function (test)
+describe("Pick", function()
+{
+    it("should work as expected", function (done)
     {
         var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
@@ -417,19 +358,14 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(result, "a");
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, "a");
+            }).nodeify(done);
+    });
+});
 
-    exprTest: function (test)
+describe("Expression", function()
+{
+    it("should multiply two numbers", function (done)
     {
         var expr = new Expression();
         expr.expr = "this.v * this.v";
@@ -442,19 +378,11 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(result, 4);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, 4);
+            }).nodeify(done);
+    });
 
-    exprMarkupTest: function (test)
+    it("should works from markup", function (done)
     {
         var block = new ActivityMarkup().parse(
             {
@@ -471,38 +399,33 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.equals(result, 4);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    },
+                assert.equal(result, 4);
+            }).nodeify(done);
+    });
+});
 
-    whileTest: function (test)
+describe("While", function()
+{
+    it("should run a basic cycle", function (done)
     {
         var block = new ActivityMarkup().parse(
-        {
-            block: {
-                i: 10,
-                j: 0,
-                z: 0,
-                args: [
-                    {
-                        while: {
-                            condition: "{this.j < this.i}",
-                            body: "{this.j++}",
-                            "@to": "z"
-                        }
-                    },
-                    "{ { j: this.j, z: this.z } }"
-                ]
-            }
-        });
+            {
+                block: {
+                    i: 10,
+                    j: 0,
+                    z: 0,
+                    args: [
+                        {
+                            while: {
+                                condition: "{this.j < this.i}",
+                                body: "{this.j++}",
+                                "@to": "z"
+                            }
+                        },
+                        "{ { j: this.j, z: this.z } }"
+                    ]
+                }
+            });
 
         var engine = new ActivityExecutionEngine(block);
         //engine.addTracker(new ConsoleTracker());
@@ -510,17 +433,9 @@ module.exports = {
         engine.invoke().then(
             function (result)
             {
-                test.ok(_.isObject(result));
-                test.equals(result.j, 10);
-                test.equals(result.z, 9);
-            },
-            function (e)
-            {
-                test.ifError(e);
-            }).finally(
-            function ()
-            {
-                test.done();
-            });
-    }
-}
+                assert.ok(_.isObject(result));
+                assert.equal(result.j, 10);
+                assert.equal(result.z, 9);
+            }).nodeify(done);
+    });
+});

@@ -1,4 +1,2 @@
-module.exports = {
-    activities: require("./activities"),
-    hosting: require("./hosting")
-}
+require("./activities");
+require("./hosting");

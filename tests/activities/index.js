@@ -1,4 +1,2 @@
-module.exports = {
-    basicTests: require("./basicTests"),
-    bookmarkingTests: require("./bookmarkingTests")
-}
+require("./basicTests");
+require("./bookmarkingTests");

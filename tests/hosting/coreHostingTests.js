@@ -3,27 +3,44 @@ var _ = require("lodash");
 var hostingTestCommon = require("./hostingTestCommon");
 var MemoryPersistence = require("../../").hosting.MemoryPersistence;
 
-module.exports = {
-    instanceIdParserTests: function (test)
+var assert = require("assert");
+
+describe("InstanceIdParser", function()
+{
+    describe("#parse()", function()
     {
-        try
+        it("should understand common paths", function()
         {
             var p = new InstanceIdParser();
-            test.equals(p.parse("this", 1), 1);
-            test.equals(p.parse("[0]", [1]), 1);
-            test.equals(p.parse("[0]", [4,5]), 4);
-            test.equals(p.parse("[1].id", [{ id: 1 }, { id: 2 }]), 2);
-            test.equals(p.parse("id[0].a", { id: [ { a: "foo" } ] }), "foo");
-        }
-        catch (e)
+            assert.equal(p.parse("this", 1), 1);
+            assert.equal(p.parse("[0]", [1]), 1);
+            assert.equal(p.parse("[0]", [4,5]), 4);
+            assert.equal(p.parse("[1].id", [{ id: 1 }, { id: 2 }]), 2);
+            assert.equal(p.parse("id[0].a", { id: [ { a: "foo" } ] }), "foo");
+        });
+    });
+});
+
+describe("WorkflowHost", function()
+{
+    describe("Without persistence", function()
+    {
+        it("should run basic hosting example", function(done)
         {
-            test.ifError(e);
-        }
-        finally
+            hostingTestCommon.doBasicHostTest(null).nodeify(done);
+        });
+    });
+
+    describe("With MemoryPersistence", function()
+    {
+        it("should run basic hosting example", function(done)
         {
-            test.done();
-        }
-    },
+            hostingTestCommon.doBasicHostTest(new MemoryPersistence()).nodeify(done);
+        });
+    });
+});
+
+module.exports = {
 
     basicHostTestWOPersistence: function (test)
     {
