@@ -87,7 +87,7 @@ describe("WorkflowHost", function()
         {
             var hostOptions = {
                 persistence: new MemoryPersistence(),
-                lazyPersistence: true,
+                lazyPersistence: false,
                 serializer: new Serializer(),
                 alwaysLoadState: true
             };
