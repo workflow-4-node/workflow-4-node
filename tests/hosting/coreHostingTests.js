@@ -38,14 +38,24 @@ describe("WorkflowHost", function()
 
     describe("With MemoryPersistence", function()
     {
-        it("should run basic hosting example", function(done)
+        it("should run basic hosting example in non-lazy mode", function(done)
         {
-            hostingTestCommon.doBasicHostTest(new MemoryPersistence()).nodeify(done);
+            hostingTestCommon.doBasicHostTest(new MemoryPersistence(), false).nodeify(done);
         });
 
-        it("should run correlated calculator example", function(done)
+        it("should run basic hosting example in lazy mode", function(done)
         {
-            hostingTestCommon.doCalculatorTest(new MemoryPersistence()).nodeify(done);
+            hostingTestCommon.doBasicHostTest(new MemoryPersistence(), true).nodeify(done);
+        });
+
+        it("should run correlated calculator example in non-lazy mode", function(done)
+        {
+            hostingTestCommon.doCalculatorTest(new MemoryPersistence(), false).nodeify(done);
+        });
+
+        it("should run correlated calculator example in lazy mode", function(done)
+        {
+            hostingTestCommon.doCalculatorTest(new MemoryPersistence(), true).nodeify(done);
         });
     });
 });

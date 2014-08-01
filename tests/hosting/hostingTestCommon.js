@@ -9,7 +9,7 @@ var assert = require("assert");
 
 module.exports = {
     doBasicHostTest: Promise.coroutine(
-        function* (persistence)
+        function* (persistence, lazy)
         {
             var workflow = new ActivityMarkup().parse(
                 {
@@ -54,7 +54,8 @@ module.exports = {
             var host = new WorkflowHost(
                 {
                     alwaysLoadState: true,
-                    persistence: persistence
+                    persistence: persistence,
+                    lazyPersistence: lazy
                 });
 
             host.registerWorkflow(workflow);
@@ -78,7 +79,7 @@ module.exports = {
         }),
 
     doCalculatorTest: Promise.coroutine(
-        function* (persistence)
+        function* (persistence, lazy)
         {
             var workflow = new ActivityMarkup().parse(
                 {
@@ -221,7 +222,8 @@ module.exports = {
             var host = new WorkflowHost(
                 {
                     alwaysLoadState: true,
-                    persistence: persistence
+                    persistence: persistence,
+                    lazyPersistence: lazy
                 });
 
             host.registerWorkflow(workflow);
@@ -240,7 +242,8 @@ module.exports = {
                 var host = new WorkflowHost(
                     {
                         alwaysLoadState: true,
-                        persistence: persistence
+                        persistence: persistence,
+                        lazyPersistence: lazy
                     });
                 host.registerWorkflow(workflow);
             }
