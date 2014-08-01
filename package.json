@@ -1,6 +1,6 @@
 {
   "name": "workflow-4-node",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "author": "Gabor Mezo",
   "description": "Workflow 4 Node is a .NET Workflow Foundation like framework for Node.js. The goal is to reach feature equivalence and beyond.",
   "homepage": "https://github.com/unbornchikken/workflow-4-node",
