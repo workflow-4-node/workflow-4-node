@@ -9,8 +9,14 @@ var assert = require("assert");
 
 module.exports = {
     doBasicHostTest: Promise.coroutine(
-        function* (persistence, lazy)
+        function* (hostOptions)
         {
+            hostOptions = _.extend(
+                {
+                    enablePromotions: true
+                },
+                hostOptions);
+
             var workflow = new ActivityMarkup().parse(
                 {
                     workflow: {
@@ -51,12 +57,7 @@ module.exports = {
                     }
                 });
 
-            var host = new WorkflowHost(
-                {
-                    alwaysLoadState: true,
-                    persistence: persistence,
-                    lazyPersistence: lazy
-                });
+            var host = new WorkflowHost(hostOptions);
 
             host.registerWorkflow(workflow);
             var result = yield (host.invokeMethod("wf", "foo", [5]));
@@ -64,9 +65,9 @@ module.exports = {
             assert.equal(result, 25);
 
             // Verify promotedProperties:
-            if (persistence)
+            if (hostOptions && hostOptions.persistence)
             {
-                var promotedProperties = yield (Promise.resolve(persistence.loadPromotedProperties("wf", 5)));
+                var promotedProperties = yield (Promise.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
                 assert.ok(promotedProperties);
                 assert.equal(promotedProperties.v, 25);
                 assert.equal(promotedProperties.x, 666);
@@ -79,7 +80,7 @@ module.exports = {
         }),
 
     doCalculatorTest: Promise.coroutine(
-        function* (persistence, lazy)
+        function* (hostOptions)
         {
             var workflow = new ActivityMarkup().parse(
                 {
@@ -219,12 +220,7 @@ module.exports = {
                     }
                 });
 
-            var host = new WorkflowHost(
-                {
-                    alwaysLoadState: true,
-                    persistence: persistence,
-                    lazyPersistence: lazy
-                });
+            var host = new WorkflowHost(hostOptions);
 
             host.registerWorkflow(workflow);
             //host.addTracker(new ConsoleTracker());
@@ -237,14 +233,9 @@ module.exports = {
             arg.value = 55;
             yield (host.invokeMethod("calculator", "add", [ arg ]));
 
-            if (persistence)
+            if (hostOptions && hostOptions.persistence)
             {
-                var host = new WorkflowHost(
-                    {
-                        alwaysLoadState: true,
-                        persistence: persistence,
-                        lazyPersistence: lazy
-                    });
+                var host = new WorkflowHost(hostOptions);
                 host.registerWorkflow(workflow);
             }
 
