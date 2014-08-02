@@ -1,4 +1,4 @@
-var ActivityMarkup = require("../../").activities.ActivityMarkup;
+var activityMarkup = require("../../").activities.activityMarkup;
 var WorkflowHost = require("../../").hosting.WorkflowHost;
 var ConsoleTracker = require("../../").activities.ConsoleTracker;
 var _ = require("lodash");
@@ -17,7 +17,7 @@ module.exports = {
                 },
                 hostOptions);
 
-            var workflow = new ActivityMarkup().parse(
+            var workflow = activityMarkup.parse(
                 {
                     workflow: {
                         name: "wf",
@@ -82,7 +82,7 @@ module.exports = {
     doCalculatorTest: Promise.coroutine(
         function* (hostOptions)
         {
-            var workflow = new ActivityMarkup().parse(
+            var workflow = activityMarkup.parse(
                 {
                     workflow: {
                         name: "calculator",

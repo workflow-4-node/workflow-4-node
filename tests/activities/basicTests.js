@@ -1,7 +1,7 @@
 var Expression = require("../../").activities.Expression;
 var Func = require("../../").activities.Func;
 var Block = require("../../").activities.Block;
-var ActivityMarkup = require("../../").activities.ActivityMarkup;
+var activityMarkup = require("../../").activities.activityMarkup;
 var ActivityExecutionEngine = require("../../").activities.ActivityExecutionEngine;
 var _ = require("lodash");
 var ConsoleTracker = require("../../").activities.ConsoleTracker;
@@ -32,7 +32,6 @@ describe("Func", function()
 
     it("should run when created from markup", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
         var fop = activityMarkup.parse(
             {
                 func: {
@@ -95,7 +94,6 @@ describe("Func", function()
 
     it("should work as an agument", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
         var expected = { name: "Gabor" };
 
         var fop = activityMarkup.parse(
@@ -170,7 +168,6 @@ describe("Block", function()
 
     it("can be generated from markup", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
         var block = activityMarkup.parse(
             {
                 block: {
@@ -230,8 +227,6 @@ describe("Block", function()
 
     it("can be generated from markup string", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
-
         var markup = {
             block: {
                 var1: 1,
@@ -290,7 +285,6 @@ describe("Parallel", function()
 {
     it("should work as expected", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
             {
                 parallel: {
@@ -330,7 +324,6 @@ describe("Pick", function()
 {
     it("should work as expected", function (done)
     {
-        var activityMarkup = new ActivityMarkup();
         var activity = activityMarkup.parse(
             {
                 pick: {
@@ -384,7 +377,7 @@ describe("Expression", function()
 
     it("should works from markup", function (done)
     {
-        var block = new ActivityMarkup().parse(
+        var block = activityMarkup.parse(
             {
                 block: {
                     v: 2,
@@ -408,7 +401,7 @@ describe("While", function()
 {
     it("should run a basic cycle", function (done)
     {
-        var block = new ActivityMarkup().parse(
+        var block = activityMarkup.parse(
             {
                 block: {
                     i: 10,

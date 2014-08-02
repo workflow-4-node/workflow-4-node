@@ -1,7 +1,7 @@
 var Expression = require("../../").activities.Expression;
 var Func = require("../../").activities.Func;
 var Block = require("../../").activities.Block;
-var ActivityMarkup = require("../../").activities.ActivityMarkup;
+var activityMarkup = require("../../").activities.activityMarkup;
 var ActivityExecutionEngine = require("../../").activities.ActivityExecutionEngine;
 var _ = require("lodash");
 var ConsoleTracker = require("../../").activities.ConsoleTracker;
@@ -16,7 +16,6 @@ describe("ActivityExecutionEngine", function()
     {
         it("should handle parallel activities", function (done)
         {
-            var activityMarkup = new ActivityMarkup();
             var activity = activityMarkup.parse(
                 {
                     parallel: {
@@ -114,7 +113,6 @@ describe("ActivityExecutionEngine", function()
 
         it("should handle of picking activities", function (done)
         {
-            var activityMarkup = new ActivityMarkup();
             var activity = activityMarkup.parse(
                 {
                     block: {
