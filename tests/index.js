@@ -11,6 +11,7 @@ var ConsoleTracker = require("../").activities.ConsoleTracker;
 var WorkflowHost = require("../").hosting.WorkflowHost;
 var InstanceIdParser = require("../").hosting.InstanceIdParser;
 var Promise = require("bluebird");
+var assert = require("assert");
 
 describe("Parallel", function()
 {
@@ -48,10 +49,10 @@ describe("Parallel", function()
                                 {
                                     return new Promise(function(resolve, reject)
                                     {
-                                        setImmediate(function()
+                                        setTimeout(function()
                                         {
-                                            resolve(0);
-                                        })
+                                            resolve("bubu");
+                                        }, 200)
                                     });
                                 }
                             }
@@ -70,7 +71,7 @@ describe("Parallel", function()
                 assert.equal(result[0], "a");
                 assert.equal(result[1], "ab");
                 assert.equal(result[2], 42);
-                assert.equal(result[3], 0);
+                assert.equal(result[3], "bubu");
             }).nodeify(done);
     });
 });
