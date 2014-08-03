@@ -1,15 +1,15 @@
 //require("./activities");
 //require("./hosting");
 
-var Expression = require("../../").activities.Expression;
-var Func = require("../../").activities.Func;
-var Block = require("../../").activities.Block;
-var activityMarkup = require("../../").activities.activityMarkup;
-var ActivityExecutionEngine = require("../../").activities.ActivityExecutionEngine;
+var Expression = require("../").activities.Expression;
+var Func = require("../").activities.Func;
+var Block = require("../").activities.Block;
+var activityMarkup = require("../").activities.activityMarkup;
+var ActivityExecutionEngine = require("../").activities.ActivityExecutionEngine;
 var _ = require("lodash");
-var ConsoleTracker = require("../../").activities.ConsoleTracker;
-var WorkflowHost = require("../../").hosting.WorkflowHost;
-var InstanceIdParser = require("../../").hosting.InstanceIdParser;
+var ConsoleTracker = require("../").activities.ConsoleTracker;
+var WorkflowHost = require("../").hosting.WorkflowHost;
+var InstanceIdParser = require("../").hosting.InstanceIdParser;
 var Promise = require("bluebird");
 
 describe("Parallel", function()
