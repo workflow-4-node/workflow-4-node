@@ -302,20 +302,44 @@ describe("Parallel", function()
                             func: {
                                 code: 'function() { return this.var1 += "b"; }'
                             }
+                        },
+                        {
+                            func: {
+                                code: function ()
+                                {
+                                    return Promise.delay(100).then(function() { return 42; });
+                                }
+                            }
+                        },
+                        {
+                            func: {
+                                code: function ()
+                                {
+                                    return new Promise(function(resolve, reject)
+                                    {
+                                        setImmediate(function()
+                                        {
+                                            resolve(0);
+                                        })
+                                    });
+                                }
+                            }
                         }
                     ]
                 }
             });
 
         var engine = new ActivityExecutionEngine(activity);
-        //engine.addTracker(new ConsoleTracker());
+        engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
             function (result)
             {
-                assert.equal(result.length, 2);
+                assert.equal(result.length, 4);
                 assert.equal(result[0], "a");
                 assert.equal(result[1], "ab");
+                assert.equal(result[2], 42);
+                assert.equal(result[3], 0);
             }).nodeify(done);
     });
 });
