@@ -330,7 +330,7 @@ describe("Parallel", function()
             });
 
         var engine = new ActivityExecutionEngine(activity);
-        engine.addTracker(new ConsoleTracker());
+        //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
             function (result)
