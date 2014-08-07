@@ -34,6 +34,6 @@
     "guid": "^0.0.12",
     "harmony-reflect": "^1.0.1",
     "lodash": "^2.4.1",
-    "mocha": "^1.21.3",
+    "mongodb": "^1.4.7"
   }
 }
