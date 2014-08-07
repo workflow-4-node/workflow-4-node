@@ -58,6 +58,7 @@ module.exports = {
                 });
 
             var host = new WorkflowHost(hostOptions);
+            //host.addTracker(new ConsoleTracker());
 
             host.registerWorkflow(workflow);
             var result = yield (host.invokeMethod("wf", "foo", [5]));
