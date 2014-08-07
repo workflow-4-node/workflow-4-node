@@ -283,7 +283,43 @@ describe("Block", function()
 
 describe("Parallel", function()
 {
-    it("should work as expected", function (done)
+    it("should work as expected with sync activities", function (done)
+    {
+        var activity = activityMarkup.parse(
+            {
+                parallel: {
+                    var1: "",
+                    args: [
+                        {
+                            func: {
+                                code: function ()
+                                {
+                                    return this.var1 += "a";
+                                }
+                            }
+                        },
+                        {
+                            func: {
+                                code: 'function() { return this.var1 += "b"; }'
+                            }
+                        }
+                    ]
+                }
+            });
+
+        var engine = new ActivityExecutionEngine(activity);
+        //engine.addTracker(new ConsoleTracker());
+
+        engine.invoke().then(
+            function (result)
+            {
+                assert.equal(result.length, 2);
+                assert.equal(result[0], "a");
+                assert.equal(result[1], "ab");
+            }).nodeify(done);
+    });
+
+    it("should work as expected with async activities", function (done)
     {
         var activity = activityMarkup.parse(
             {
@@ -346,7 +382,7 @@ describe("Parallel", function()
 
 describe("Pick", function()
 {
-    it("should work as expected", function (done)
+    it("should work as expected with sync activities", function (done)
     {
         var activity = activityMarkup.parse(
             {
@@ -376,6 +412,45 @@ describe("Pick", function()
             function (result)
             {
                 assert.equal(result, "a");
+            }).nodeify(done);
+    });
+
+    it("should work as expected with async activities", function (done)
+    {
+        var activity = activityMarkup.parse(
+            {
+                pick: [
+                    {
+                        func: {
+                            code: function ()
+                            {
+                                return Promise.delay(100).then(function() { return 42; });
+                            }
+                        }
+                    },
+                    {
+                        func: {
+                            code: function ()
+                            {
+                                return new Promise(function(resolve, reject)
+                                {
+                                    setImmediate(function()
+                                    {
+                                        resolve(0);
+                                    })
+                                });
+                            }
+                        }
+                    }
+                ]
+            });
+
+        var engine = new ActivityExecutionEngine(activity);
+
+        engine.invoke().then(
+            function (result)
+            {
+                assert.equal(result, 0);
             }).nodeify(done);
     });
 });
