@@ -14,35 +14,52 @@ var Promise = require("bluebird");
 
 var assert = require("assert");
 
-it("should work as expected with async activities", function (done)
+describe("Pick", function()
 {
-    var activity = activityMarkup.parse(
-        {
-            parallel: {
-                var1: "",
-                args: [
+//    it("should work as expected with sync activities", function (done)
+//    {
+//        var activity = activityMarkup.parse(
+//            {
+//                pick: {
+//                    var1: "",
+//                    args: [
+//                        {
+//                            func: {
+//                                code: function ()
+//                                {
+//                                    return this.var1 += "a";
+//                                }
+//                            }
+//                        },
+//                        {
+//                            func: {
+//                                code: 'function() { return this.var1 += "b"; }'
+//                            }
+//                        }
+//                    ]
+//                }
+//            });
+//
+//        var engine = new ActivityExecutionEngine(activity);
+//
+//        engine.invoke().then(
+//            function (result)
+//            {
+//                assert.equal(result, "a");
+//                return Promise.delay(100);
+//            }).nodeify(done);
+//    });
+
+    it("should work as expected with async activities", function (done)
+    {
+        var activity = activityMarkup.parse(
+            {
+                pick: [
                     {
                         func: {
                             code: function ()
                             {
-                                return this.var1 += "a";
-                            }
-                        }
-                    },
-                    {
-                        func: {
-                            code: 'function() { return this.var1 += "b"; }'
-                        }
-                    },
-                    {
-                        func: {
-                            code: function ()
-                            {
-                                return Promise.delay(10)
-                                    .then(function()
-                                    {
-                                        return 42;
-                                    });
+                                return Promise.delay(100).then(function() { return 42; });
                             }
                         }
                     },
@@ -61,19 +78,16 @@ it("should work as expected with async activities", function (done)
                         }
                     }
                 ]
-            }
-        });
+            });
 
-    var engine = new ActivityExecutionEngine(activity);
-    //engine.addTracker(new ConsoleTracker());
+        var engine = new ActivityExecutionEngine(activity);
+        engine.addTracker(new ConsoleTracker());
 
-    engine.invoke().then(
-        function (result)
-        {
-            assert.equal(result.length, 4);
-            assert.equal(result[0], "a");
-            assert.equal(result[1], "ab");
-            assert.equal(result[2], 42);
-            assert.equal(result[3], 0);
-        }).nodeify(done);
+        engine.invoke().then(
+            function (result)
+            {
+                assert.equal(result, 0);
+                return Promise.delay(100);
+            }).nodeify(done);
+    });
 });
