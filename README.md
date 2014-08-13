@@ -11,4 +11,14 @@ http://msdn.microsoft.com/en-us/library/dd807391(v=vs.110).aspx
 
 Readiness: 99%
 
+It's basically completed, but a [weird Windows clustering issue of node.js prevent](https://github.com/joyent/node/issues/7691) me to release it right now. I hope the fix will be released soon.
+
+## Milestone 2
+
+DESIGNER!
+
+I have some early drafts and trying to show you some screenshots soon. It will be exciting and really different from the .NET WF's version.  
+
+Readiness: 10%
+
 Stay tuned ...
