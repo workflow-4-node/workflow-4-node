@@ -15,9 +15,21 @@ It's basically completed, but a [weird Windows clustering issue of node.js](http
 
 ## Milestone 2
 
-DESIGNER!
+**DESIGNER!**
 
-I have some early drafts and I'm gonna try to show you some screenshots soon. It will be exciting and really different from the .NET WF's version.  
+I have some early drafts and I can show you some screenshots right now. It will be exciting and really different from the .NET WF's version.  
+
+**An empty block:**
+
+![Block](https://raw.githubusercontent.com/unbornchikken/workflow-4-node-design/master/screenshots/01/wfd1.png)
+
+**Variable editor:**
+
+![Variables](https://raw.githubusercontent.com/unbornchikken/workflow-4-node-design/master/screenshots/01/wfd2.png)
+
+**Arguments:**
+
+![Arguments](https://raw.githubusercontent.com/unbornchikken/workflow-4-node-design/master/screenshots/01/wfd3.png)
 
 Readiness: 10%
 
