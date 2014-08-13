@@ -481,7 +481,7 @@ describe("Expression", function()
                 block: {
                     v: 2,
                     args: [
-                        "{this.v * this.v}"
+                        "# this.v * this.v"
                     ]
                 }
             });
@@ -509,12 +509,12 @@ describe("While", function()
                     args: [
                         {
                             while: {
-                                condition: "{this.j < this.i}",
-                                body: "{this.j++}",
+                                condition: "# this.j < this.i",
+                                body: "# this.j++",
                                 "@to": "z"
                             }
                         },
-                        "{ { j: this.j, z: this.z } }"
+                        "# { j: this.j, z: this.z }"
                     ]
                 }
             });
