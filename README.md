@@ -17,7 +17,7 @@ It's basically completed, but a [weird Windows clustering issue of node.js](http
 
 DESIGNER!
 
-I have some early drafts and trying to show you some screenshots soon. It will be exciting and really different from the .NET WF's version.  
+I have some early drafts and I'm gonna try to show you some screenshots soon. It will be exciting and really different from the .NET WF's version.  
 
 Readiness: 10%
 
