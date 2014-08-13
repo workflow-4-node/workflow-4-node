@@ -159,4 +159,6 @@ $RECYCLE.BIN/
 node_modules/
 .idea/
 .c9/
+.settings/
 .project
+.jshint*
