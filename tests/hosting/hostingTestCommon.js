@@ -35,7 +35,7 @@ module.exports = {
                             {
                                 endMethod: {
                                     methodName: "foo",
-                                    result: "{this.v[0] * this.v[0]}",
+                                    result: "# this.v[0] * this.v[0]",
                                     "@to": "v"
                                 }
                             },
@@ -49,7 +49,7 @@ module.exports = {
                                 method: {
                                     methodName: "bar",
                                     instanceIdPath: "[0]",
-                                    result: "{this.v * 2}"
+                                    result: "# this.v * 2"
                                 }
                             },
                             "some string for wf result but not for the method result"
@@ -93,7 +93,7 @@ module.exports = {
                         args: [
                             {
                                 while: {
-                                    condition: "{ this.running }",
+                                    condition: "# this.running",
                                     body: {
                                         pick: [
                                             {
@@ -111,7 +111,7 @@ module.exports = {
                                                         },
                                                         {
                                                             assign: {
-                                                                value: "{ this.currentValue + this.inputArgs[0].value }",
+                                                                value: "# this.currentValue + this.inputArgs[0].value",
                                                                 to: "currentValue"
                                                             }
                                                         }
@@ -133,7 +133,7 @@ module.exports = {
                                                         },
                                                         {
                                                             assign: {
-                                                                value: "{ this.currentValue - this.inputArgs[0].value }",
+                                                                value: "# this.currentValue - this.inputArgs[0].value",
                                                                 to: "currentValue"
                                                             }
                                                         }
@@ -155,7 +155,7 @@ module.exports = {
                                                         },
                                                         {
                                                             assign: {
-                                                                value: "{ this.currentValue * this.inputArgs[0].value }",
+                                                                value: "# this.currentValue * this.inputArgs[0].value",
                                                                 to: "currentValue"
                                                             }
                                                         }
@@ -177,7 +177,7 @@ module.exports = {
                                                         },
                                                         {
                                                             assign: {
-                                                                value: "{ this.currentValue / this.inputArgs[0].value }",
+                                                                value: "# this.currentValue / this.inputArgs[0].value",
                                                                 to: "currentValue"
                                                             }
                                                         }
@@ -190,7 +190,7 @@ module.exports = {
                                                     methodName: "equals",
                                                     instanceIdPath: "[0].id",
                                                     canCreateInstance: true,
-                                                    result: "{ this.currentValue }"
+                                                    result: "# this.currentValue"
                                                 }
                                             },
                                             {
