@@ -1,6 +1,8 @@
 Workflow 4 Node (LGPL-3.0) - PRERELEASE
 =======================================
 
+**[Read and rollow: Workflow 4 Node Blog](http://workflow4node.wordpress.com/)**
+
 Workflow 4 Node is (gonna be) a [.NET Workflow Foundation](http://msdn.microsoft.com/en-us/library/ee342461.aspx) like framework for Node.js. The goal is to reach feature equivalence and beyond.
 
 ## Milestone 1
@@ -9,9 +11,9 @@ Being able to implement Correlated Calculator in Workflow 4 Node by using MongoD
 
 http://msdn.microsoft.com/en-us/library/dd807391(v=vs.110).aspx
 
-Readiness: 99%
+Readiness: **100%**
 
-It's completed, but a [weird Windows clustering issue of node.js](https://github.com/joyent/node/issues/7691) prevent me to release it right now. I hope the fix will be released soon.
+It's completed, [see it in the blog](http://workflow4node.wordpress.com/2014/08/16/workflow-foundation-for-node-js-milestorne-1-correlated-calculator-w-mongodb-persistence/)!
 
 ## Milestone 2
 
