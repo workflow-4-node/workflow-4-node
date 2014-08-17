@@ -13,7 +13,7 @@ http://msdn.microsoft.com/en-us/library/dd807391(v=vs.110).aspx
 
 Readiness: **100%**
 
-It's completed, [see it in the blog](http://workflow4node.wordpress.com/2014/08/16/workflow-foundation-for-node-js-milestorne-1-correlated-calculator-w-mongodb-persistence/)!
+It's completed, [please have a look at in the blog](http://workflow4node.wordpress.com/2014/08/16/workflow-foundation-for-node-js-milestorne-1-correlated-calculator-w-mongodb-persistence/)!
 
 ## Milestone 2
 
