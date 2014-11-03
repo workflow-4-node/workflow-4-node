@@ -30,11 +30,11 @@
     "backpack-node": "^0.1.13",
     "bluebird": "^2.1.3",
     "date-utils": "^1.2.15",
-    "fast.js": "^0.0.3",
+    "fast.js": "0.0.3",
     "guid": "^0.0.12",
     "lodash": "^2.4.1",
     "mongodb": "^1.4.7",
     "node-proxy": "^0.8.0",
-    "traceur": "^0.0.58"
+    "traceur": "0.0.58"
   }
 }

@@ -1,6 +1,5 @@
 var traceur = require('traceur');
-traceur.require.makeDefault(function(filename)
-{
+traceur.require.makeDefault(function (filename) {
     return /^(?!.*node_modules)+.+\.js$/.test(filename);
 });
 

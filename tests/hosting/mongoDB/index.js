@@ -3,16 +3,12 @@ var hostingTestCommon = require("../hostingTestCommon");
 var Serializer = require("backpack-node").system.Serializer;
 
 var connStr = process.env.TEST_MONGODB_CONN;
-var persistence = connStr ? new MongoDDPersistence({ connection: connStr }) : null;
+var persistence = connStr ? new MongoDDPersistence({connection: connStr}) : null;
 
-if (persistence)
-{
-    describe("WorkflowHost", function ()
-    {
-        describe("With MongoDBPersistence", function ()
-        {
-            it("should run basic hosting example in non-lazy mode", function (done)
-            {
+if (persistence) {
+    describe("WorkflowHost", function () {
+        describe("With MongoDBPersistence", function () {
+            it("should run basic hosting example in non-lazy mode", function (done) {
                 var hostOptions = {
                     persistence: persistence,
                     lazyPersistence: false,
@@ -22,8 +18,7 @@ if (persistence)
                 hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
             });
 
-            it("should run basic hosting example in lazy mode", function (done)
-            {
+            it("should run basic hosting example in lazy mode", function (done) {
                 var hostOptions = {
                     persistence: persistence,
                     lazyPersistence: true,
@@ -33,8 +28,7 @@ if (persistence)
                 hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
             });
 
-            it("should run correlated calculator example in non-lazy mode", function (done)
-            {
+            it("should run correlated calculator example in non-lazy mode", function (done) {
                 var hostOptions = {
                     persistence: persistence,
                     lazyPersistence: false,
@@ -44,8 +38,7 @@ if (persistence)
                 hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
             });
 
-            it("should run correlated calculator example in lazy mode", function (done)
-            {
+            it("should run correlated calculator example in lazy mode", function (done) {
                 var hostOptions = {
                     persistence: persistence,
                     lazyPersistence: true,
@@ -55,8 +48,7 @@ if (persistence)
                 hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
             });
 
-            it("should run correlated calculator example with a serializer", function (done)
-            {
+            it("should run correlated calculator example with a serializer", function (done) {
                 var hostOptions = {
                     persistence: persistence,
                     lazyPersistence: true,

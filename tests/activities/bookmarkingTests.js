@@ -10,12 +10,9 @@ var InstanceIdParser = require("../../").hosting.InstanceIdParser;
 
 var assert = require("assert");
 
-describe("ActivityExecutionEngine", function()
-{
-    describe("Bookmarking", function()
-    {
-        it("should handle parallel activities", function (done)
-        {
+describe("ActivityExecutionEngine", function () {
+    describe("Bookmarking", function () {
+        it("should handle parallel activities", function (done) {
             var activity = activityMarkup.parse(
                 {
                     parallel: {
@@ -35,8 +32,7 @@ describe("ActivityExecutionEngine", function()
                                         {
                                             func: {
                                                 displayName: "Func 1",
-                                                code: function ()
-                                                {
+                                                code: function () {
                                                     return this.var1 += "a";
                                                 }
                                             }
@@ -57,8 +53,7 @@ describe("ActivityExecutionEngine", function()
                                         {
                                             func: {
                                                 displayName: "Func 2",
-                                                code: function ()
-                                                {
+                                                code: function () {
                                                     return this.var1 += "b";
                                                 }
                                             }
@@ -94,25 +89,21 @@ describe("ActivityExecutionEngine", function()
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
-                function (result)
-                {
-                    try
-                    {
+                function (result) {
+                    try {
                         assert.ok(_.isArray(result));
                         assert.equal(result.length, 3);
                         assert.equal(result[0], "a");
                         assert.equal(result[1], "ab");
                         assert.equal(result[2], "bubu");
                     }
-                    catch (e)
-                    {
+                    catch (e) {
                         assert.ifError(e);
                     }
                 }).nodeify(done);
         });
 
-        it("should handle of picking activities", function (done)
-        {
+        it("should handle of picking activities", function (done) {
             var activity = activityMarkup.parse(
                 {
                     block: {
@@ -132,8 +123,7 @@ describe("ActivityExecutionEngine", function()
                                                     {
                                                         func: {
                                                             displayName: "Do Not Do This Func",
-                                                            code: function ()
-                                                            {
+                                                            code: function () {
                                                                 this.var1 = -1;
                                                             }
                                                         }
@@ -150,8 +140,7 @@ describe("ActivityExecutionEngine", function()
                                                     {
                                                         func: {
                                                             displayName: "Do This Func",
-                                                            code: function ()
-                                                            {
+                                                            code: function () {
                                                                 this.var1 = 1;
                                                             }
                                                         }
@@ -170,8 +159,7 @@ describe("ActivityExecutionEngine", function()
                             {
                                 func: {
                                     displayName: "Final Func",
-                                    code: function ()
-                                    {
+                                    code: function () {
                                         return this.var1;
                                     }
                                 }
@@ -184,14 +172,11 @@ describe("ActivityExecutionEngine", function()
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
-                function (result)
-                {
-                    try
-                    {
+                function (result) {
+                    try {
                         assert.equal(result, 1);
                     }
-                    catch (e)
-                    {
+                    catch (e) {
                         assert.ifError(e);
                     }
                 }).nodeify(done);

@@ -9,8 +9,7 @@ var assert = require("assert");
 
 module.exports = {
     doBasicHostTest: Promise.coroutine(
-        function* (hostOptions)
-        {
+        function* (hostOptions) {
             hostOptions = _.extend(
                 {
                     enablePromotions: true
@@ -66,8 +65,7 @@ module.exports = {
             assert.equal(result, 25);
 
             // Verify promotedProperties:
-            if (hostOptions && hostOptions.persistence)
-            {
+            if (hostOptions && hostOptions.persistence) {
                 var promotedProperties = yield (Promise.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
                 assert.ok(promotedProperties);
                 assert.equal(promotedProperties.v, 25);
@@ -81,8 +79,7 @@ module.exports = {
         }),
 
     doCalculatorTest: Promise.coroutine(
-        function* (hostOptions)
-        {
+        function* (hostOptions) {
             var workflow = activityMarkup.parse(
                 {
                     workflow: {
@@ -226,44 +223,43 @@ module.exports = {
             host.registerWorkflow(workflow);
             //host.addTracker(new ConsoleTracker());
 
-            var arg = { id: Math.floor((Math.random() * 1000000000) + 1) };
+            var arg = {id: Math.floor((Math.random() * 1000000000) + 1)};
 
-            var result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            var result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 0);
 
             arg.value = 55;
-            yield (host.invokeMethod("calculator", "add", [ arg ]));
+            yield (host.invokeMethod("calculator", "add", [arg]));
 
-            if (hostOptions && hostOptions.persistence)
-            {
+            if (hostOptions && hostOptions.persistence) {
                 var host = new WorkflowHost(hostOptions);
                 host.registerWorkflow(workflow);
             }
 
-            result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 55);
 
             arg.value = 5;
-            yield (host.invokeMethod("calculator", "divide", [ arg ]));
-            result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            yield (host.invokeMethod("calculator", "divide", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 11);
 
             arg.value = 1;
-            yield (host.invokeMethod("calculator", "subtract", [ arg ]));
-            result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            yield (host.invokeMethod("calculator", "subtract", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 10);
 
             arg.value = 100;
-            yield (host.invokeMethod("calculator", "multiply", [ arg ]));
-            result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            yield (host.invokeMethod("calculator", "multiply", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 1000);
 
             delete arg.value;
-            yield (host.invokeMethod("calculator", "reset", [ arg ]));
-            result = yield (host.invokeMethod("calculator", "equals", [ arg ]));
+            yield (host.invokeMethod("calculator", "reset", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 0);
 
             delete arg.value;
-            yield (host.invokeMethod("calculator", "reset", [ arg ]));
+            yield (host.invokeMethod("calculator", "reset", [arg]));
         })
 };

@@ -11,32 +11,26 @@ var Promise = require("bluebird");
 
 var assert = require("assert");
 
-describe("Func", function()
-{
-    it("should run with a synchronous code", function (done)
-    {
+describe("Func", function () {
+    it("should run with a synchronous code", function (done) {
         var fop = new Func();
-        fop.code = function (obj)
-        {
+        fop.code = function (obj) {
             return obj.name;
         };
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Gabor" }).then(
-            function (result)
-            {
+        engine.invoke({name: "Gabor"}).then(
+            function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
     });
 
-    it("should run when created from markup", function (done)
-    {
+    it("should run when created from markup", function (done) {
         var fop = activityMarkup.parse(
             {
                 func: {
-                    code: function (obj)
-                    {
+                    code: function (obj) {
                         return obj.name;
                     }
                 }
@@ -44,41 +38,34 @@ describe("Func", function()
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Gabor" }).then(
-            function (result)
-            {
+        engine.invoke({name: "Gabor"}).then(
+            function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
     });
 
-    it("should run when code is asynchronous", function (done)
-    {
+    it("should run when code is asynchronous", function (done) {
         var fop = new Func();
-        fop.code = function (obj)
-        {
+        fop.code = function (obj) {
             return Promise.resolve(obj.name);
         };
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Mezo" }).then(
-            function (result)
-            {
+        engine.invoke({name: "Mezo"}).then(
+            function (result) {
                 assert.equal(result, "Mezo");
             }).nodeify(done);
     });
 
-    it("should accept external parameters those are functions also", function (done)
-    {
-        var expected = { name: "Gabor" };
+    it("should accept external parameters those are functions also", function (done) {
+        var expected = {name: "Gabor"};
         var fop = new Func();
-        fop.code = function (obj)
-        {
+        fop.code = function (obj) {
             return obj.name;
         };
         var fopin = new Func();
-        fopin.code = function ()
-        {
+        fopin.code = function () {
             return expected;
         };
 
@@ -86,29 +73,25 @@ describe("Func", function()
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke(fopin).then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, expected.name);
             }).nodeify(done);
     });
 
-    it("should work as an agument", function (done)
-    {
-        var expected = { name: "Gabor" };
+    it("should work as an agument", function (done) {
+        var expected = {name: "Gabor"};
 
         var fop = activityMarkup.parse(
             {
                 func: {
                     args: {
                         func: {
-                            code: function ()
-                            {
+                            code: function () {
                                 return expected;
                             }
                         }
                     },
-                    code: function (obj)
-                    {
+                    code: function (obj) {
                         return obj.name;
                     }
                 }
@@ -117,45 +100,38 @@ describe("Func", function()
         var engine = new ActivityExecutionEngine(fop);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, expected.name);
             }).nodeify(done);
     });
 });
 
-describe("Block", function()
-{
-    it("should handle variables well", function (done)
-    {
+describe("Block", function () {
+    it("should handle variables well", function (done) {
         var block = new Block();
         block.var1 = 1;
         block.var2 = 2;
         block.var3 = 3;
 
         var f1 = new Func();
-        f1.code = function ()
-        {
+        f1.code = function () {
             return this.var3 += this.var1 * 2;
         }
 
         var f2 = new Func();
-        f2.code = function ()
-        {
+        f2.code = function () {
             return this.var3 += this.var2 * 3;
         }
 
         var f3 = new Func();
-        f3.code = function ()
-        {
+        f3.code = function () {
             return this.var3 * 4;
         }
 
         var engine = new ActivityExecutionEngine(block);
 
         engine.invoke(f1, f2, f3).then(
-            function (result)
-            {
+            function (result) {
                 var x1 = 1;
                 var x2 = 2;
                 var x3 = 3;
@@ -166,16 +142,14 @@ describe("Block", function()
             }).nodeify(done);
     });
 
-    it("can be generated from markup", function (done)
-    {
+    it("can be generated from markup", function (done) {
         var block = activityMarkup.parse(
             {
                 block: {
                     var1: 1,
                     var2: {
                         func: {
-                            code: function()
-                            {
+                            code: function () {
                                 return 2;
                             }
                         }
@@ -184,24 +158,21 @@ describe("Block", function()
                     args: [
                         {
                             func: {
-                                code: function bubu()
-                                {
+                                code: function bubu() {
                                     return this.var3 += this.var1 * 2;
                                 }
                             }
                         },
                         {
                             func: {
-                                code: function kittyfuck()
-                                {
+                                code: function kittyfuck() {
                                     return this.var3 += this.var2 * 3;
                                 }
                             }
                         },
                         {
                             func: {
-                                code: function ()
-                                {
+                                code: function () {
                                     return this.var3 * 4;
                                 }
                             }
@@ -213,8 +184,7 @@ describe("Block", function()
         var engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 var x1 = 1;
                 var x2 = 2;
                 var x3 = 3;
@@ -225,8 +195,7 @@ describe("Block", function()
             }).nodeify(done);
     });
 
-    it("can be generated from markup string", function (done)
-    {
+    it("can be generated from markup string", function (done) {
         var markup = {
             block: {
                 var1: 1,
@@ -235,24 +204,21 @@ describe("Block", function()
                 args: [
                     {
                         func: {
-                            code: function ()
-                            {
+                            code: function () {
                                 return this.var3 += this.var1 * 2;
                             }
                         }
                     },
                     {
                         func: {
-                            code: function ()
-                            {
+                            code: function () {
                                 return this.var3 += this.var2 * 3;
                             }
                         }
                     },
                     {
                         func: {
-                            code: function ()
-                            {
+                            code: function () {
                                 return this.var3 * 4;
                             }
                         }
@@ -268,8 +234,7 @@ describe("Block", function()
         var engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 var x1 = 1;
                 var x2 = 2;
                 var x3 = 3;
@@ -281,10 +246,8 @@ describe("Block", function()
     });
 });
 
-describe("Parallel", function()
-{
-    it("should work as expected with sync activities", function (done)
-    {
+describe("Parallel", function () {
+    it("should work as expected with sync activities", function (done) {
         var activity = activityMarkup.parse(
             {
                 parallel: {
@@ -292,8 +255,7 @@ describe("Parallel", function()
                     args: [
                         {
                             func: {
-                                code: function ()
-                                {
+                                code: function () {
                                     return this.var1 += "a";
                                 }
                             }
@@ -311,16 +273,14 @@ describe("Parallel", function()
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result.length, 2);
                 assert.equal(result[0], "a");
                 assert.equal(result[1], "ab");
             }).nodeify(done);
     });
 
-    it("should work as expected with async activities", function (done)
-    {
+    it("should work as expected with async activities", function (done) {
         var activity = activityMarkup.parse(
             {
                 parallel: {
@@ -328,8 +288,7 @@ describe("Parallel", function()
                     args: [
                         {
                             func: {
-                                code: function ()
-                                {
+                                code: function () {
                                     return this.var1 += "a";
                                 }
                             }
@@ -341,20 +300,18 @@ describe("Parallel", function()
                         },
                         {
                             func: {
-                                code: function ()
-                                {
-                                    return Promise.delay(100).then(function() { return 42; });
+                                code: function () {
+                                    return Promise.delay(100).then(function () {
+                                        return 42;
+                                    });
                                 }
                             }
                         },
                         {
                             func: {
-                                code: function ()
-                                {
-                                    return new Promise(function(resolve, reject)
-                                    {
-                                        setImmediate(function()
-                                        {
+                                code: function () {
+                                    return new Promise(function (resolve, reject) {
+                                        setImmediate(function () {
                                             resolve(0);
                                         })
                                     });
@@ -369,8 +326,7 @@ describe("Parallel", function()
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result.length, 4);
                 assert.equal(result[0], "a");
                 assert.equal(result[1], "ab");
@@ -380,10 +336,8 @@ describe("Parallel", function()
     });
 });
 
-describe("Pick", function()
-{
-    it("should work as expected with sync activities", function (done)
-    {
+describe("Pick", function () {
+    it("should work as expected with sync activities", function (done) {
         var activity = activityMarkup.parse(
             {
                 pick: {
@@ -391,8 +345,7 @@ describe("Pick", function()
                     args: [
                         {
                             func: {
-                                code: function ()
-                                {
+                                code: function () {
                                     return this.var1 += "a";
                                 }
                             }
@@ -409,33 +362,29 @@ describe("Pick", function()
         var engine = new ActivityExecutionEngine(activity);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, "a");
             }).nodeify(done);
     });
 
-    it("should work as expected with async activities", function (done)
-    {
+    it("should work as expected with async activities", function (done) {
         var activity = activityMarkup.parse(
             {
                 pick: [
                     {
                         func: {
-                            code: function ()
-                            {
-                                return Promise.delay(100).then(function() { return 42; });
+                            code: function () {
+                                return Promise.delay(100).then(function () {
+                                    return 42;
+                                });
                             }
                         }
                     },
                     {
                         func: {
-                            code: function ()
-                            {
-                                return new Promise(function(resolve, reject)
-                                {
-                                    setImmediate(function()
-                                    {
+                            code: function () {
+                                return new Promise(function (resolve, reject) {
+                                    setImmediate(function () {
                                         resolve(0);
                                     })
                                 });
@@ -448,34 +397,29 @@ describe("Pick", function()
         var engine = new ActivityExecutionEngine(activity);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, 0);
             }).nodeify(done);
     });
 });
 
-describe("Expression", function()
-{
-    it("should multiply two numbers", function (done)
-    {
+describe("Expression", function () {
+    it("should multiply two numbers", function (done) {
         var expr = new Expression();
         expr.expr = "this.v * this.v";
         var block = new Block();
         block.v = 2;
-        block.args = [ expr ];
+        block.args = [expr];
 
         var engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, 4);
             }).nodeify(done);
     });
 
-    it("should works from markup", function (done)
-    {
+    it("should works from markup", function (done) {
         var block = activityMarkup.parse(
             {
                 block: {
@@ -489,17 +433,14 @@ describe("Expression", function()
         var engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.equal(result, 4);
             }).nodeify(done);
     });
 });
 
-describe("While", function()
-{
-    it("should run a basic cycle", function (done)
-    {
+describe("While", function () {
+    it("should run a basic cycle", function (done) {
         var block = activityMarkup.parse(
             {
                 block: {
@@ -523,8 +464,7 @@ describe("While", function()
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
-            function (result)
-            {
+            function (result) {
                 assert.ok(_.isObject(result));
                 assert.equal(result.j, 10);
                 assert.equal(result.z, 9);
