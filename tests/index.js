@@ -1,7 +1,4 @@
-var traceur = require('traceur');
-traceur.require.makeDefault(function (filename) {
-    return /^(?!.*node_modules)+.+\.js$/.test(filename);
-});
+require('backpack-node').system.es6.es6App();
 
 require("./activities");
 require("./hosting");
