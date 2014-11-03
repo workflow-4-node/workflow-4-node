@@ -471,3 +471,85 @@ describe("While", function () {
             }).nodeify(done);
     });
 });
+
+describe("If", function () {
+    it("should call then body", function (done) {
+        var block = activityMarkup.parse({
+            block: {
+                v: 5,
+                args: [
+                    {
+                        if: {
+                            condition: "# this.v == 5",
+                            thenBody: {
+                                func: {
+                                    args: [1],
+                                    code: function (a) {
+                                        return a + this.v;
+                                    }
+                                }
+                            },
+                            elseBody: {
+                                func: {
+                                    args: [2],
+                                    code: function (a) {
+                                        return a + this.v;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+
+        var engine = new ActivityExecutionEngine(block);
+        engine.invoke().then(
+            function (result) {
+                assert.equal(1 + 5, result);
+            }).nodeify(done);
+    });
+
+    it("should call else body", function (done) {
+        var block = activityMarkup.parse({
+            block: {
+                v: 5,
+                r: 0,
+                args: [
+                    {
+                        if: {
+                            condition: {
+                                func: {
+                                    code: function() { return false; }
+                                }
+                            },
+                            thenBody: {
+                                func: {
+                                    args: [1],
+                                    code: function (a) {
+                                        this.r = a + this.v;
+                                    }
+                                }
+                            },
+                            elseBody: {
+                                func: {
+                                    args: [2],
+                                    code: function (a) {
+                                        this.r = a + this.v;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "# this.r"
+                ]
+            }
+        });
+
+        var engine = new ActivityExecutionEngine(block);
+        engine.invoke().then(
+            function (result) {
+                assert.equal(2 + 5, result);
+            }).nodeify(done);
+    });
+});
