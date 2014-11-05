@@ -115,17 +115,17 @@ describe("Block", function () {
 
         var f1 = new Func();
         f1.code = function () {
-            return this.var3 += this.var1 * 2;
+            return this.set("var3", this.get("var3") + this.get("var1") * 2);
         }
 
         var f2 = new Func();
         f2.code = function () {
-            return this.var3 += this.var2 * 3;
+            return this.set("var3", this.get("var3") + this.get("var2") * 3);
         }
 
         var f3 = new Func();
         f3.code = function () {
-            return this.var3 * 4;
+            return this.get("var3") * 4;
         }
 
         var engine = new ActivityExecutionEngine(block);
@@ -159,21 +159,21 @@ describe("Block", function () {
                         {
                             func: {
                                 code: function bubu() {
-                                    return this.var3 += this.var1 * 2;
+                                    return this.set("var3", this.get("var3") + this.get("var1") * 2);
                                 }
                             }
                         },
                         {
                             func: {
                                 code: function kittyfuck() {
-                                    return this.var3 += this.var2 * 3;
+                                    return this.set("var3", this.get("var3") + this.get("var2") * 3);
                                 }
                             }
                         },
                         {
                             func: {
                                 code: function () {
-                                    return this.var3 * 4;
+                                    return this.get("var3") * 4;
                                 }
                             }
                         }
@@ -204,22 +204,22 @@ describe("Block", function () {
                 args: [
                     {
                         func: {
-                            code: function () {
-                                return this.var3 += this.var1 * 2;
+                            code: function bubu() {
+                                return this.set("var3", this.get("var3") + this.get("var1") * 2);
+                            }
+                        }
+                    },
+                    {
+                        func: {
+                            code: function kittyfuck() {
+                                return this.set("var3", this.get("var3") + this.get("var2") * 3);
                             }
                         }
                     },
                     {
                         func: {
                             code: function () {
-                                return this.var3 += this.var2 * 3;
-                            }
-                        }
-                    },
-                    {
-                        func: {
-                            code: function () {
-                                return this.var3 * 4;
+                                return this.get("var3") * 4;
                             }
                         }
                     }
@@ -256,13 +256,13 @@ describe("Parallel", function () {
                         {
                             func: {
                                 code: function () {
-                                    return this.var1 += "a";
+                                    return this.add("var1", "a");
                                 }
                             }
                         },
                         {
                             func: {
-                                code: 'function() { return this.var1 += "b"; }'
+                                code: 'function() { return this.add("var1", "b"); }'
                             }
                         }
                     ]
@@ -289,13 +289,13 @@ describe("Parallel", function () {
                         {
                             func: {
                                 code: function () {
-                                    return this.var1 += "a";
+                                    return this.add("var1", "a");
                                 }
                             }
                         },
                         {
                             func: {
-                                code: 'function() { return this.var1 += "b"; }'
+                                code: 'function() { return this.add("var1", "b"); }'
                             }
                         },
                         {
@@ -346,13 +346,13 @@ describe("Pick", function () {
                         {
                             func: {
                                 code: function () {
-                                    return this.var1 += "a";
+                                    return this.add("var1", "a");
                                 }
                             }
                         },
                         {
                             func: {
-                                code: 'function() { return this.var1 += "b"; }'
+                                code: 'function() { return this.add("var1", "b"); }'
                             }
                         }
                     ]
@@ -406,7 +406,7 @@ describe("Pick", function () {
 describe("Expression", function () {
     it("should multiply two numbers", function (done) {
         var expr = new Expression();
-        expr.expr = "this.v * this.v";
+        expr.expr = "this.get('v') * this.get('v')";
         var block = new Block();
         block.v = 2;
         block.args = [expr];
@@ -425,7 +425,7 @@ describe("Expression", function () {
                 block: {
                     v: 2,
                     args: [
-                        "# this.v * this.v"
+                        "# this.get('v') * this.get('v')"
                     ]
                 }
             });
@@ -450,12 +450,12 @@ describe("While", function () {
                     args: [
                         {
                             while: {
-                                condition: "# this.j < this.i",
-                                body: "# this.j++",
+                                condition: "# this.get('j') < this.get('i')",
+                                body: "# this.postfixInc('j')",
                                 "@to": "z"
                             }
                         },
-                        "# { j: this.j, z: this.z }"
+                        "# { j: this.get('j'), z: this.get('z') }"
                     ]
                 }
             });
@@ -480,12 +480,12 @@ describe("If", function () {
                 args: [
                     {
                         if: {
-                            condition: "# this.v == 5",
+                            condition: "# this.get('v') == 5",
                             thenBody: {
                                 func: {
                                     args: [1],
                                     code: function (a) {
-                                        return a + this.v;
+                                        return a + this.get('v');
                                     }
                                 }
                             },
@@ -493,7 +493,7 @@ describe("If", function () {
                                 func: {
                                     args: [2],
                                     code: function (a) {
-                                        return a + this.v;
+                                        return a + this.get('v');
                                     }
                                 }
                             }
@@ -527,7 +527,7 @@ describe("If", function () {
                                 func: {
                                     args: [1],
                                     code: function (a) {
-                                        this.r = a + this.v;
+                                        this.set("r", a + this.get("v"));
                                     }
                                 }
                             },
@@ -535,13 +535,13 @@ describe("If", function () {
                                 func: {
                                     args: [2],
                                     code: function (a) {
-                                        this.r = a + this.v;
+                                        this.set("r", a + this.get("v"));
                                     }
                                 }
                             }
                         }
                     },
-                    "# this.r"
+                    "# this.get('r')"
                 ]
             }
         });

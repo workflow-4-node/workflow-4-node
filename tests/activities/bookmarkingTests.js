@@ -33,7 +33,7 @@ describe("ActivityExecutionEngine", function () {
                                             func: {
                                                 displayName: "Func 1",
                                                 code: function () {
-                                                    return this.var1 += "a";
+                                                    return this.add("var1", "a");
                                                 }
                                             }
                                         }
@@ -54,7 +54,7 @@ describe("ActivityExecutionEngine", function () {
                                             func: {
                                                 displayName: "Func 2",
                                                 code: function () {
-                                                    return this.var1 += "b";
+                                                    return this.add("var1", "b");
                                                 }
                                             }
                                         }
@@ -124,7 +124,7 @@ describe("ActivityExecutionEngine", function () {
                                                         func: {
                                                             displayName: "Do Not Do This Func",
                                                             code: function () {
-                                                                this.var1 = -1;
+                                                                this.set("var1", -1);
                                                             }
                                                         }
                                                     }
@@ -141,7 +141,7 @@ describe("ActivityExecutionEngine", function () {
                                                         func: {
                                                             displayName: "Do This Func",
                                                             code: function () {
-                                                                this.var1 = 1;
+                                                                this.set("var1", 1);
                                                             }
                                                         }
                                                     }
@@ -160,7 +160,7 @@ describe("ActivityExecutionEngine", function () {
                                 func: {
                                     displayName: "Final Func",
                                     code: function () {
-                                        return this.var1;
+                                        return this.get("var1");
                                     }
                                 }
                             }
