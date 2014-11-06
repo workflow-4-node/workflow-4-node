@@ -30,8 +30,8 @@ describe("activityMarkup", function () {
 
     it("should load custom activity type from array", function (done) {
         var activity = activityMarkup.parse({
+            "@require": [ "tests/activities/customActivities/adder" ],
             block: {
-                "@require": [ "tests/activities/customActivities/adder" ],
                 a: 1,
                 b: 2,
                 c: 3,
