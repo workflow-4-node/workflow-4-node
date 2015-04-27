@@ -1,5 +1,6 @@
 var activityMarkup = require("../../").activities.activityMarkup;
 var ActivityExecutionEngine = require("../../").activities.ActivityExecutionEngine;
+var path = require("path");
 
 var assert = require("assert");
 
@@ -7,7 +8,7 @@ describe("activityMarkup", function () {
     it("should load custom activity type from string", function (done) {
         var activity = activityMarkup.parse({
             block: {
-                "@require": "tests/activities/customActivities/adder",
+                "@require": path.join(__dirname, "/customActivities/adder"),
                 a: 10,
                 b: 20,
                 c: 30,
@@ -30,7 +31,7 @@ describe("activityMarkup", function () {
 
     it("should load custom activity type from array", function (done) {
         var activity = activityMarkup.parse({
-            "@require": [ "tests/activities/customActivities/adder" ],
+            "@require": [ path.join(__dirname, "/customActivities/adder") ],
             block: {
                 a: 1,
                 b: 2,
