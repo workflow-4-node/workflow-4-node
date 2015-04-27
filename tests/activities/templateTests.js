@@ -1,10 +1,9 @@
 var ActivityExecutionEngine = require('../../').activities.ActivityExecutionEngine;
 var _ = require('lodash');
-
 var assert = require('assert');
 
-describe('Template', function() {
-    it('should parse object correctly', function(done) {
+describe('Template', function () {
+    it('should parse object correctly', function (done) {
 
         var engine = new ActivityExecutionEngine({
             template: {
@@ -15,7 +14,7 @@ describe('Template', function() {
                         {
                             c: {
                                 '@func': {
-                                    code: function() {
+                                    code: function () {
                                         return 6;
                                     }
                                 }
@@ -26,9 +25,9 @@ describe('Template', function() {
                 }
             }
         });
-        
-        engine.invoke().then(function(result) {
-            
+
+        engine.invoke().then(function (result) {
+
             assert.ok(_.isPlainObject(result));
             assert.equal(result.a, 'foo');
             assert.ok(_.isArray(result.b));
@@ -40,7 +39,7 @@ describe('Template', function() {
         }).nodeify(done);
     });
 
-    it('should work when specialized', function(done) {
+    it('should work when specialized', function (done) {
 
         var engine = new ActivityExecutionEngine({
             block: [
@@ -51,7 +50,7 @@ describe('Template', function() {
                         {
                             c: {
                                 '@func': {
-                                    code: function() {
+                                    code: function () {
                                         return 6;
                                     }
                                 }
@@ -63,8 +62,7 @@ describe('Template', function() {
             ]
         });
 
-        engine.invoke().then(function(result) {
-
+        engine.invoke().then(function (result) {
             assert.ok(_.isPlainObject(result));
             assert.equal(result.a, 'foo');
             assert.ok(_.isArray(result.b));
