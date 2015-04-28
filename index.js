@@ -1,5 +1,5 @@
 module.exports = {
-    common: require("./lib/common/index"),
-    activities: require("./lib/activities/index"),
-    hosting: require("./lib/hosting/index")
+    common: require("./lib/common"),
+    activities: require("./lib/activities"),
+    hosting: require("./lib/hosting")
 };

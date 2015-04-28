@@ -33,6 +33,7 @@
     "fast.js": "0.0.3",
     "guid": "^0.0.12",
     "lodash": "^3.7.0",
-    "mongodb": "^2.x"
+    "mongodb": "^2.x",
+    "debug": "^2.1.3"
   }
 }
