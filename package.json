@@ -1,6 +1,6 @@
 {
   "name": "workflow-4-node",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "author": "Gabor Mezo",
   "description": "Workflow 4 Node is a .NET Workflow Foundation like framework for Node.js. The goal is to reach feature equivalence and beyond.",
   "homepage": "https://github.com/unbornchikken/workflow-4-node",
@@ -11,8 +11,7 @@
   "main": "./index",
   "scripts": {
     "test": "node ./node_modules/mocha/bin/mocha tests",
-    "compile": "node ./node_modules/gulp/bin/gulp.js",
-    "prepublish": "npm run compile && npm test"
+    "compile": "node ./node_modules/gulp/bin/gulp.js"
   },
   "licenses": "LGPL-3.0",
   "engines": [
