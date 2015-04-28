@@ -1,7 +1,7 @@
 Workflow 4 Node (LGPL-3.0) - PRERELEASE
 =======================================
 
-**[Read and rollow: Workflow 4 Node Blog](http://workflow4node.wordpress.com/)**
+**[Read and follow: Workflow 4 Node Blog](http://workflow4node.wordpress.com/)**
 
 Workflow 4 Node is (gonna be) a [.NET Workflow Foundation](http://msdn.microsoft.com/en-us/library/ee342461.aspx) like framework for Node.js. The goal is to reach feature equivalence and beyond.
 
