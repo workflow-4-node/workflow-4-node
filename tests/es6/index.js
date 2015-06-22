@@ -1,0 +1,2 @@
+require("./activities");
+require("./hosting");

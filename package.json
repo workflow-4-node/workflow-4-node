@@ -27,18 +27,20 @@
   ],
   "devDependencies": {
     "gulp": "^3.8.11",
+    "gulp-sequence": "^0.3.2",
     "gulp-traceur": "^0.17.1",
-    "mocha": "^1.21.0"
+    "mocha": "^1.21.0",
+    "traceur": "*"
   },
   "dependencies": {
     "backpack-node": "^0.1.25",
-    "bluebird": "^2.x",
-    "date-utils": "^1.2.15",
+    "bluebird": "^2.9.30",
+    "date-utils": "^1.2.17",
     "debug": "^2.1.3",
     "fast.js": "0.0.3",
     "guid": "^0.0.12",
-    "lodash": "^3.7.0",
-    "mongodb": "^2.x",
-    "traceur": "0.0.89"
+    "lodash": "^3.9.3",
+    "mongodb": "^2.0.34",
+    "traceur-runtime": "*"
   }
 }
