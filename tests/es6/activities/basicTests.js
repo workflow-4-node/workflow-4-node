@@ -21,7 +21,7 @@ describe("Func", function () {
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({name: "Gabor"}).then(
+        engine.invoke({ name: "Gabor" }).then(
             function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
@@ -39,7 +39,7 @@ describe("Func", function () {
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({name: "Gabor"}).then(
+        engine.invoke({ name: "Gabor" }).then(
             function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
@@ -53,14 +53,14 @@ describe("Func", function () {
 
         var engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({name: "Mezo"}).then(
+        engine.invoke({ name: "Mezo" }).then(
             function (result) {
                 assert.equal(result, "Mezo");
             }).nodeify(done);
     });
 
     it("should accept external parameters those are functions also", function (done) {
-        var expected = {name: "Gabor"};
+        var expected = { name: "Gabor" };
         var fop = new Func();
         fop.code = function (obj) {
             return obj.name;
@@ -80,7 +80,7 @@ describe("Func", function () {
     });
 
     it("should work as an agument", function (done) {
-        var expected = {name: "Gabor"};
+        var expected = { name: "Gabor" };
 
         var fop = activityMarkup.parse(
             {
@@ -815,6 +815,105 @@ describe('Logic Operators', function () {
                     assert.ok(_.isPlainObject(result));
                     assert.equal(result.a, true);
                     assert.equal(result.b, 42);
+                }).nodeify(done);
+        });
+    });
+
+    describe('For', function () {
+        it('should work between range 0 and 10 by step 1', function (done) {
+            var engine = new ActivityExecutionEngine({
+                block: {
+                    seq: "",
+                    args: [
+                        {
+                            for: {
+                                from: 0,
+                                to: {
+                                    func: {
+                                        code: function () {
+                                            return Promise.delay(100).then(function () { return 10; })
+                                        }
+                                    }
+                                },
+                                body: "# this.set('seq', this.get('seq') + this.get('i'))"
+                            }
+                        },
+                        "# this.get('seq')"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isString(result));
+                    assert.equal(result, "0123456789");
+                }).nodeify(done);
+        });
+
+        it('should work between range 10 downto 4 by step -2', function (done) {
+            var engine = new ActivityExecutionEngine({
+                block: {
+                    seq: "",
+                    r: null,
+                    args: [
+                        {
+                            for: {
+                                from: 10,
+                                to: {
+                                    func: {
+                                        code: function () {
+                                            return Promise.delay(100).then(function () { return 4; })
+                                        }
+                                    }
+                                },
+                                step: -2,
+                                varName: "klow",
+                                body: "# this.set('seq', this.get('seq') + this.get('klow'))",
+                                "@to": "r"
+                            }
+                        },
+                        "# { v: this.get('seq'), r: this.get('r') }"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isObject(result));
+                    assert.equal(result.v, "1086");
+                    assert.equal(result.r, "1086");
+                }).nodeify(done);
+        });
+    });
+
+    describe('ForEach', function () {
+        it('should work non parallel', function (done) {
+            var engine = new ActivityExecutionEngine({
+                block: {
+                    seq: {
+                        func: {
+                            code: function () {
+                                return [1, 2, 3, 4, 5, 6];
+                            }
+                        }
+                    },
+                    result: "",
+                    args: [
+                        {
+                            forEach: {
+                                from: "# this.get('seq')",
+                                body: "# this.set('result', this.get('result') + this.get('item'))"
+                            }
+                        },
+                        "# this.get('result')"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isString(result));
+                    assert.equal(result, "123456");
                 }).nodeify(done);
         });
     });
