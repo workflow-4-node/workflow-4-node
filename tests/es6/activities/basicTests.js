@@ -916,5 +916,78 @@ describe('Logic Operators', function () {
                     assert.equal(result, "123456");
                 }).nodeify(done);
         });
+
+        it('should work parallel non scheduled', function (done) {
+            var engine = new ActivityExecutionEngine({
+                block: {
+                    seq: {
+                        func: {
+                            code: function () {
+                                return [1, 2, 3, 4, 5, 6];
+                            }
+                        }
+                    },
+                    result: "",
+                    args: [
+                        {
+                            forEach: {
+                                parallel: true,
+                                varName: "klow",
+                                from: "# this.get('seq')",
+                                body: "# this.set('result', this.get('result') + this.get('klow'))"
+                            }
+                        },
+                        "# this.get('result')"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isString(result));
+                    assert.equal(result, "123456");
+                }).nodeify(done);
+        });
+
+        it('should work parallel scheduled', function (done) {
+            var engine = new ActivityExecutionEngine({
+                block: {
+                    seq: {
+                        func: {
+                            code: function () {
+                                return [1, 2, 3, 4, 5, 6];
+                            }
+                        }
+                    },
+                    result: [],
+                    args: [
+                        {
+                            forEach: {
+                                parallel: true,
+                                varName: "klow",
+                                from: "# this.get('seq')",
+                                body: {
+                                    func: {
+                                        code: function() {
+                                            return Promise.delay(100)
+                                                .then(function() {
+                                                    this.get("result").push(this.get("klow"));
+                                                });
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "# this.get('result')"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isArray(result));
+                    assert.equal(result, "123456");
+                }).nodeify(done);
+        });
     });
 });
