@@ -818,7 +818,9 @@ describe('Logic Operators', function () {
                 }).nodeify(done);
         });
     });
+});
 
+describe("Loops", function () {
     describe('For', function () {
         it('should work between range 0 and 10 by step 1', function (done) {
             var engine = new ActivityExecutionEngine({
@@ -968,10 +970,12 @@ describe('Logic Operators', function () {
                                 from: "# this.get('seq')",
                                 body: {
                                     func: {
-                                        code: function() {
-                                            return Promise.delay(100)
-                                                .then(function() {
-                                                    this.get("result").push(this.get("klow"));
+                                        code: function () {
+                                            "use strict";
+                                            let self = this;
+                                            return Promise.delay(Math.random() * 100)
+                                                .then(function () {
+                                                    self.get("result").push(self.get("klow"));
                                                 });
                                         }
                                     }
@@ -986,7 +990,8 @@ describe('Logic Operators', function () {
             engine.invoke().then(
                 function (result) {
                     assert(_.isArray(result));
-                    assert.equal(result, "123456");
+                    assert.equal(result.length, 6);
+                    assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
                 }).nodeify(done);
         });
     });
