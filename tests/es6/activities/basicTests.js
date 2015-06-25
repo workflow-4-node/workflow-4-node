@@ -903,7 +903,7 @@ describe("Loops", function () {
                     args: [
                         {
                             forEach: {
-                                from: "# this.get('seq')",
+                                items: "# this.get('seq')",
                                 body: "# this.set('result', this.get('result') + this.get('item'))"
                             }
                         },
@@ -935,7 +935,7 @@ describe("Loops", function () {
                             forEach: {
                                 parallel: true,
                                 varName: "klow",
-                                from: "# this.get('seq')",
+                                items: "# this.get('seq')",
                                 body: "# this.set('result', this.get('result') + this.get('klow'))"
                             }
                         },
@@ -954,31 +954,21 @@ describe("Loops", function () {
         it('should work parallel scheduled', function (done) {
             var engine = new ActivityExecutionEngine({
                 block: {
-                    seq: {
-                        func: {
-                            code: function () {
-                                return [1, 2, 3, 4, 5, 6];
-                            }
-                        }
-                    },
+                    seq: "function () { return [1, 2, 3, 4, 5, 6]; }",
                     result: [],
                     args: [
                         {
                             forEach: {
                                 parallel: true,
                                 varName: "klow",
-                                from: "# this.get('seq')",
-                                body: {
-                                    func: {
-                                        code: function () {
-                                            "use strict";
-                                            let self = this;
-                                            return Promise.delay(Math.random() * 100)
-                                                .then(function () {
-                                                    self.get("result").push(self.get("klow"));
-                                                });
-                                        }
-                                    }
+                                items: "# this.get('seq')",
+                                body: function () {
+                                    "use strict";
+                                    let self = this;
+                                    return Promise.delay(Math.random() * 100)
+                                        .then(function () {
+                                            self.get("result").push(self.get("klow"));
+                                        });
                                 }
                             }
                         },
