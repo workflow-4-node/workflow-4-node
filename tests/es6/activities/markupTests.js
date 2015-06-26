@@ -1,27 +1,30 @@
-var wf4node = require("../../../");
-var activityMarkup = wf4node.activities.activityMarkup;
-var ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
-var path = require("path");
+"use strict";
 
-var assert = require("assert");
+/* global describe,it */
+
+let wf4node = require("../../../");
+let activityMarkup = wf4node.activities.activityMarkup;
+let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
+let path = require("path");
+let assert = require("assert");
 
 describe("activityMarkup", function () {
     it("should load custom activity type from string", function (done) {
-        var activity = activityMarkup.parse({
-            block: {
+        let activity = activityMarkup.parse({
+            "@block": {
                 "@require": path.join(__dirname, "/customActivities/adder"),
                 a: 10,
                 b: 20,
                 c: 30,
                 args: [
                     {
-                        adder: ["#this.get('a')", "#this.get('b')", "#this.get('c')"]
+                        "@adder": ["#this.get('a')", "#this.get('b')", "#this.get('c')"]
                     }
                 ]
             }
         });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
 
         engine.invoke()
             .then(
@@ -31,21 +34,21 @@ describe("activityMarkup", function () {
     });
 
     it("should load custom activity type from array", function (done) {
-        var activity = activityMarkup.parse({
+        let activity = activityMarkup.parse({
             "@require": [ path.join(__dirname, "/customActivities/adder") ],
-            block: {
+            "@block": {
                 a: 1,
                 b: 2,
                 c: 3,
                 args: [
                     {
-                        adder: ["#this.get('a')", "#this.get('b')", "#this.get('c')"]
+                        "@adder": ["#this.get('a')", "#this.get('b')", "#this.get('c')"]
                     }
                 ]
             }
         });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
 
         engine.invoke()
             .then(

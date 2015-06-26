@@ -1,16 +1,20 @@
-var wf4node = require("../../../");
-var InstanceIdParser = wf4node.hosting.InstanceIdParser;
-var _ = require("lodash");
-var hostingTestCommon = require("./hostingTestCommon");
-var MemoryPersistence = wf4node.hosting.MemoryPersistence;
-var Serializer = require("backpack-node").system.Serializer;
+"use strict";
 
-var assert = require("assert");
+/* global describe,it */
+
+let wf4node = require("../../../");
+let InstanceIdParser = wf4node.hosting.InstanceIdParser;
+let _ = require("lodash");
+let hostingTestCommon = require("./hostingTestCommon");
+let MemoryPersistence = wf4node.hosting.MemoryPersistence;
+let Serializer = require("backpack-node").system.Serializer;
+
+let assert = require("assert");
 
 describe("InstanceIdParser", function () {
     describe("#parse()", function () {
         it("should understand common paths", function () {
-            var p = new InstanceIdParser();
+            let p = new InstanceIdParser();
             assert.equal(p.parse("this", 1), 1);
             assert.equal(p.parse("[0]", [1]), 1);
             assert.equal(p.parse("[0]", [4, 5]), 4);
@@ -35,7 +39,7 @@ describe("WorkflowHost", function () {
         this.timeout(5000);
 
         it("should run basic hosting example in non-lazy mode", function (done) {
-            var hostOptions = {
+            let hostOptions = {
                 persistence: new MemoryPersistence(),
                 lazyPersistence: false,
                 serializer: null,
@@ -45,7 +49,7 @@ describe("WorkflowHost", function () {
         });
 
         it("should run basic hosting example in lazy mode", function (done) {
-            var hostOptions = {
+            let hostOptions = {
                 persistence: new MemoryPersistence(),
                 lazyPersistence: true,
                 serializer: null,
@@ -55,7 +59,7 @@ describe("WorkflowHost", function () {
         });
 
         it("should run correlated calculator example in non-lazy mode", function (done) {
-            var hostOptions = {
+            let hostOptions = {
                 persistence: new MemoryPersistence(),
                 lazyPersistence: false,
                 serializer: null,
@@ -65,7 +69,7 @@ describe("WorkflowHost", function () {
         });
 
         it("should run correlated calculator example in lazy mode", function (done) {
-            var hostOptions = {
+            let hostOptions = {
                 persistence: new MemoryPersistence(),
                 lazyPersistence: true,
                 serializer: null,
@@ -75,7 +79,7 @@ describe("WorkflowHost", function () {
         });
 
         it("should run correlated calculator example if state is serialized", function (done) {
-            var hostOptions = {
+            let hostOptions = {
                 persistence: new MemoryPersistence(),
                 lazyPersistence: false,
                 serializer: new Serializer(),
