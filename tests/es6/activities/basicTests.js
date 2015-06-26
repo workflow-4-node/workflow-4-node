@@ -112,7 +112,7 @@ describe("Func", function () {
 });
 
 describe("Block", function () {
-    it("should handle letiables well", function (done) {
+    it("should handle variables well", function (done) {
         let block = new Block();
         block.let1 = 1;
         block.let2 = 2;
