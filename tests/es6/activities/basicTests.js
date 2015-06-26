@@ -445,7 +445,7 @@ describe("Expression", function () {
 });
 
 describe("If", function () {
-    it("should call then body", function (done) {
+    it("should call then", function (done) {
         let block = activityMarkup.parse({
             "@block": {
                 v: 5,
@@ -453,7 +453,7 @@ describe("If", function () {
                     {
                         "@if": {
                             condition: "# this.get('v') == 5",
-                            thenBody: {
+                            then: {
                                 "@func": {
                                     args: [1],
                                     code: function (a) {
@@ -461,7 +461,7 @@ describe("If", function () {
                                     }
                                 }
                             },
-                            elseBody: {
+                            else: {
                                 "@func": {
                                     args: [2],
                                     code: function (a) {
@@ -482,7 +482,7 @@ describe("If", function () {
             }).nodeify(done);
     });
 
-    it("should call else body", function (done) {
+    it("should call else", function (done) {
         let block = activityMarkup.parse({
             "@block": {
                 v: 5,
@@ -497,7 +497,7 @@ describe("If", function () {
                                     }
                                 }
                             },
-                            thenBody: {
+                            then: {
                                 "@func": {
                                     args: [1],
                                     code: function (a) {
@@ -505,7 +505,7 @@ describe("If", function () {
                                     }
                                 }
                             },
-                            elseBody: {
+                            else: {
                                 "@func": {
                                     args: [2],
                                     code: function (a) {
@@ -987,5 +987,42 @@ describe("Loops", function () {
                     assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
                 }).nodeify(done);
         });
+    });
+});
+
+describe("Merge", function () {
+    it("should merge arrays", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@merge": [
+                [1, 2, 3],
+                "# [4, 5, 6]"
+            ]
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert(_.isArray(result));
+                assert.equal(result.length, 6);
+                assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
+            }).nodeify(done);
+    });
+
+    it("should merge objects", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@merge": [
+                { a: function() { return 2; } },
+                "# {b: 2}",
+                { c: "function() { return 42; }" }
+            ]
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert(_.isObject(result));
+                assert.equal(_.keys(result).length, 3);
+                assert.equal(result.a, 2);
+                assert.equal(result.b, 2);
+                assert.equal(result.c, 42);
+            }).nodeify(done);
     });
 });

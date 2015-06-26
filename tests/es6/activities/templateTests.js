@@ -78,4 +78,36 @@ describe("Template", function () {
             assert.equal(result.b[2], 42);
         }).nodeify(done);
     });
+
+    it("should work on arrays", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@block": {
+                rule: {
+                    value: 22
+                },
+                args: [
+                    {
+                        "@block": {
+                            a: [
+                                {
+                                    $project: {
+                                        $literal: "# this.get('rule').value"
+                                    }
+                                }
+                            ],
+                            args: [
+                                "= a"
+                            ]
+                        }
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(function (result) {
+            assert.ok(_.isArray(result));
+            assert.ok(_.isPlainObject(result[0].$project));
+            assert.equal(result[0].$project.$literal, 22);
+        }).nodeify(done);
+    });
 });
