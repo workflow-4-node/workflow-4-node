@@ -804,7 +804,7 @@ describe("Loops", function () {
                             {
                                 "@while": {
                                     condition: "# this.get('j') < this.get('i')",
-                                    body: "# this.postfixInc('j')",
+                                    args: "# this.postfixInc('j')",
                                     "@to": "z"
                                 }
                             },
@@ -841,7 +841,7 @@ describe("Loops", function () {
                                         }
                                     }
                                 },
-                                body: "# this.set('seq', this.get('seq') + this.get('i'))"
+                                args: "# this.set('seq', this.get('seq') + this.get('i'))"
                             }
                         },
                         "# this.get('seq')"
@@ -874,7 +874,7 @@ describe("Loops", function () {
                                 },
                                 step: -2,
                                 varName: "klow",
-                                body: "# this.set('seq', this.get('seq') + this.get('klow'))",
+                                args: "# this.set('seq', this.get('seq') + this.get('klow'))",
                                 "@to": "r"
                             }
                         },
@@ -908,7 +908,7 @@ describe("Loops", function () {
                         {
                             "@forEach": {
                                 items: "# this.get('seq')",
-                                body: "# this.set('result', this.get('result') + this.get('item'))"
+                                args: "# this.set('result', this.get('result') + this.get('item'))"
                             }
                         },
                         "# this.get('result')"
@@ -940,7 +940,7 @@ describe("Loops", function () {
                                 parallel: true,
                                 varName: "klow",
                                 items: "# this.get('seq')",
-                                body: "# this.set('result', this.get('result') + this.get('klow'))"
+                                args: "# this.set('result', this.get('result') + this.get('klow'))"
                             }
                         },
                         "# this.get('result')"
@@ -966,7 +966,7 @@ describe("Loops", function () {
                                 parallel: true,
                                 varName: "klow",
                                 items: "# this.get('seq')",
-                                body: function () {
+                                args: function () {
                                     let self = this;
                                     return Promise.delay(Math.random() * 100)
                                         .then(function () {
@@ -1010,7 +1010,7 @@ describe("Merge", function () {
     it("should merge objects", function (done) {
         let engine = new ActivityExecutionEngine({
             "@merge": [
-                { a: function() { return 2; } },
+                { a: function () { return 2; } },
                 "# {b: 2}",
                 { c: "function() { return 42; }" }
             ]
@@ -1023,6 +1023,113 @@ describe("Merge", function () {
                 assert.equal(result.a, 2);
                 assert.equal(result.b, 2);
                 assert.equal(result.c, 42);
+            }).nodeify(done);
+    });
+});
+
+describe("switch", function () {
+    it("should work w/o default", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@switch": {
+                expression: "# 42",
+                args: [
+                    {
+                        "@case": {
+                            value: 43,
+                            args: function() {
+                                return "55";
+                            }
+                        }
+                    },
+                    {
+                        "@case": {
+                            value: 42,
+                            args: function() {
+                                return "hi";
+                            }
+                        }
+                    },
+                    {
+                        "@case": {
+                            value: "42",
+                            args: "# 'boo'"
+                        }
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert.deepEqual(result, "hi");
+            }).nodeify(done);
+    });
+
+    it("should work w default", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@switch": {
+                expression: "# 43",
+                args: [
+                    {
+                        "@case": {
+                            value: 43,
+                            args: function() {
+                                return 55;
+                            }
+                        }
+                    },
+                    {
+                        "@case": {
+                            value: 42,
+                            args: function() {
+                                return "hi";
+                            }
+                        }
+                    },
+                    {
+                        "@default": "# 'boo'"
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert.deepEqual(result, 55);
+            }).nodeify(done);
+    });
+
+    it("should do its default", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@switch": {
+                expression: "# 'klow'",
+                args: [
+                    {
+                        "@case": {
+                            value: 43,
+                            args: function() {
+                                return 55;
+                            }
+                        }
+                    },
+                    {
+                        "@case": {
+                            value: 42,
+                            args: function() {
+                                return "hi";
+                            }
+                        }
+                    },
+                    {
+                        "@default": "# 'boo'"
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert.deepEqual(result, "boo");
             }).nodeify(done);
     });
 });

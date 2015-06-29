@@ -93,7 +93,7 @@ module.exports = {
                             {
                                 "@while": {
                                     condition: "# this.get('running')",
-                                    body: {
+                                    args: {
                                         "@pick": [
                                             {
                                                 "@block": {
