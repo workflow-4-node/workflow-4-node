@@ -12,7 +12,7 @@ let _ = require("lodash");
 let ConsoleTracker = wf4node.activities.ConsoleTracker;
 let WorkflowHost = wf4node.hosting.WorkflowHost;
 let InstanceIdParser = wf4node.hosting.InstanceIdParser;
-let Promise = require("bluebird");
+let Bluebird = require("bluebird");
 
 let assert = require("assert");
 
@@ -52,7 +52,7 @@ describe("Func", function () {
     it("should run when code is asynchronous", function (done) {
         let fop = new Func();
         fop.code = function (obj) {
-            return Promise.resolve(obj.name);
+            return Bluebird.resolve(obj.name);
         };
 
         let engine = new ActivityExecutionEngine(fop);
@@ -306,7 +306,7 @@ describe("Parallel", function () {
                         {
                             "@func": {
                                 code: function () {
-                                    return Promise.delay(100).then(function () {
+                                    return Bluebird.delay(100).then(function () {
                                         return 42;
                                     });
                                 }
@@ -315,7 +315,7 @@ describe("Parallel", function () {
                         {
                             "@func": {
                                 code: function () {
-                                    return new Promise(function (resolve, reject) {
+                                    return new Bluebird(function (resolve, reject) {
                                         setImmediate(function () {
                                             resolve(0);
                                         });
@@ -379,7 +379,7 @@ describe("Pick", function () {
                     {
                         "@func": {
                             code: function () {
-                                return Promise.delay(100).then(function () {
+                                return Bluebird.delay(100).then(function () {
                                     return 42;
                                 });
                             }
@@ -388,7 +388,7 @@ describe("Pick", function () {
                     {
                         "@func": {
                             code: function () {
-                                return new Promise(function (resolve, reject) {
+                                return new Bluebird(function (resolve, reject) {
                                     setImmediate(function () {
                                         resolve(0);
                                     });
@@ -768,7 +768,7 @@ describe('Logic Operators', function () {
                                 }
                             ],
                             isFalse: function () {
-                                return Promise.delay(100).then(function () {
+                                return Bluebird.delay(100).then(function () {
                                     return 42;
                                 });
                             }
@@ -837,7 +837,7 @@ describe("Loops", function () {
                                 to: {
                                     "@func": {
                                         code: function () {
-                                            return Promise.delay(100).then(function () { return 10; });
+                                            return Bluebird.delay(100).then(function () { return 10; });
                                         }
                                     }
                                 },
@@ -868,7 +868,7 @@ describe("Loops", function () {
                                 to: {
                                     "@func": {
                                         code: function () {
-                                            return Promise.delay(100).then(function () { return 4; });
+                                            return Bluebird.delay(100).then(function () { return 4; });
                                         }
                                     }
                                 },
@@ -968,7 +968,7 @@ describe("Loops", function () {
                                 items: "# this.get('seq')",
                                 args: function () {
                                     let self = this;
-                                    return Promise.delay(Math.random() * 100)
+                                    return Bluebird.delay(Math.random() * 100)
                                         .then(function () {
                                             self.get("result").push(self.get("klow"));
                                         });
@@ -1028,108 +1028,216 @@ describe("Merge", function () {
 });
 
 describe("switch", function () {
-    it("should work w/o default", function (done) {
-        let engine = new ActivityExecutionEngine({
-            "@switch": {
-                expression: "# 42",
-                args: [
-                    {
-                        "@case": {
-                            value: 43,
-                            args: function() {
-                                return "55";
+    describe("switch w/ case", function () {
+        it("should work w/o default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 42",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return "55";
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: "42",
+                                args: "# 'boo'"
                             }
                         }
-                    },
-                    {
-                        "@case": {
-                            value: 42,
-                            args: function() {
-                                return "hi";
-                            }
-                        }
-                    },
-                    {
-                        "@case": {
-                            value: "42",
-                            args: "# 'boo'"
-                        }
-                    }
-                ]
-            }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "hi");
+                }).nodeify(done);
         });
 
-        engine.invoke().then(
-            function (result) {
-                assert.deepEqual(result, "hi");
-            }).nodeify(done);
+        it("should work w default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 43",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, 55);
+                }).nodeify(done);
+        });
+
+        it("should do its default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 'klow'",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "boo");
+                }).nodeify(done);
+        });
     });
 
-    it("should work w default", function (done) {
-        let engine = new ActivityExecutionEngine({
-            "@switch": {
-                expression: "# 43",
-                args: [
-                    {
-                        "@case": {
-                            value: 43,
-                            args: function() {
-                                return 55;
+    describe("switch w/ when", function () {
+        it("should work w/o default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: 0,
+                                args: function () {
+                                    return "55";
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: function() {
+                                    return Bluebird.resolve(42);
+                                },
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: "42",
+                                args: "# 'boo'"
                             }
                         }
-                    },
-                    {
-                        "@case": {
-                            value: 42,
-                            args: function() {
-                                return "hi";
-                            }
-                        }
-                    },
-                    {
-                        "@default": "# 'boo'"
-                    }
-                ]
-            }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "hi");
+                }).nodeify(done);
         });
 
-        engine.invoke().then(
-            function (result) {
-                assert.deepEqual(result, 55);
-            }).nodeify(done);
-    });
+        it("should work w default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: undefined,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
 
-    it("should do its default", function (done) {
-        let engine = new ActivityExecutionEngine({
-            "@switch": {
-                expression: "# 'klow'",
-                args: [
-                    {
-                        "@case": {
-                            value: 43,
-                            args: function() {
-                                return 55;
-                            }
-                        }
-                    },
-                    {
-                        "@case": {
-                            value: 42,
-                            args: function() {
-                                return "hi";
-                            }
-                        }
-                    },
-                    {
-                        "@default": "# 'boo'"
-                    }
-                ]
-            }
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, 55);
+                }).nodeify(done);
         });
 
-        engine.invoke().then(
-            function (result) {
-                assert.deepEqual(result, "boo");
-            }).nodeify(done);
+        it("should do its default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: "",
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: null,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "boo");
+                }).nodeify(done);
+        });
     });
 });
