@@ -1201,6 +1201,8 @@ describe("switch", function () {
                 }
             });
 
+            //engine.addTracker(new ConsoleTracker());
+
             engine.invoke().then(
                 function (result) {
                     assert.deepEqual(result, 55);
