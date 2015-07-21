@@ -42,7 +42,7 @@ describe("activityMarkup", function () {
                 c: 3,
                 args: [
                     {
-                        "@adder": ["#this.get('a')", "#this.get('b')", "#this.get('c')"]
+                        "@adder": ["= a", "= b", "= c"]
                     }
                 ]
             }

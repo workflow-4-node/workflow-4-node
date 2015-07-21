@@ -7,7 +7,7 @@ let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
 let _ = require("lodash");
 let assert = require("assert");
 
-describe("Template", function () {
+describe("templates", function () {
     it("should parse object correctly", function (done) {
 
         let engine = new ActivityExecutionEngine({
