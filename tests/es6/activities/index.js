@@ -8,4 +8,3 @@ require("./objects");
 require("./bookmarkingTests");
 require("./markupTests");
 require("./templateTests");
-
