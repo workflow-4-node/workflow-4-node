@@ -1,25 +1,29 @@
-var wf4node = require("../../../");
-var Expression = wf4node.activities.Expression;
-var Func = wf4node.activities.Func;
-var Block = wf4node.activities.Block;
-var activityMarkup = wf4node.activities.activityMarkup;
-var ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
-var _ = require("lodash");
-var ConsoleTracker = wf4node.activities.ConsoleTracker;
-var WorkflowHost = wf4node.hosting.WorkflowHost;
-var InstanceIdParser = wf4node.hosting.InstanceIdParser;
-var Promise = require("bluebird");
+"use strict";
 
-var assert = require("assert");
+/* global describe,it */
+
+let wf4node = require("../../../");
+let Expression = wf4node.activities.Expression;
+let Func = wf4node.activities.Func;
+let Block = wf4node.activities.Block;
+let activityMarkup = wf4node.activities.activityMarkup;
+let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
+let _ = require("lodash");
+let ConsoleTracker = wf4node.activities.ConsoleTracker;
+let WorkflowHost = wf4node.hosting.WorkflowHost;
+let InstanceIdParser = wf4node.hosting.InstanceIdParser;
+let Bluebird = require("bluebird");
+
+let assert = require("assert");
 
 describe("Func", function () {
     it("should run with a synchronous code", function (done) {
-        var fop = new Func();
+        let fop = new Func();
         fop.code = function (obj) {
             return obj.name;
         };
 
-        var engine = new ActivityExecutionEngine(fop);
+        let engine = new ActivityExecutionEngine(fop);
 
         engine.invoke({ name: "Gabor" }).then(
             function (result) {
@@ -28,16 +32,16 @@ describe("Func", function () {
     });
 
     it("should run when created from markup", function (done) {
-        var fop = activityMarkup.parse(
+        let fop = activityMarkup.parse(
             {
-                func: {
+                "@func": {
                     code: function (obj) {
                         return obj.name;
                     }
                 }
             });
 
-        var engine = new ActivityExecutionEngine(fop);
+        let engine = new ActivityExecutionEngine(fop);
 
         engine.invoke({ name: "Gabor" }).then(
             function (result) {
@@ -46,12 +50,12 @@ describe("Func", function () {
     });
 
     it("should run when code is asynchronous", function (done) {
-        var fop = new Func();
+        let fop = new Func();
         fop.code = function (obj) {
-            return Promise.resolve(obj.name);
+            return Bluebird.resolve(obj.name);
         };
 
-        var engine = new ActivityExecutionEngine(fop);
+        let engine = new ActivityExecutionEngine(fop);
 
         engine.invoke({ name: "Mezo" }).then(
             function (result) {
@@ -60,17 +64,17 @@ describe("Func", function () {
     });
 
     it("should accept external parameters those are functions also", function (done) {
-        var expected = { name: "Gabor" };
-        var fop = new Func();
+        let expected = { name: "Gabor" };
+        let fop = new Func();
         fop.code = function (obj) {
             return obj.name;
         };
-        var fopin = new Func();
+        let fopin = new Func();
         fopin.code = function () {
             return expected;
         };
 
-        var engine = new ActivityExecutionEngine(fop);
+        let engine = new ActivityExecutionEngine(fop);
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke(fopin).then(
@@ -80,13 +84,13 @@ describe("Func", function () {
     });
 
     it("should work as an agument", function (done) {
-        var expected = { name: "Gabor" };
+        let expected = { name: "Gabor" };
 
-        var fop = activityMarkup.parse(
+        let fop = activityMarkup.parse(
             {
-                func: {
+                "@func": {
                     args: {
-                        func: {
+                        "@func": {
                             code: function () {
                                 return expected;
                             }
@@ -98,7 +102,7 @@ describe("Func", function () {
                 }
             });
 
-        var engine = new ActivityExecutionEngine(fop);
+        let engine = new ActivityExecutionEngine(fop);
 
         engine.invoke().then(
             function (result) {
@@ -109,72 +113,72 @@ describe("Func", function () {
 
 describe("Block", function () {
     it("should handle variables well", function (done) {
-        var block = new Block();
-        block.var1 = 1;
-        block.var2 = 2;
-        block.var3 = 3;
+        let block = new Block();
+        block.let1 = 1;
+        block.let2 = 2;
+        block.let3 = 3;
 
-        var f1 = new Func();
+        let f1 = new Func();
         f1.code = function () {
-            return this.set("var3", this.get("var3") + this.get("var1") * 2);
-        }
+            return this.set("let3", this.get("let3") + this.get("let1") * 2);
+        };
 
-        var f2 = new Func();
+        let f2 = new Func();
         f2.code = function () {
-            return this.set("var3", this.get("var3") + this.get("var2") * 3);
-        }
+            return this.set("let3", this.get("let3") + this.get("let2") * 3);
+        };
 
-        var f3 = new Func();
+        let f3 = new Func();
         f3.code = function () {
-            return this.get("var3") * 4;
-        }
+            return this.get("let3") * 4;
+        };
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
 
         engine.invoke(f1, f2, f3).then(
             function (result) {
-                var x1 = 1;
-                var x2 = 2;
-                var x3 = 3;
+                let x1 = 1;
+                let x2 = 2;
+                let x3 = 3;
                 x3 += x1 * 2;
                 x3 += x2 * 3;
-                var r = x3 * 4;
+                let r = x3 * 4;
                 assert.equal(result, r);
             }).nodeify(done);
     });
 
     it("can be generated from markup", function (done) {
-        var block = activityMarkup.parse(
+        let block = activityMarkup.parse(
             {
-                block: {
-                    var1: 1,
-                    var2: {
-                        func: {
+                "@block": {
+                    let1: 1,
+                    let2: {
+                        "@func": {
                             code: function () {
                                 return 2;
                             }
                         }
                     },
-                    var3: 3,
+                    let3: 3,
                     args: [
                         {
-                            func: {
+                            "@func": {
                                 code: function bubu() {
-                                    return this.set("var3", this.get("var3") + this.get("var1") * 2);
+                                    return this.set("let3", this.get("let3") + this.get("let1") * 2);
                                 }
                             }
                         },
                         {
-                            func: {
+                            "@func": {
                                 code: function kittyfuck() {
-                                    return this.set("var3", this.get("var3") + this.get("var2") * 3);
+                                    return this.set("let3", this.get("let3") + this.get("let2") * 3);
                                 }
                             }
                         },
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return this.get("var3") * 4;
+                                    return this.get("let3") * 4;
                                 }
                             }
                         }
@@ -182,45 +186,45 @@ describe("Block", function () {
                 }
             });
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
             function (result) {
-                var x1 = 1;
-                var x2 = 2;
-                var x3 = 3;
+                let x1 = 1;
+                let x2 = 2;
+                let x3 = 3;
                 x3 += x1 * 2;
                 x3 += x2 * 3;
-                var r = x3 * 4;
+                let r = x3 * 4;
                 assert.equal(result, r);
             }).nodeify(done);
     });
 
     it("can be generated from markup string", function (done) {
-        var markup = {
-            block: {
-                var1: 1,
-                var2: 2,
-                var3: 3,
+        let markup = {
+            "@block": {
+                let1: 1,
+                let2: 2,
+                let3: 3,
                 args: [
                     {
-                        func: {
+                        "@func": {
                             code: function bubu() {
-                                return this.set("var3", this.get("var3") + this.get("var1") * 2);
+                                return this.set("let3", this.get("let3") + this.get("let1") * 2);
                             }
                         }
                     },
                     {
-                        func: {
+                        "@func": {
                             code: function kittyfuck() {
-                                return this.set("var3", this.get("var3") + this.get("var2") * 3);
+                                return this.set("let3", this.get("let3") + this.get("let2") * 3);
                             }
                         }
                     },
                     {
-                        func: {
+                        "@func": {
                             code: function () {
-                                return this.get("var3") * 4;
+                                return this.get("let3") * 4;
                             }
                         }
                     }
@@ -228,20 +232,20 @@ describe("Block", function () {
             }
         };
 
-        var markupString = activityMarkup.stringify(markup);
+        let markupString = activityMarkup.stringify(markup);
         assert.ok(_.isString(markupString));
-        var block = activityMarkup.parse(markupString);
+        let block = activityMarkup.parse(markupString);
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
             function (result) {
-                var x1 = 1;
-                var x2 = 2;
-                var x3 = 3;
+                let x1 = 1;
+                let x2 = 2;
+                let x3 = 3;
                 x3 += x1 * 2;
                 x3 += x2 * 3;
-                var r = x3 * 4;
+                let r = x3 * 4;
                 assert.equal(result, r);
             }).nodeify(done);
     });
@@ -249,28 +253,28 @@ describe("Block", function () {
 
 describe("Parallel", function () {
     it("should work as expected with sync activities", function (done) {
-        var activity = activityMarkup.parse(
+        let activity = activityMarkup.parse(
             {
-                parallel: {
-                    var1: "",
+                "@parallel": {
+                    let1: "",
                     args: [
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return this.add("var1", "a");
+                                    return this.add("let1", "a");
                                 }
                             }
                         },
                         {
-                            func: {
-                                code: 'function() { return this.add("var1", "b"); }'
+                            "@func": {
+                                code: 'function() { return this.add("let1", "b"); }'
                             }
                         }
                     ]
                 }
             });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
@@ -282,39 +286,39 @@ describe("Parallel", function () {
     });
 
     it("should work as expected with async activities", function (done) {
-        var activity = activityMarkup.parse(
+        let activity = activityMarkup.parse(
             {
-                parallel: {
-                    var1: "",
+                "@parallel": {
+                    let1: "",
                     args: [
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return this.add("var1", "a");
+                                    return this.add("let1", "a");
                                 }
                             }
                         },
                         {
-                            func: {
-                                code: 'function() { return this.add("var1", "b"); }'
+                            "@func": {
+                                code: 'function() { return this.add("let1", "b"); }'
                             }
                         },
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return Promise.delay(100).then(function () {
+                                    return Bluebird.delay(100).then(function () {
                                         return 42;
                                     });
                                 }
                             }
                         },
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return new Promise(function (resolve, reject) {
+                                    return new Bluebird(function (resolve, reject) {
                                         setImmediate(function () {
                                             resolve(0);
-                                        })
+                                        });
                                     });
                                 }
                             }
@@ -323,7 +327,7 @@ describe("Parallel", function () {
                 }
             });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
         //engine.addTracker(new ConsoleTracker());
 
         engine.invoke().then(
@@ -339,28 +343,28 @@ describe("Parallel", function () {
 
 describe("Pick", function () {
     it("should work as expected with sync activities", function (done) {
-        var activity = activityMarkup.parse(
+        let activity = activityMarkup.parse(
             {
-                pick: {
-                    var1: "",
+                "@pick": {
+                    let1: "",
                     args: [
                         {
-                            func: {
+                            "@func": {
                                 code: function () {
-                                    return this.add("var1", "a");
+                                    return this.add("let1", "a");
                                 }
                             }
                         },
                         {
-                            func: {
-                                code: 'function() { return this.add("var1", "b"); }'
+                            "@func": {
+                                code: 'function() { return this.add("let1", "b"); }'
                             }
                         }
                     ]
                 }
             });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
 
         engine.invoke().then(
             function (result) {
@@ -369,25 +373,25 @@ describe("Pick", function () {
     });
 
     it("should work as expected with async activities", function (done) {
-        var activity = activityMarkup.parse(
+        let activity = activityMarkup.parse(
             {
-                pick: [
+                "@pick": [
                     {
-                        func: {
+                        "@func": {
                             code: function () {
-                                return Promise.delay(100).then(function () {
+                                return Bluebird.delay(100).then(function () {
                                     return 42;
                                 });
                             }
                         }
                     },
                     {
-                        func: {
+                        "@func": {
                             code: function () {
-                                return new Promise(function (resolve, reject) {
+                                return new Bluebird(function (resolve, reject) {
                                     setImmediate(function () {
                                         resolve(0);
-                                    })
+                                    });
                                 });
                             }
                         }
@@ -395,7 +399,7 @@ describe("Pick", function () {
                 ]
             });
 
-        var engine = new ActivityExecutionEngine(activity);
+        let engine = new ActivityExecutionEngine(activity);
 
         engine.invoke().then(
             function (result) {
@@ -406,13 +410,13 @@ describe("Pick", function () {
 
 describe("Expression", function () {
     it("should multiply two numbers", function (done) {
-        var expr = new Expression();
+        let expr = new Expression();
         expr.expr = "this.get('v') * this.get('v')";
-        var block = new Block();
+        let block = new Block();
         block.v = 2;
         block.args = [expr];
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
             function (result) {
@@ -421,9 +425,9 @@ describe("Expression", function () {
     });
 
     it("should works from markup", function (done) {
-        var block = activityMarkup.parse(
+        let block = activityMarkup.parse(
             {
-                block: {
+                "@block": {
                     v: 2,
                     args: [
                         "# this.get('v') * this.get('v')"
@@ -431,7 +435,7 @@ describe("Expression", function () {
                 }
             });
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
 
         engine.invoke().then(
             function (result) {
@@ -440,58 +444,25 @@ describe("Expression", function () {
     });
 });
 
-describe("While", function () {
-    it("should run a basic cycle", function (done) {
-        var block = activityMarkup.parse(
-            {
-                block: {
-                    i: 10,
-                    j: 0,
-                    z: 0,
-                    args: [
-                        {
-                            while: {
-                                condition: "# this.get('j') < this.get('i')",
-                                body: "# this.postfixInc('j')",
-                                "@to": "z"
-                            }
-                        },
-                        "# { j: this.get('j'), z: this.get('z') }"
-                    ]
-                }
-            });
-
-        var engine = new ActivityExecutionEngine(block);
-        //engine.addTracker(new ConsoleTracker());
-
-        engine.invoke().then(
-            function (result) {
-                assert.ok(_.isObject(result));
-                assert.equal(result.j, 10);
-                assert.equal(result.z, 9);
-            }).nodeify(done);
-    });
-});
-
 describe("If", function () {
-    it("should call then body", function (done) {
-        var block = activityMarkup.parse({
-            block: {
+    it("should call then", function (done) {
+        let block = activityMarkup.parse({
+            "@block": {
                 v: 5,
                 args: [
                     {
-                        if: {
+                        "@if": {
                             condition: "# this.get('v') == 5",
-                            thenBody: {
-                                func: {
+                            then: {
+                                "@func": {
                                     args: [1],
                                     code: function (a) {
                                         return a + this.get('v');
                                     }
                                 }
                             },
-                            elseBody: {
-                                func: {
+                            else: {
+                                "@func": {
                                     args: [2],
                                     code: function (a) {
                                         return a + this.get('v');
@@ -504,38 +475,38 @@ describe("If", function () {
             }
         });
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
         engine.invoke().then(
             function (result) {
                 assert.equal(1 + 5, result);
             }).nodeify(done);
     });
 
-    it("should call else body", function (done) {
-        var block = activityMarkup.parse({
-            block: {
+    it("should call else", function (done) {
+        let block = activityMarkup.parse({
+            "@block": {
                 v: 5,
                 r: 0,
                 args: [
                     {
-                        if: {
+                        "@if": {
                             condition: {
-                                func: {
+                                "@func": {
                                     code: function () {
                                         return false;
                                     }
                                 }
                             },
-                            thenBody: {
-                                func: {
+                            then: {
+                                "@func": {
                                     args: [1],
                                     code: function (a) {
                                         this.set("r", a + this.get("v"));
                                     }
                                 }
                             },
-                            elseBody: {
-                                func: {
+                            else: {
+                                "@func": {
                                     args: [2],
                                     code: function (a) {
                                         this.set("r", a + this.get("v"));
@@ -549,7 +520,7 @@ describe("If", function () {
             }
         });
 
-        var engine = new ActivityExecutionEngine(block);
+        let engine = new ActivityExecutionEngine(block);
         engine.invoke().then(
             function (result) {
                 assert.equal(2 + 5, result);
@@ -560,31 +531,31 @@ describe("If", function () {
 describe('Logic Operators', function () {
     describe('Truthy', function () {
         it('should work', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     t1: {
-                        truthy: {
+                        "@truthy": {
                             value: 'a'
                         }
                     },
                     t2: {
-                        truthy: {
+                        "@truthy": {
                             value: null
                         }
                     },
                     t3: {
-                        truthy: {
+                        "@truthy": {
                             value: true,
                             is: 'is',
                             isNot: 'isNot'
                         }
                     },
                     t4: {
-                        truthy: {
+                        "@truthy": {
                             value: null,
                             is: 'is',
                             isNot: {
-                                func: {
+                                "@func": {
                                     code: function () {
                                         return 'isNot';
                                     }
@@ -611,31 +582,31 @@ describe('Logic Operators', function () {
 
     describe('Falsy', function () {
         it('should work', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     t1: {
-                        falsy: {
+                        "@falsy": {
                             value: 'a'
                         }
                     },
                     t2: {
-                        falsy: {
+                        "@falsy": {
                             value: null
                         }
                     },
                     t3: {
-                        falsy: {
+                        "@falsy": {
                             value: true,
                             is: 'is',
                             isNot: 'isNot'
                         }
                     },
                     t4: {
-                        falsy: {
+                        "@falsy": {
                             value: null,
                             is: '# "is"',
                             isNot: {
-                                func: {
+                                "@func": {
                                     code: function () {
                                         return 'isNot';
                                     }
@@ -662,10 +633,10 @@ describe('Logic Operators', function () {
 
     describe('Equals', function () {
         it('should work', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     a: {
-                        equals: {
+                        "@equals": {
                             value: function () {
                                 return 42;
                             },
@@ -677,7 +648,7 @@ describe('Logic Operators', function () {
                         }
                     },
                     b: {
-                        equals: {
+                        "@equals": {
                             value: function () {
                                 return 42;
                             },
@@ -706,10 +677,10 @@ describe('Logic Operators', function () {
 
     describe('NotEquals', function () {
         it('should work', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     a: {
-                        notEquals: {
+                        "@notEquals": {
                             value: function () {
                                 return 42;
                             },
@@ -721,7 +692,7 @@ describe('Logic Operators', function () {
                         }
                     },
                     b: {
-                        notEquals: {
+                        "@notEquals": {
                             value: function () {
                                 return 42;
                             },
@@ -750,22 +721,22 @@ describe('Logic Operators', function () {
 
     describe('Not, And, Or', function () {
         it('should work', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     a: {
-                        and: [
+                        "@and": [
                             true,
                             'bubu',
                             {
-                                or: [
+                                "@or": [
                                     '# true',
                                     false
                                 ]
                             },
                             {
-                                not: [
+                                "@not": [
                                     {
-                                        and: [
+                                        "@and": [
                                             true,
                                             function () {
                                                 return null;
@@ -777,18 +748,18 @@ describe('Logic Operators', function () {
                         ]
                     },
                     b: {
-                        and: {
+                        "@and": {
                             args: [
                                 {
-                                    or: [
+                                    "@or": [
                                         '# true',
                                         false
                                     ]
                                 },
                                 {
-                                    not: [
+                                    "@not": [
                                         {
-                                            and: [
+                                            "@and": [
                                                 true,
                                                 '# [ 42 ]'
                                             ]
@@ -797,7 +768,7 @@ describe('Logic Operators', function () {
                                 }
                             ],
                             isFalse: function () {
-                                return Promise.delay(100).then(function () {
+                                return Bluebird.delay(100).then(function () {
                                     return 42;
                                 });
                             }
@@ -818,24 +789,59 @@ describe('Logic Operators', function () {
                 }).nodeify(done);
         });
     });
+});
+
+describe("Loops", function () {
+    describe("While", function () {
+        it("should run a basic cycle", function (done) {
+            let block = activityMarkup.parse(
+                {
+                    "@block": {
+                        i: 10,
+                        j: 0,
+                        z: 0,
+                        args: [
+                            {
+                                "@while": {
+                                    condition: "# this.get('j') < this.get('i')",
+                                    args: "# this.postfixInc('j')",
+                                    "@to": "z"
+                                }
+                            },
+                            "# { j: this.get('j'), z: this.get('z') }"
+                        ]
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(block);
+            //engine.addTracker(new ConsoleTracker());
+
+            engine.invoke().then(
+                function (result) {
+                    assert.ok(_.isObject(result));
+                    assert.equal(result.j, 10);
+                    assert.equal(result.z, 9);
+                }).nodeify(done);
+        });
+    });
 
     describe('For', function () {
         it('should work between range 0 and 10 by step 1', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     seq: "",
                     args: [
                         {
-                            for: {
+                            "@for": {
                                 from: 0,
                                 to: {
-                                    func: {
+                                    "@func": {
                                         code: function () {
-                                            return Promise.delay(100).then(function () { return 10; })
+                                            return Bluebird.delay(100).then(function () { return 10; });
                                         }
                                     }
                                 },
-                                body: "# this.set('seq', this.get('seq') + this.get('i'))"
+                                args: "# this.set('seq', this.get('seq') + this.get('i'))"
                             }
                         },
                         "# this.get('seq')"
@@ -851,24 +857,24 @@ describe('Logic Operators', function () {
         });
 
         it('should work between range 10 downto 4 by step -2', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     seq: "",
                     r: null,
                     args: [
                         {
-                            for: {
+                            "@for": {
                                 from: 10,
                                 to: {
-                                    func: {
+                                    "@func": {
                                         code: function () {
-                                            return Promise.delay(100).then(function () { return 4; })
+                                            return Bluebird.delay(100).then(function () { return 4; });
                                         }
                                     }
                                 },
                                 step: -2,
                                 varName: "klow",
-                                body: "# this.set('seq', this.get('seq') + this.get('klow'))",
+                                args: "# this.set('seq', this.get('seq') + this.get('klow'))",
                                 "@to": "r"
                             }
                         },
@@ -888,10 +894,10 @@ describe('Logic Operators', function () {
 
     describe('ForEach', function () {
         it('should work non parallel', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     seq: {
-                        func: {
+                        "@func": {
                             code: function () {
                                 return [1, 2, 3, 4, 5, 6];
                             }
@@ -900,9 +906,9 @@ describe('Logic Operators', function () {
                     result: "",
                     args: [
                         {
-                            forEach: {
-                                from: "# this.get('seq')",
-                                body: "# this.set('result', this.get('result') + this.get('item'))"
+                            "@forEach": {
+                                items: "# this.get('seq')",
+                                args: "# this.set('result', this.get('result') + this.get('item'))"
                             }
                         },
                         "# this.get('result')"
@@ -918,10 +924,10 @@ describe('Logic Operators', function () {
         });
 
         it('should work parallel non scheduled', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
                     seq: {
-                        func: {
+                        "@func": {
                             code: function () {
                                 return [1, 2, 3, 4, 5, 6];
                             }
@@ -930,11 +936,11 @@ describe('Logic Operators', function () {
                     result: "",
                     args: [
                         {
-                            forEach: {
+                            "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                from: "# this.get('seq')",
-                                body: "# this.set('result', this.get('result') + this.get('klow'))"
+                                items: "# this.get('seq')",
+                                args: "# this.set('result', this.get('result') + this.get('klow'))"
                             }
                         },
                         "# this.get('result')"
@@ -950,31 +956,22 @@ describe('Logic Operators', function () {
         });
 
         it('should work parallel scheduled', function (done) {
-            var engine = new ActivityExecutionEngine({
-                block: {
-                    seq: {
-                        func: {
-                            code: function () {
-                                return [1, 2, 3, 4, 5, 6];
-                            }
-                        }
-                    },
+            let engine = new ActivityExecutionEngine({
+                "@block": {
+                    seq: "function () { return [1, 2, 3, 4, 5, 6]; }",
                     result: [],
                     args: [
                         {
-                            forEach: {
+                            "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                from: "# this.get('seq')",
-                                body: {
-                                    func: {
-                                        code: function() {
-                                            return Promise.delay(100)
-                                                .then(function() {
-                                                    this.get("result").push(this.get("klow"));
-                                                });
-                                        }
-                                    }
+                                items: "# this.get('seq')",
+                                args: function () {
+                                    let self = this;
+                                    return Bluebird.delay(Math.random() * 100)
+                                        .then(function () {
+                                            self.get("result").push(self.get("klow"));
+                                        });
                                 }
                             }
                         },
@@ -986,7 +983,262 @@ describe('Logic Operators', function () {
             engine.invoke().then(
                 function (result) {
                     assert(_.isArray(result));
-                    assert.equal(result, "123456");
+                    assert.equal(result.length, 6);
+                    assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
+                }).nodeify(done);
+        });
+    });
+});
+
+describe("Merge", function () {
+    it("should merge arrays", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@merge": [
+                [1, 2, 3],
+                "# [4, 5, 6]"
+            ]
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert(_.isArray(result));
+                assert.equal(result.length, 6);
+                assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
+            }).nodeify(done);
+    });
+
+    it("should merge objects", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@merge": [
+                { a: function () { return 2; } },
+                "# {b: 2}",
+                { c: "function() { return 42; }" }
+            ]
+        });
+
+        engine.invoke().then(
+            function (result) {
+                assert(_.isObject(result));
+                assert.equal(_.keys(result).length, 3);
+                assert.equal(result.a, 2);
+                assert.equal(result.b, 2);
+                assert.equal(result.c, 42);
+            }).nodeify(done);
+    });
+});
+
+describe("switch", function () {
+    describe("switch w/ case", function () {
+        it("should work w/o default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 42",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return "55";
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: "42",
+                                args: "# 'boo'"
+                            }
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "hi");
+                }).nodeify(done);
+        });
+
+        it("should work w default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 43",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, 55);
+                }).nodeify(done);
+        });
+
+        it("should do its default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    expression: "# 'klow'",
+                    args: [
+                        {
+                            "@case": {
+                                value: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@case": {
+                                value: 42,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "boo");
+                }).nodeify(done);
+        });
+    });
+
+    describe("switch w/ when", function () {
+        it("should work w/o default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: 0,
+                                args: function () {
+                                    return "55";
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: function() {
+                                    return Bluebird.resolve(42);
+                                },
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: "42",
+                                args: "# 'boo'"
+                            }
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "hi");
+                }).nodeify(done);
+        });
+
+        it("should work w default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: 43,
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: undefined,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            //engine.addTracker(new ConsoleTracker());
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, 55);
+                }).nodeify(done);
+        });
+
+        it("should do its default", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@switch": {
+                    args: [
+                        {
+                            "@when": {
+                                condition: "",
+                                args: function () {
+                                    return 55;
+                                }
+                            }
+                        },
+                        {
+                            "@when": {
+                                condition: null,
+                                args: function () {
+                                    return "hi";
+                                }
+                            }
+                        },
+                        {
+                            "@default": "# 'boo'"
+                        }
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert.deepEqual(result, "boo");
                 }).nodeify(done);
         });
     });

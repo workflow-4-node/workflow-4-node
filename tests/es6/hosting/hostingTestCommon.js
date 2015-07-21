@@ -1,12 +1,13 @@
-var wf4node = require("../../../");
-var activityMarkup = wf4node.activities.activityMarkup;
-var WorkflowHost = wf4node.hosting.WorkflowHost;
-var ConsoleTracker = wf4node.activities.ConsoleTracker;
-var _ = require("lodash");
-var asyncHelpers = wf4node.common.asyncHelpers;
-var Promise = require("bluebird");
+"use strict";
 
-var assert = require("assert");
+let wf4node = require("../../../");
+let activityMarkup = wf4node.activities.activityMarkup;
+let WorkflowHost = wf4node.hosting.WorkflowHost;
+let ConsoleTracker = wf4node.activities.ConsoleTracker;
+let _ = require("lodash");
+let asyncHelpers = wf4node.common.asyncHelpers;
+let Promise = require("bluebird");
+let assert = require("assert");
 
 module.exports = {
     doBasicHostTest: Promise.coroutine(
@@ -17,15 +18,15 @@ module.exports = {
                 },
                 hostOptions);
 
-            var workflow = activityMarkup.parse(
+            let workflow = activityMarkup.parse(
                 {
-                    workflow: {
+                    "@workflow": {
                         name: "wf",
                         "!v": null,
                         "!x": 0,
                         args: [
                             {
-                                beginMethod: {
+                                "@beginMethod": {
                                     methodName: "foo",
                                     canCreateInstance: true,
                                     instanceIdPath: "[0]",
@@ -33,20 +34,20 @@ module.exports = {
                                 }
                             },
                             {
-                                endMethod: {
+                                "@endMethod": {
                                     methodName: "foo",
                                     result: "# this.get('v')[0] * this.get('v')[0]",
                                     "@to": "v"
                                 }
                             },
                             {
-                                assign: {
+                                "@assign": {
                                     value: 666,
                                     to: "x"
                                 }
                             },
                             {
-                                method: {
+                                "@method": {
                                     methodName: "bar",
                                     instanceIdPath: "[0]",
                                     result: "# this.get('v') * 2"
@@ -57,17 +58,17 @@ module.exports = {
                     }
                 });
 
-            var host = new WorkflowHost(hostOptions);
+            let host = new WorkflowHost(hostOptions);
             //host.addTracker(new ConsoleTracker());
 
             host.registerWorkflow(workflow);
-            var result = yield (host.invokeMethod("wf", "foo", [5]));
+            let result = yield (host.invokeMethod("wf", "foo", [5]));
 
             assert.equal(result, 25);
 
             // Verify promotedProperties:
             if (hostOptions && hostOptions.persistence) {
-                var promotedProperties = yield (Promise.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
+                let promotedProperties = yield (Promise.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
                 assert.ok(promotedProperties);
                 assert.equal(promotedProperties.v, 25);
                 assert.equal(promotedProperties.x, 666);
@@ -81,25 +82,25 @@ module.exports = {
 
     doCalculatorTest: Promise.coroutine(
         function* (hostOptions) {
-            var workflow = activityMarkup.parse(
+            let workflow = activityMarkup.parse(
                 {
-                    workflow: {
+                    "@workflow": {
                         name: "calculator",
                         running: true,
                         inputArgs: null,
                         currentValue: 0,
                         args: [
                             {
-                                while: {
+                                "@while": {
                                     condition: "# this.get('running')",
-                                    body: {
-                                        pick: [
+                                    args: {
+                                        "@pick": [
                                             {
-                                                block: {
+                                                "@block": {
                                                     displayName: "Add block",
                                                     args: [
                                                         {
-                                                            method: {
+                                                            "@method": {
                                                                 displayName: "Add method",
                                                                 methodName: "add",
                                                                 instanceIdPath: "[0].id",
@@ -108,7 +109,7 @@ module.exports = {
                                                             }
                                                         },
                                                         {
-                                                            assign: {
+                                                            "@assign": {
                                                                 value: "# this.get('currentValue') + this.get('inputArgs')[0].value",
                                                                 to: "currentValue"
                                                             }
@@ -117,11 +118,11 @@ module.exports = {
                                                 }
                                             },
                                             {
-                                                block: {
+                                                "@block": {
                                                     displayName: "Subtract block",
                                                     args: [
                                                         {
-                                                            method: {
+                                                            "@method": {
                                                                 displayName: "Subtract method",
                                                                 methodName: "subtract",
                                                                 instanceIdPath: "[0].id",
@@ -130,7 +131,7 @@ module.exports = {
                                                             }
                                                         },
                                                         {
-                                                            assign: {
+                                                            "@assign": {
                                                                 value: "# this.get('currentValue') - this.get('inputArgs')[0].value",
                                                                 to: "currentValue"
                                                             }
@@ -139,11 +140,11 @@ module.exports = {
                                                 }
                                             },
                                             {
-                                                block: {
+                                                "@block": {
                                                     displayName: "Multiply block",
                                                     args: [
                                                         {
-                                                            method: {
+                                                            "@method": {
                                                                 displayName: "Multiply method",
                                                                 methodName: "multiply",
                                                                 instanceIdPath: "[0].id",
@@ -152,7 +153,7 @@ module.exports = {
                                                             }
                                                         },
                                                         {
-                                                            assign: {
+                                                            "@assign": {
                                                                 value: "# this.get('currentValue') * this.get('inputArgs')[0].value",
                                                                 to: "currentValue"
                                                             }
@@ -161,11 +162,11 @@ module.exports = {
                                                 }
                                             },
                                             {
-                                                block: {
+                                                "@block": {
                                                     displayName: "Divide block",
                                                     args: [
                                                         {
-                                                            method: {
+                                                            "@method": {
                                                                 displayName: "Divide method",
                                                                 methodName: "divide",
                                                                 instanceIdPath: "[0].id",
@@ -174,7 +175,7 @@ module.exports = {
                                                             }
                                                         },
                                                         {
-                                                            assign: {
+                                                            "@assign": {
                                                                 value: "# this.get('currentValue') / this.get('inputArgs')[0].value",
                                                                 to: "currentValue"
                                                             }
@@ -183,7 +184,7 @@ module.exports = {
                                                 }
                                             },
                                             {
-                                                method: {
+                                                "@method": {
                                                     displayName: "Equals method",
                                                     methodName: "equals",
                                                     instanceIdPath: "[0].id",
@@ -192,18 +193,18 @@ module.exports = {
                                                 }
                                             },
                                             {
-                                                block: {
+                                                "@block": {
                                                     displayName: "Reset block",
                                                     args: [
                                                         {
-                                                            method: {
+                                                            "@method": {
                                                                 displayName: "Reset method",
                                                                 methodName: "reset",
                                                                 instanceIdPath: "[0].id"
                                                             }
                                                         },
                                                         {
-                                                            assign: {
+                                                            "@assign": {
                                                                 value: false,
                                                                 to: "running"
                                                             }
@@ -219,21 +220,21 @@ module.exports = {
                     }
                 });
 
-            var host = new WorkflowHost(hostOptions);
+            let host = new WorkflowHost(hostOptions);
 
             host.registerWorkflow(workflow);
             //host.addTracker(new ConsoleTracker());
 
-            var arg = {id: Math.floor((Math.random() * 1000000000) + 1)};
+            let arg = { id: Math.floor((Math.random() * 1000000000) + 1) };
 
-            var result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            let result = yield (host.invokeMethod("calculator", "equals", [arg]));
             assert.equal(result, 0);
 
             arg.value = 55;
             yield (host.invokeMethod("calculator", "add", [arg]));
 
             if (hostOptions && hostOptions.persistence) {
-                var host = new WorkflowHost(hostOptions);
+                let host = new WorkflowHost(hostOptions);
                 host.registerWorkflow(workflow);
             }
 

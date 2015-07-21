@@ -1,37 +1,41 @@
-var wf4node = require("../../../");
-var Expression = wf4node.activities.Expression;
-var Func = wf4node.activities.Func;
-var Block = wf4node.activities.Block;
-var activityMarkup = wf4node.activities.activityMarkup;
-var ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
-var _ = require("lodash");
-var ConsoleTracker = wf4node.activities.ConsoleTracker;
-var WorkflowHost = wf4node.hosting.WorkflowHost;
-var InstanceIdParser = wf4node.hosting.InstanceIdParser;
+"use strict";
 
-var assert = require("assert");
+/* global describe,it */
+
+let wf4node = require("../../../");
+let Expression = wf4node.activities.Expression;
+let Func = wf4node.activities.Func;
+let Block = wf4node.activities.Block;
+let activityMarkup = wf4node.activities.activityMarkup;
+let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
+let _ = require("lodash");
+let ConsoleTracker = wf4node.activities.ConsoleTracker;
+let WorkflowHost = wf4node.hosting.WorkflowHost;
+let InstanceIdParser = wf4node.hosting.InstanceIdParser;
+
+let assert = require("assert");
 
 describe("ActivityExecutionEngine", function () {
     describe("Bookmarking", function () {
         it("should handle parallel activities", function (done) {
-            var activity = activityMarkup.parse(
+            let activity = activityMarkup.parse(
                 {
-                    parallel: {
+                    "@parallel": {
                         var1: "",
                         displayName: "Root",
                         args: [
                             {
-                                block: {
+                                "@block": {
                                     displayName: "Wait Block 1",
                                     args: [
                                         {
-                                            waitForBookmark: {
+                                            "@waitForBookmark": {
                                                 displayName: "Wait 1",
                                                 bookmarkName: "bm1"
                                             }
                                         },
                                         {
-                                            func: {
+                                            "@func": {
                                                 displayName: "Func 1",
                                                 code: function () {
                                                     return this.add("var1", "a");
@@ -42,17 +46,17 @@ describe("ActivityExecutionEngine", function () {
                                 }
                             },
                             {
-                                block: {
+                                "@block": {
                                     displayName: "Wait Block 2",
                                     args: [
                                         {
-                                            waitForBookmark: {
+                                            "@waitForBookmark": {
                                                 displayName: "Wait 2",
                                                 bookmarkName: "bm2"
                                             }
                                         },
                                         {
-                                            func: {
+                                            "@func": {
                                                 displayName: "Func 2",
                                                 code: function () {
                                                     return this.add("var1", "b");
@@ -63,17 +67,17 @@ describe("ActivityExecutionEngine", function () {
                                 }
                             },
                             {
-                                block: {
+                                "@block": {
                                     displayName: "Resume Block",
                                     args: [
                                         {
-                                            resumeBookmark: {
+                                            "@resumeBookmark": {
                                                 displayName: "Resume 1",
                                                 bookmarkName: "bm1"
                                             }
                                         },
                                         {
-                                            resumeBookmark: {
+                                            "@resumeBookmark": {
                                                 displayName: "Resume 2",
                                                 bookmarkName: "bm2"
                                             }
@@ -86,7 +90,7 @@ describe("ActivityExecutionEngine", function () {
                     }
                 });
 
-            var engine = new ActivityExecutionEngine(activity);
+            let engine = new ActivityExecutionEngine(activity);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(
@@ -105,24 +109,24 @@ describe("ActivityExecutionEngine", function () {
         });
 
         it("should handle of picking activities", function (done) {
-            var activity = activityMarkup.parse(
+            let activity = activityMarkup.parse(
                 {
-                    block: {
+                    "@block": {
                         var1: 0,
                         args: [
                             {
-                                parallel: [
+                                "@parallel": [
                                     {
-                                        pick: [
+                                        "@pick": [
                                             {
-                                                block: [
+                                                "@block": [
                                                     {
-                                                        waitForBookmark: {
+                                                        "@waitForBookmark": {
                                                             bookmarkName: "foo"
                                                         }
                                                     },
                                                     {
-                                                        func: {
+                                                        "@func": {
                                                             displayName: "Do Not Do This Func",
                                                             code: function () {
                                                                 this.set("var1", -1);
@@ -132,14 +136,14 @@ describe("ActivityExecutionEngine", function () {
                                                 ]
                                             },
                                             {
-                                                block: [
+                                                "@block": [
                                                     {
-                                                        waitForBookmark: {
+                                                        "@waitForBookmark": {
                                                             bookmarkName: "bm"
                                                         }
                                                     },
                                                     {
-                                                        func: {
+                                                        "@func": {
                                                             displayName: "Do This Func",
                                                             code: function () {
                                                                 this.set("var1", 1);
@@ -151,14 +155,14 @@ describe("ActivityExecutionEngine", function () {
                                         ]
                                     },
                                     {
-                                        resumeBookmark: {
+                                        "@resumeBookmark": {
                                             bookmarkName: "bm"
                                         }
                                     }
                                 ]
                             },
                             {
-                                func: {
+                                "@func": {
                                     displayName: "Final Func",
                                     code: function () {
                                         return this.get("var1");
@@ -169,7 +173,7 @@ describe("ActivityExecutionEngine", function () {
                     }
                 });
 
-            var engine = new ActivityExecutionEngine(activity);
+            let engine = new ActivityExecutionEngine(activity);
             //engine.addTracker(new ConsoleTracker());
 
             engine.invoke().then(

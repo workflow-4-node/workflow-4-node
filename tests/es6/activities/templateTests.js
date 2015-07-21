@@ -1,13 +1,17 @@
-var wf4node = require("../../../");
-var ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
-var _ = require("lodash");
-var assert = require("assert");
+"use strict";
+
+/* global describe,it */
+
+let wf4node = require("../../../");
+let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
+let _ = require("lodash");
+let assert = require("assert");
 
 describe("Template", function () {
     it("should parse object correctly", function (done) {
 
-        var engine = new ActivityExecutionEngine({
-            template: {
+        let engine = new ActivityExecutionEngine({
+            "@template": {
                 declare: {
                     a: "foo",
                     b: [
@@ -42,8 +46,8 @@ describe("Template", function () {
 
     it("should work when specialized", function (done) {
 
-        var engine = new ActivityExecutionEngine({
-            block: [
+        let engine = new ActivityExecutionEngine({
+            "@block": [
                 {
                     a: "foo",
                     b: [
@@ -72,6 +76,38 @@ describe("Template", function () {
             assert.ok(_.isPlainObject(result.b[1]));
             assert.equal(result.b[1].c, 6);
             assert.equal(result.b[2], 42);
+        }).nodeify(done);
+    });
+
+    it("should work on arrays", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@block": {
+                rule: {
+                    value: 22
+                },
+                args: [
+                    {
+                        "@block": {
+                            a: [
+                                {
+                                    $project: {
+                                        $literal: "# this.get('rule').value"
+                                    }
+                                }
+                            ],
+                            args: [
+                                "= a"
+                            ]
+                        }
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(function (result) {
+            assert.ok(_.isArray(result));
+            assert.ok(_.isPlainObject(result[0].$project));
+            assert.equal(result[0].$project.$literal, 22);
         }).nodeify(done);
     });
 });
