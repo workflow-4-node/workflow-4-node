@@ -26,10 +26,10 @@
     "developmenttool"
   ],
   "devDependencies": {
-    "gulp": "^3.8.11",
-    "gulp-sequence": "^0.3.2",
-    "gulp-traceur": "^0.17.1",
-    "mocha": "^1.21.0",
+    "gulp": "*",
+    "gulp-sequence": "*",
+    "gulp-traceur": "*",
+    "mocha": "*",
     "traceur": "*"
   },
   "dependencies": {
