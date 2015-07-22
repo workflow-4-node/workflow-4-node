@@ -12,7 +12,7 @@ let Block = wf4node.activities.Block;
 let _ = require("lodash");
 let Expression = wf4node.activities.Expression;
 
-describe("expressions", function() {
+describe("expressions", function () {
     describe("Expression", function () {
         it("should multiply two numbers", function (done) {
             let expr = new Expression();
@@ -36,6 +36,58 @@ describe("expressions", function() {
                         v: 2,
                         args: [
                             "# this.get('v') * this.get('v')"
+                        ]
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(block);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, 4);
+                }).nodeify(done);
+        });
+
+        it("should workaround get", function (done) {
+            let block = activityMarkup.parse(
+                {
+                    "@block": {
+                        v: 2,
+                        args: [
+                            {
+                                "@func": {
+                                    args: [ "=v", "= v  " ],
+                                    code: function(a, b) {
+                                        return a * b;
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(block);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, 4);
+                }).nodeify(done);
+        });
+
+        it("should access parent", function (done) {
+            let block = activityMarkup.parse(
+                {
+                    "@block": {
+                        v: 2,
+                        args: [
+                            {
+                                "@func": {
+                                    args: [ "=v", "= $parent.v  " ],
+                                    code: function(a, b) {
+                                        return a + b;
+                                    }
+                                }
+                            }
                         ]
                     }
                 });
