@@ -11,7 +11,7 @@ let Bluebird = require("bluebird");
 let Block = wf4node.activities.Block;
 let _ = require("lodash");
 
-describe("declarators", function() {
+describe("declarators", function () {
     describe("Block", function () {
         it("should handle variables well", function (done) {
             let block = new Block();
@@ -21,17 +21,17 @@ describe("declarators", function() {
 
             let f1 = new Func();
             f1.code = function () {
-                return this.set("let3", this.get("let3") + this.get("let1") * 2);
+                return this.let3 = (this.let3 + this.let1 * 2);
             };
 
             let f2 = new Func();
             f2.code = function () {
-                return this.set("let3", this.get("let3") + this.get("let2") * 3);
+                return this.let3 = (this.let3 + this.let2 * 3);
             };
 
             let f3 = new Func();
             f3.code = function () {
-                return this.get("let3") * 4;
+                return this.let3 * 4;
             };
 
             let engine = new ActivityExecutionEngine(block);
@@ -65,21 +65,21 @@ describe("declarators", function() {
                             {
                                 "@func": {
                                     code: function bubu() {
-                                        return this.set("let3", this.get("let3") + this.get("let1") * 2);
+                                        return this.let3 += this.let1 * 2;
                                     }
                                 }
                             },
                             {
                                 "@func": {
                                     code: function kittyfuck() {
-                                        return this.set("let3", this.get("let3") + this.get("let2") * 3);
+                                        return this.let3 += this.let2 * 3;
                                     }
                                 }
                             },
                             {
                                 "@func": {
                                     code: function () {
-                                        return this.get("let3") * 4;
+                                        return this.let3 * 4;
                                     }
                                 }
                             }
@@ -111,21 +111,21 @@ describe("declarators", function() {
                         {
                             "@func": {
                                 code: function bubu() {
-                                    return this.set("let3", this.get("let3") + this.get("let1") * 2);
+                                    return this.let3 = this.let3 + this.let1 * 2;
                                 }
                             }
                         },
                         {
                             "@func": {
                                 code: function kittyfuck() {
-                                    return this.set("let3", this.get("let3") + this.get("let2") * 3);
+                                    return this.let3 = this.let3 + this.let2 * 3;
                                 }
                             }
                         },
                         {
                             "@func": {
                                 code: function () {
-                                    return this.get("let3") * 4;
+                                    return this.let3 * 4;
                                 }
                             }
                         }
@@ -162,13 +162,13 @@ describe("declarators", function() {
                             {
                                 "@func": {
                                     code: function () {
-                                        return this.add("let1", "a");
+                                        return this.let1 += "a";
                                     }
                                 }
                             },
                             {
                                 "@func": {
-                                    code: 'function() { return this.add("let1", "b"); }'
+                                    code: 'function() { return this.let1 += "b"; }'
                                 }
                             }
                         ]
@@ -195,13 +195,13 @@ describe("declarators", function() {
                             {
                                 "@func": {
                                     code: function () {
-                                        return this.add("let1", "a");
+                                        return this.let1 += "a";
                                     }
                                 }
                             },
                             {
                                 "@func": {
-                                    code: 'function() { return this.add("let1", "b"); }'
+                                    code: 'function() { return this.let1 += "b"; }'
                                 }
                             },
                             {
@@ -252,13 +252,13 @@ describe("declarators", function() {
                             {
                                 "@func": {
                                     code: function () {
-                                        return this.add("let1", "a");
+                                        return this.let1 += "a";
                                     }
                                 }
                             },
                             {
                                 "@func": {
-                                    code: 'function() { return this.add("let1", "b"); }'
+                                    code: 'function() { return this.let1 += "b"; }'
                                 }
                             }
                         ]

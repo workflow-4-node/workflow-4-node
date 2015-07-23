@@ -26,6 +26,7 @@
     "no-new-func": false,
     "no-loop-func": false,
     "no-eval": false,
+    "no-return-assign": false,
     "camelcase": false,
     "eol-last": false,
     "semi": 2,
