@@ -11,14 +11,14 @@ let Bluebird = require("bluebird");
 let Block = wf4node.activities.Block;
 let _ = require("lodash");
 
-describe('Logic Operators', function () {
-    describe('Truthy', function () {
-        it('should work', function (done) {
+describe("Logic Operators", function () {
+    describe("Truthy", function () {
+        it("should work", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     t1: {
                         "@truthy": {
-                            value: 'a'
+                            value: "a"
                         }
                     },
                     t2: {
@@ -29,25 +29,25 @@ describe('Logic Operators', function () {
                     t3: {
                         "@truthy": {
                             value: true,
-                            is: 'is',
-                            isNot: 'isNot'
+                            is: "is",
+                            isNot: "isNot"
                         }
                     },
                     t4: {
                         "@truthy": {
                             value: null,
-                            is: 'is',
+                            is: "is",
                             isNot: {
                                 "@func": {
                                     code: function () {
-                                        return 'isNot';
+                                        return "isNot";
                                     }
                                 }
                             }
                         }
                     },
                     args: [
-                        ['# this.get("t1")', '# this.get("t2")', '# this.get("t3")', '# this.get("t4")']
+                        ["# this.t1", "# this.t2", "# this.t3", "# this.t4"]
                     ]
                 }
             });
@@ -57,19 +57,19 @@ describe('Logic Operators', function () {
                     assert.ok(_.isArray(result));
                     assert.equal(result[0], true);
                     assert.equal(result[1], false);
-                    assert.equal(result[2], 'is');
-                    assert.equal(result[3], 'isNot');
+                    assert.equal(result[2], "is");
+                    assert.equal(result[3], "isNot");
                 }).nodeify(done);
         });
     });
 
-    describe('Falsy', function () {
-        it('should work', function (done) {
+    describe("Falsy", function () {
+        it("should work", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     t1: {
                         "@falsy": {
-                            value: 'a'
+                            value: "a"
                         }
                     },
                     t2: {
@@ -80,25 +80,25 @@ describe('Logic Operators', function () {
                     t3: {
                         "@falsy": {
                             value: true,
-                            is: 'is',
-                            isNot: 'isNot'
+                            is: "is",
+                            isNot: "isNot"
                         }
                     },
                     t4: {
                         "@falsy": {
                             value: null,
-                            is: '# "is"',
+                            is: "# 'is'",
                             isNot: {
                                 "@func": {
                                     code: function () {
-                                        return 'isNot';
+                                        return "isNot";
                                     }
                                 }
                             }
                         }
                     },
                     args: [
-                        ['# this.get("t1")', '# this.get("t2")', '# this.get("t3")', '# this.get("t4")']
+                        ["# this.t1", "# this.t2", "# this.t3", "# this.t4"]
                     ]
                 }
             });
@@ -108,14 +108,14 @@ describe('Logic Operators', function () {
                     assert.ok(_.isArray(result));
                     assert.equal(result[0], false);
                     assert.equal(result[1], true);
-                    assert.equal(result[2], 'isNot');
-                    assert.equal(result[3], 'is');
+                    assert.equal(result[2], "isNot");
+                    assert.equal(result[3], "is");
                 }).nodeify(done);
         });
     });
 
-    describe('Equals', function () {
-        it('should work', function (done) {
+    describe("Equals", function () {
+        it("should work", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     a: {
@@ -123,11 +123,11 @@ describe('Logic Operators', function () {
                             value: function () {
                                 return 42;
                             },
-                            to: '# 40 + 2 ',
+                            to: "# 40 + 2 ",
                             is: function () {
-                                return '42';
+                                return "42";
                             },
-                            isNot: 'aba'
+                            isNot: "aba"
                         }
                     },
                     b: {
@@ -135,16 +135,16 @@ describe('Logic Operators', function () {
                             value: function () {
                                 return 42;
                             },
-                            to: '# 40 + 1 ',
+                            to: "# 40 + 1 ",
                             is: function () {
-                                return '42';
+                                return "42";
                             },
-                            isNot: 'aba'
+                            isNot: "aba"
                         }
                     },
                     args: {
-                        a: '# this.get("a")',
-                        b: '# this.get("b")'
+                        a: "# this.a",
+                        b: "# this.b"
                     }
                 }
             });
@@ -152,14 +152,14 @@ describe('Logic Operators', function () {
             engine.invoke().then(
                 function (result) {
                     assert.ok(_.isPlainObject(result));
-                    assert.equal(result.a, '42');
-                    assert.equal(result.b, 'aba');
+                    assert.equal(result.a, "42");
+                    assert.equal(result.b, "aba");
                 }).nodeify(done);
         });
     });
 
-    describe('NotEquals', function () {
-        it('should work', function (done) {
+    describe("NotEquals", function () {
+        it("should work", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     a: {
@@ -167,11 +167,11 @@ describe('Logic Operators', function () {
                             value: function () {
                                 return 42;
                             },
-                            to: '# 40 + 2 ',
+                            to: "# 40 + 2 ",
                             is: function () {
-                                return '42';
+                                return "42";
                             },
-                            isNot: 'aba'
+                            isNot: "aba"
                         }
                     },
                     b: {
@@ -179,16 +179,16 @@ describe('Logic Operators', function () {
                             value: function () {
                                 return 42;
                             },
-                            to: '# 40 + 1 ',
+                            to: "# 40 + 1 ",
                             is: function () {
-                                return '42';
+                                return "42";
                             },
-                            isNot: 'aba'
+                            isNot: "aba"
                         }
                     },
                     args: {
-                        a: '# this.get("a")',
-                        b: '# this.get("b")'
+                        a: "# this.a",
+                        b: "# this.b"
                     }
                 }
             });
@@ -196,23 +196,23 @@ describe('Logic Operators', function () {
             engine.invoke().then(
                 function (result) {
                     assert.ok(_.isPlainObject(result));
-                    assert.equal(result.a, 'aba');
-                    assert.equal(result.b, '42');
+                    assert.equal(result.a, "aba");
+                    assert.equal(result.b, "42");
                 }).nodeify(done);
         });
     });
 
-    describe('Not, And, Or', function () {
-        it('should work', function (done) {
+    describe("Not, And, Or", function () {
+        it("should work", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     a: {
                         "@and": [
                             true,
-                            'bubu',
+                            "bubu",
                             {
                                 "@or": [
-                                    '# true',
+                                    "# true",
                                     false
                                 ]
                             },
@@ -235,7 +235,7 @@ describe('Logic Operators', function () {
                             args: [
                                 {
                                     "@or": [
-                                        '# true',
+                                        "# true",
                                         false
                                     ]
                                 },
@@ -244,7 +244,7 @@ describe('Logic Operators', function () {
                                         {
                                             "@and": [
                                                 true,
-                                                '# [ 42 ]'
+                                                "# [ 42 ]"
                                             ]
                                         }
                                     ]
@@ -258,8 +258,8 @@ describe('Logic Operators', function () {
                         }
                     },
                     args: {
-                        a: '# this.get("a")',
-                        b: '# this.get("b")'
+                        a: "# this.a",
+                        b: "# this.b"
                     }
                 }
             });

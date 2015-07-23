@@ -56,7 +56,7 @@ describe("expressions", function () {
                         args: [
                             {
                                 "@func": {
-                                    args: [ "# this.v", "# $parent.v  " ],
+                                    args: [ "# this.v", "# this.$parent.v  " ],
                                     code: function(a, b) {
                                         return a + b;
                                     }

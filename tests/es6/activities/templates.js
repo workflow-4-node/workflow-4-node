@@ -91,12 +91,12 @@ describe("templates", function () {
                             a: [
                                 {
                                     $project: {
-                                        $literal: "# this.get('rule').value"
+                                        $literal: "# this.rule.value"
                                     }
                                 }
                             ],
                             args: [
-                                "= a"
+                                "# this.a"
                             ]
                         }
                     }

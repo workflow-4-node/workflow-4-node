@@ -20,12 +20,12 @@ describe("conditionals", function() {
                     args: [
                         {
                             "@if": {
-                                condition: "# this.get('v') == 5",
+                                condition: "# this.v == 5",
                                 then: {
                                     "@func": {
                                         args: [1],
                                         code: function (a) {
-                                            return a + this.get('v');
+                                            return a + this.v;
                                         }
                                     }
                                 },
@@ -33,7 +33,7 @@ describe("conditionals", function() {
                                     "@func": {
                                         args: [2],
                                         code: function (a) {
-                                            return a + this.get('v');
+                                            return a + this.v;
                                         }
                                     }
                                 }
@@ -69,7 +69,7 @@ describe("conditionals", function() {
                                     "@func": {
                                         args: [1],
                                         code: function (a) {
-                                            this.set("r", a + this.get("v"));
+                                            this.r = a + this.v;
                                         }
                                     }
                                 },
@@ -77,13 +77,13 @@ describe("conditionals", function() {
                                     "@func": {
                                         args: [2],
                                         code: function (a) {
-                                            this.set("r", a + this.get("v"));
+                                            this.r = a + this.v;
                                         }
                                     }
                                 }
                             }
                         },
-                        "# this.get('r')"
+                        "# this.r"
                     ]
                 }
             });

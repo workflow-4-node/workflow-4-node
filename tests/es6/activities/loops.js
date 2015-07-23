@@ -23,12 +23,12 @@ describe("Loops", function () {
                         args: [
                             {
                                 "@while": {
-                                    condition: "# this.get('j') < this.get('i')",
-                                    args: "# this.postfixInc('j')",
+                                    condition: "# this.j < this.i",
+                                    args: "# this.j++",
                                     "@to": "z"
                                 }
                             },
-                            "# { j: this.get('j'), z: this.get('z') }"
+                            "# { j: this.j, z: this.z }"
                         ]
                     }
                 });
@@ -61,10 +61,10 @@ describe("Loops", function () {
                                         }
                                     }
                                 },
-                                args: "# this.set('seq', this.get('seq') + this.get('i'))"
+                                args: "# this.seq = this.seq + this.i"
                             }
                         },
-                        "# this.get('seq')"
+                        "# this.seq"
                     ]
                 }
             });
@@ -94,11 +94,11 @@ describe("Loops", function () {
                                 },
                                 step: -2,
                                 varName: "klow",
-                                args: "# this.set('seq', this.get('seq') + this.get('klow'))",
+                                args: "# this.seq += this.klow",
                                 "@to": "r"
                             }
                         },
-                        "# { v: this.get('seq'), r: this.get('r') }"
+                        "# { v: this.seq, r: this.r }"
                     ]
                 }
             });
@@ -127,11 +127,11 @@ describe("Loops", function () {
                     args: [
                         {
                             "@forEach": {
-                                items: "# this.get('seq')",
-                                args: "# this.set('result', this.get('result') + this.get('item'))"
+                                items: "# this.seq",
+                                args: "# this.result += this.item"
                             }
                         },
-                        "# this.get('result')"
+                        "# this.result"
                     ]
                 }
             });
@@ -159,11 +159,11 @@ describe("Loops", function () {
                             "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                items: "# this.get('seq')",
-                                args: "# this.set('result', this.get('result') + this.get('klow'))"
+                                items: "# this.seq",
+                                args: "# this.result += this.klow"
                             }
                         },
-                        "# this.get('result')"
+                        "# this.result"
                     ]
                 }
             });
@@ -185,17 +185,17 @@ describe("Loops", function () {
                             "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                items: "# this.get('seq')",
+                                items: "# this.seq",
                                 args: function () {
                                     let self = this;
                                     return Bluebird.delay(Math.random() * 100)
                                         .then(function () {
-                                            self.get("result").push(self.get("klow"));
+                                            self.result.push(self.klow);
                                         });
                                 }
                             }
                         },
-                        "# this.get('result')"
+                        "# this.result"
                     ]
                 }
             });

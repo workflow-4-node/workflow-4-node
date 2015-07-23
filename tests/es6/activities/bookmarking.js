@@ -36,7 +36,7 @@ describe("bookmarking", function () {
                                         "@func": {
                                             displayName: "Func 1",
                                             code: function () {
-                                                return this.add("var1", "a");
+                                                return this.var1 += "a";
                                             }
                                         }
                                     }
@@ -57,7 +57,7 @@ describe("bookmarking", function () {
                                         "@func": {
                                             displayName: "Func 2",
                                             code: function () {
-                                                return this.add("var1", "b");
+                                                return this.var1 += "b";
                                             }
                                         }
                                     }
@@ -127,7 +127,7 @@ describe("bookmarking", function () {
                                                     "@func": {
                                                         displayName: "Do Not Do This Func",
                                                         code: function () {
-                                                            this.set("var1", -1);
+                                                            this.var1 = -1;
                                                         }
                                                     }
                                                 }
@@ -144,7 +144,7 @@ describe("bookmarking", function () {
                                                     "@func": {
                                                         displayName: "Do This Func",
                                                         code: function () {
-                                                            this.set("var1", 1);
+                                                            this.var1 = 1;
                                                         }
                                                     }
                                                 }
@@ -163,7 +163,7 @@ describe("bookmarking", function () {
                             "@func": {
                                 displayName: "Final Func",
                                 code: function () {
-                                    return this.get("var1");
+                                    return this.var1;
                                 }
                             }
                         }
