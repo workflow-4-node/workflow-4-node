@@ -1,62 +1,85 @@
-var wf4node = require("../../../../");
-var MongoDDPersistence = wf4node.hosting.mongoDB.MongoDDPersistence;
-var hostingTestCommon = require("../hostingTestCommon");
-var Serializer = require("backpack-node").system.Serializer;
+"use strict";
 
-var connStr = process.env.TEST_MONGODB_CONN;
-var persistence = connStr ? new MongoDDPersistence({connection: connStr}) : null;
+/* global describe,it */
+
+let wf4node = require("../../../../");
+let MongoDDPersistence = wf4node.hosting.mongoDB.MongoDDPersistence;
+let hostingTestCommon = require("../hostingTestCommon");
+let Serializer = require("backpack-node").system.Serializer;
+
+let connStr = process.env.TEST_MONGODB_CONN;
+let persistence = connStr ? new MongoDDPersistence({connection: connStr}) : null;
 
 if (persistence) {
     describe("WorkflowHost", function () {
-        describe("With MongoDBPersistence", function () {
-            it("should run basic hosting example in non-lazy mode", function (done) {
-                var hostOptions = {
-                    persistence: persistence,
-                    lazyPersistence: false,
-                    serializer: null,
-                    alwaysLoadState: true
-                };
-                hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
+        this.timeout(5000);
+
+        function getInfo(options) {
+            return `lazy: ${options.lazyPersistence ? "yes" : "no"}, serializer: ${options.serializer ? "yes" : "no"}, alwaysLoad: ${options.alwaysLoadState ? "yes" : "no"}`;
+        }
+
+        function testBasic(options) {
+            it("should run by: " + getInfo(options), function (done) {
+                hostingTestCommon.doBasicHostTest(options).nodeify(done);
+            });
+        }
+
+        function testCalc(options) {
+            it("should run by: " + getInfo(options), function (done) {
+                hostingTestCommon.doCalculatorTest(options).nodeify(done);
+            });
+        }
+
+        let allOptions = [
+            {
+                persistence: persistence,
+                lazyPersistence: false,
+                serializer: null,
+                alwaysLoadState: false
+            },
+            {
+                persistence: persistence,
+                lazyPersistence: true,
+                serializer: null,
+                alwaysLoadState: false
+            },
+            {
+                persistence: persistence,
+                lazyPersistence: false,
+                serializer: new Serializer(),
+                alwaysLoadState: false
+            },
+            {
+                persistence: persistence,
+                lazyPersistence: true,
+                serializer: new Serializer(),
+                alwaysLoadState: false
+            },
+            {
+                persistence: persistence,
+                lazyPersistence: false,
+                serializer: new Serializer(),
+                alwaysLoadState: true
+            },
+            {
+                persistence: persistence,
+                lazyPersistence: true,
+                serializer: new Serializer(),
+                alwaysLoadState: true
+            }
+        ];
+
+        describe("With MongoDB Persistence", function () {
+            describe("Basic Example", function () {
+                for (let opt of allOptions) {
+                    testBasic(opt);
+                }
             });
 
-            it("should run basic hosting example in lazy mode", function (done) {
-                var hostOptions = {
-                    persistence: persistence,
-                    lazyPersistence: true,
-                    serializer: null,
-                    alwaysLoadState: true
-                };
-                hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
-            });
-
-            it("should run correlated calculator example in non-lazy mode", function (done) {
-                var hostOptions = {
-                    persistence: persistence,
-                    lazyPersistence: false,
-                    serializer: null,
-                    alwaysLoadState: true
-                };
-                hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
-            });
-
-            it("should run correlated calculator example in lazy mode", function (done) {
-                var hostOptions = {
-                    persistence: persistence,
-                    lazyPersistence: true,
-                    serializer: null,
-                    alwaysLoadState: true
-                };
-                hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
-            });
-
-            it("should run correlated calculator example with a serializer", function (done) {
-                var hostOptions = {
-                    persistence: persistence,
-                    lazyPersistence: true,
-                    serializer: new Serializer(),
-                    alwaysLoadState: true
-                };
-                hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
+            describe("Calculator Example", function () {
+                for (let opt of allOptions) {
+                    testCalc(opt);
+                }
             });
         });
     });

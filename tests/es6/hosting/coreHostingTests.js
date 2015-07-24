@@ -18,74 +18,87 @@ describe("InstanceIdParser", function () {
             assert.equal(p.parse("this", 1), 1);
             assert.equal(p.parse("[0]", [1]), 1);
             assert.equal(p.parse("[0]", [4, 5]), 4);
-            assert.equal(p.parse("[1].id", [{id: 1}, {id: 2}]), 2);
-            assert.equal(p.parse("id[0].a", {id: [{a: "foo"}]}), "foo");
+            assert.equal(p.parse("[1].id", [{ id: 1 }, { id: 2 }]), 2);
+            assert.equal(p.parse("id[0].a", { id: [{ a: "foo" }] }), "foo");
         });
     });
 });
 
 describe("WorkflowHost", function () {
-    describe("Without persistence", function () {
-        it("should run basic hosting example", function (done) {
-            hostingTestCommon.doBasicHostTest().nodeify(done);
+    this.timeout(5000);
+
+    function getInfo(options) {
+        return `persistence: ${options.persistence ? "on" : "off"}, lazy: ${options.lazyPersistence ? "yes" : "no"}, serializer: ${options.serializer ? "yes" : "no"}, alwaysLoad: ${options.alwaysLoadState ? "yes" : "no"}`;
+    }
+
+    function testBasic(options) {
+        it("should run by: " + getInfo(options), function (done) {
+            hostingTestCommon.doBasicHostTest(options).nodeify(done);
+        });
+    }
+
+    function testCalc(options) {
+        it("should run by: " + getInfo(options), function (done) {
+            hostingTestCommon.doCalculatorTest(options).nodeify(done);
+        });
+    }
+
+    let allOptions = [
+        {
+            persistence: null,
+            lazyPersistence: false,
+            serializer: null,
+            alwaysLoadState: false
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: false,
+            serializer: null,
+            alwaysLoadState: false
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: true,
+            serializer: null,
+            alwaysLoadState: false
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: false,
+            serializer: new Serializer(),
+            alwaysLoadState: false
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: true,
+            serializer: new Serializer(),
+            alwaysLoadState: false
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: false,
+            serializer: new Serializer(),
+            alwaysLoadState: true
+        },
+        {
+            persistence: new MemoryPersistence(),
+            lazyPersistence: true,
+            serializer: new Serializer(),
+            alwaysLoadState: true
+        }
+    ];
+
+    describe("Without Persistence and With Memory Persistence", function () {
+        describe("Basic Example", function () {
+            for (let opt of allOptions) {
+                testBasic(opt);
+            }
         });
 
-        it("should run correlated calculator example", function (done) {
-            hostingTestCommon.doCalculatorTest().nodeify(done);
-        });
-    });
-
-    describe("With MemoryPersistence", function () {
-        this.timeout(5000);
-
-        it("should run basic hosting example in non-lazy mode", function (done) {
-            let hostOptions = {
-                persistence: new MemoryPersistence(),
-                lazyPersistence: false,
-                serializer: null,
-                alwaysLoadState: true
-            };
-            hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
-        });
-
-        it("should run basic hosting example in lazy mode", function (done) {
-            let hostOptions = {
-                persistence: new MemoryPersistence(),
-                lazyPersistence: true,
-                serializer: null,
-                alwaysLoadState: true
-            };
-            hostingTestCommon.doBasicHostTest(hostOptions).nodeify(done);
-        });
-
-        it("should run correlated calculator example in non-lazy mode", function (done) {
-            let hostOptions = {
-                persistence: new MemoryPersistence(),
-                lazyPersistence: false,
-                serializer: null,
-                alwaysLoadState: true
-            };
-            hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
-        });
-
-        it("should run correlated calculator example in lazy mode", function (done) {
-            let hostOptions = {
-                persistence: new MemoryPersistence(),
-                lazyPersistence: true,
-                serializer: null,
-                alwaysLoadState: true
-            };
-            hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
-        });
-
-        it("should run correlated calculator example if state is serialized", function (done) {
-            let hostOptions = {
-                persistence: new MemoryPersistence(),
-                lazyPersistence: false,
-                serializer: new Serializer(),
-                alwaysLoadState: true
-            };
-            hostingTestCommon.doCalculatorTest(hostOptions).nodeify(done);
+        describe("Calculator Example", function () {
+            for (let opt of allOptions) {
+                testCalc(opt);
+            }
         });
     });
 });
