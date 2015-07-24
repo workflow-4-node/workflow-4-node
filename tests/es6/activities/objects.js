@@ -32,7 +32,7 @@ describe("objects", function() {
         it("should merge objects", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@merge": [
-                    { a: function () { return 2; } },
+                    { a: "function () { return 2; }" },
                     "= {b: 2}",
                     { c: "function() { return 42; }" }
                 ]

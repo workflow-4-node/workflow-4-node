@@ -11,7 +11,7 @@ let Bluebird = require("bluebird");
 let Block = wf4node.activities.Block;
 let _ = require("lodash");
 
-describe("conditionals", function() {
+describe("conditionals", function () {
     describe("If", function () {
         it("should call then", function (done) {
             let block = activityMarkup.parse({
@@ -46,7 +46,7 @@ describe("conditionals", function() {
             let engine = new ActivityExecutionEngine(block);
             engine.invoke().then(
                 function (result) {
-                    assert.equal(1 + 5, result);
+                    assert.equal(result, 1 + 5);
                 }).nodeify(done);
         });
 
@@ -91,7 +91,60 @@ describe("conditionals", function() {
             let engine = new ActivityExecutionEngine(block);
             engine.invoke().then(
                 function (result) {
-                    assert.equal(2 + 5, result);
+                    assert.equal(result, 2 + 5);
+                }).nodeify(done);
+        });
+
+        it("should run blocks", function (done) {
+            let block = activityMarkup.parse({
+                "@block": {
+                    v: 5,
+                    s: 1,
+                    args: [
+                        {
+                            "@if": {
+                                condition: {
+                                    "@func": {
+                                        code: function () {
+                                            return false;
+                                        }
+                                    }
+                                },
+                                then: {
+                                    "@func": {
+                                        args: [1],
+                                        code: function (a) {
+                                            this.s = a + this.v;
+                                        }
+                                    }
+                                },
+                                else: {
+                                    "@block": [
+                                        {
+                                            "@func": {
+                                                args: [2],
+                                                code: function (a) {
+                                                    let self = this;
+                                                    return Bluebird.delay(100).then(function () { self.s = 40 + a; });
+                                                }
+                                            }
+                                        },
+                                        function () {
+                                            return this.s;
+                                        }
+                                    ]
+                                }
+                            }
+                        },
+                        "= this.s"
+                    ]
+                }
+            });
+
+            let engine = new ActivityExecutionEngine(block);
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, 42);
                 }).nodeify(done);
         });
     });
@@ -219,7 +272,7 @@ describe("conditionals", function() {
                             },
                             {
                                 "@when": {
-                                    condition: function() {
+                                    condition: function () {
                                         return Bluebird.resolve(42);
                                     },
                                     args: function () {
