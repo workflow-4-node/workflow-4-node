@@ -42,6 +42,28 @@ describe("Func", function () {
             }).nodeify(done);
     });
 
+    it("should run twice", function (done) {
+        let fop = activityMarkup.parse(
+            {
+                "@func": {
+                    code: function (obj) {
+                        return obj.name;
+                    }
+                }
+            });
+
+        let engine = new ActivityExecutionEngine(fop);
+
+        engine.invoke({ name: "Gabor" })
+            .then(function (result) {
+                assert.equal(result, "Gabor");
+                return engine.invoke({ name: "Pisti" })
+                    .then(function (result2) {
+                        assert.equal(result2, "Pisti");
+                    });
+            }).nodeify(done);
+    });
+
     it("should run when code is asynchronous", function (done) {
         let fop = new Func();
         fop.code = function (obj) {
