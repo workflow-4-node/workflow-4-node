@@ -47,7 +47,7 @@ describe("Logic Operators", function () {
                         }
                     },
                     args: [
-                        ["# this.t1", "# this.t2", "# this.t3", "# this.t4"]
+                        ["= this.t1", "= this.t2", "= this.t3", "= this.t4"]
                     ]
                 }
             });
@@ -87,7 +87,7 @@ describe("Logic Operators", function () {
                     t4: {
                         "@falsy": {
                             value: null,
-                            is: "# 'is'",
+                            is: "= 'is'",
                             isNot: {
                                 "@func": {
                                     code: function () {
@@ -98,7 +98,7 @@ describe("Logic Operators", function () {
                         }
                     },
                     args: [
-                        ["# this.t1", "# this.t2", "# this.t3", "# this.t4"]
+                        ["= this.t1", "= this.t2", "= this.t3", "= this.t4"]
                     ]
                 }
             });
@@ -123,7 +123,7 @@ describe("Logic Operators", function () {
                             value: function () {
                                 return 42;
                             },
-                            to: "# 40 + 2 ",
+                            to: "= 40 + 2 ",
                             is: function () {
                                 return "42";
                             },
@@ -135,7 +135,7 @@ describe("Logic Operators", function () {
                             value: function () {
                                 return 42;
                             },
-                            to: "# 40 + 1 ",
+                            to: "= 40 + 1 ",
                             is: function () {
                                 return "42";
                             },
@@ -143,8 +143,8 @@ describe("Logic Operators", function () {
                         }
                     },
                     args: {
-                        a: "# this.a",
-                        b: "# this.b"
+                        a: "= this.a",
+                        b: "= this.b"
                     }
                 }
             });
@@ -167,7 +167,7 @@ describe("Logic Operators", function () {
                             value: function () {
                                 return 42;
                             },
-                            to: "# 40 + 2 ",
+                            to: "= 40 + 2 ",
                             is: function () {
                                 return "42";
                             },
@@ -179,7 +179,7 @@ describe("Logic Operators", function () {
                             value: function () {
                                 return 42;
                             },
-                            to: "# 40 + 1 ",
+                            to: "= 40 + 1 ",
                             is: function () {
                                 return "42";
                             },
@@ -187,8 +187,8 @@ describe("Logic Operators", function () {
                         }
                     },
                     args: {
-                        a: "# this.a",
-                        b: "# this.b"
+                        a: "= this.a",
+                        b: "= this.b"
                     }
                 }
             });
@@ -212,7 +212,7 @@ describe("Logic Operators", function () {
                             "bubu",
                             {
                                 "@or": [
-                                    "# true",
+                                    "= true",
                                     false
                                 ]
                             },
@@ -235,7 +235,7 @@ describe("Logic Operators", function () {
                             args: [
                                 {
                                     "@or": [
-                                        "# true",
+                                        "= true",
                                         false
                                     ]
                                 },
@@ -244,7 +244,7 @@ describe("Logic Operators", function () {
                                         {
                                             "@and": [
                                                 true,
-                                                "# [ 42 ]"
+                                                "= [ 42 ]"
                                             ]
                                         }
                                     ]
@@ -258,8 +258,8 @@ describe("Logic Operators", function () {
                         }
                     },
                     args: {
-                        a: "# this.a",
-                        b: "# this.b"
+                        a: "= this.a",
+                        b: "= this.b"
                     }
                 }
             });

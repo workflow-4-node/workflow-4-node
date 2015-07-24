@@ -17,7 +17,7 @@ describe("objects", function() {
             let engine = new ActivityExecutionEngine({
                 "@merge": [
                     [1, 2, 3],
-                    "# [4, 5, 6]"
+                    "= [4, 5, 6]"
                 ]
             });
 
@@ -33,7 +33,7 @@ describe("objects", function() {
             let engine = new ActivityExecutionEngine({
                 "@merge": [
                     { a: function () { return 2; } },
-                    "# {b: 2}",
+                    "= {b: 2}",
                     { c: "function() { return 42; }" }
                 ]
             });

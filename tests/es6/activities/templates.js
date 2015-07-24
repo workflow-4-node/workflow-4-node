@@ -25,7 +25,7 @@ describe("templates", function () {
                                 }
                             }
                         },
-                        "# 42"
+                        "= 42"
                     ]
                 }
             }
@@ -61,7 +61,7 @@ describe("templates", function () {
                                 }
                             }
                         },
-                        "# 42"
+                        "= 42"
                     ]
                 }
             ]
@@ -91,12 +91,12 @@ describe("templates", function () {
                             a: [
                                 {
                                     $project: {
-                                        $literal: "# this.rule.value"
+                                        $literal: "= this.rule.value"
                                     }
                                 }
                             ],
                             args: [
-                                "# this.a"
+                                "= this.a"
                             ]
                         }
                     }

@@ -20,7 +20,7 @@ describe("conditionals", function() {
                     args: [
                         {
                             "@if": {
-                                condition: "# this.v == 5",
+                                condition: "= this.v == 5",
                                 then: {
                                     "@func": {
                                         args: [1],
@@ -83,7 +83,7 @@ describe("conditionals", function() {
                                 }
                             }
                         },
-                        "# this.r"
+                        "= this.r"
                     ]
                 }
             });
@@ -101,7 +101,7 @@ describe("conditionals", function() {
             it("should work w/o default", function (done) {
                 let engine = new ActivityExecutionEngine({
                     "@switch": {
-                        expression: "# 42",
+                        expression: "= 42",
                         args: [
                             {
                                 "@case": {
@@ -122,7 +122,7 @@ describe("conditionals", function() {
                             {
                                 "@case": {
                                     value: "42",
-                                    args: "# 'boo'"
+                                    args: "= 'boo'"
                                 }
                             }
                         ]
@@ -138,7 +138,7 @@ describe("conditionals", function() {
             it("should work w default", function (done) {
                 let engine = new ActivityExecutionEngine({
                     "@switch": {
-                        expression: "# 43",
+                        expression: "= 43",
                         args: [
                             {
                                 "@case": {
@@ -157,7 +157,7 @@ describe("conditionals", function() {
                                 }
                             },
                             {
-                                "@default": "# 'boo'"
+                                "@default": "= 'boo'"
                             }
                         ]
                     }
@@ -172,7 +172,7 @@ describe("conditionals", function() {
             it("should do its default", function (done) {
                 let engine = new ActivityExecutionEngine({
                     "@switch": {
-                        expression: "# 'klow'",
+                        expression: "= 'klow'",
                         args: [
                             {
                                 "@case": {
@@ -191,7 +191,7 @@ describe("conditionals", function() {
                                 }
                             },
                             {
-                                "@default": "# 'boo'"
+                                "@default": "= 'boo'"
                             }
                         ]
                     }
@@ -230,7 +230,7 @@ describe("conditionals", function() {
                             {
                                 "@when": {
                                     condition: "42",
-                                    args: "# 'boo'"
+                                    args: "= 'boo'"
                                 }
                             }
                         ]
@@ -264,7 +264,7 @@ describe("conditionals", function() {
                                 }
                             },
                             {
-                                "@default": "# 'boo'"
+                                "@default": "= 'boo'"
                             }
                         ]
                     }
@@ -299,7 +299,7 @@ describe("conditionals", function() {
                                 }
                             },
                             {
-                                "@default": "# 'boo'"
+                                "@default": "= 'boo'"
                             }
                         ]
                     }

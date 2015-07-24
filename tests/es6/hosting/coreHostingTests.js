@@ -12,7 +12,7 @@ let Serializer = require("backpack-node").system.Serializer;
 let assert = require("assert");
 
 describe("InstanceIdParser", function () {
-    describe("#parse()", function () {
+    describe("=parse()", function () {
         it("should understand common paths", function () {
             let p = new InstanceIdParser();
             assert.equal(p.parse("this", 1), 1);

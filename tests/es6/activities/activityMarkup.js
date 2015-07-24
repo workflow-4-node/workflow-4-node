@@ -18,7 +18,7 @@ describe("activityMarkup", function () {
                 c: 30,
                 args: [
                     {
-                        "@adder": ["#this.a", "#this.b", "#this.c"]
+                        "@adder": ["=this.a", "=this.b", "=this.c"]
                     }
                 ]
             }
@@ -42,7 +42,7 @@ describe("activityMarkup", function () {
                 c: 3,
                 args: [
                     {
-                        "@adder": ["# this.a", "# this.b", "# this.c"]
+                        "@adder": ["= this.a", "= this.b", "= this.c"]
                     }
                 ]
             }

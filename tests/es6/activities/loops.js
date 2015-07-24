@@ -23,12 +23,12 @@ describe("Loops", function () {
                         args: [
                             {
                                 "@while": {
-                                    condition: "# this.j < this.i",
-                                    args: "# this.j++",
+                                    condition: "= this.j < this.i",
+                                    args: "= this.j++",
                                     "@to": "z"
                                 }
                             },
-                            "# { j: this.j, z: this.z }"
+                            "= { j: this.j, z: this.z }"
                         ]
                     }
                 });
@@ -61,10 +61,10 @@ describe("Loops", function () {
                                         }
                                     }
                                 },
-                                args: "# this.seq = this.seq + this.i"
+                                args: "= this.seq = this.seq + this.i"
                             }
                         },
-                        "# this.seq"
+                        "= this.seq"
                     ]
                 }
             });
@@ -94,11 +94,11 @@ describe("Loops", function () {
                                 },
                                 step: -2,
                                 varName: "klow",
-                                args: "# this.seq += this.klow",
+                                args: "= this.seq += this.klow",
                                 "@to": "r"
                             }
                         },
-                        "# { v: this.seq, r: this.r }"
+                        "= { v: this.seq, r: this.r }"
                     ]
                 }
             });
@@ -127,11 +127,11 @@ describe("Loops", function () {
                     args: [
                         {
                             "@forEach": {
-                                items: "# this.seq",
-                                args: "# this.result += this.item"
+                                items: "= this.seq",
+                                args: "= this.result += this.item"
                             }
                         },
-                        "# this.result"
+                        "= this.result"
                     ]
                 }
             });
@@ -159,11 +159,11 @@ describe("Loops", function () {
                             "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                items: "# this.seq",
-                                args: "# this.result += this.klow"
+                                items: "= this.seq",
+                                args: "= this.result += this.klow"
                             }
                         },
-                        "# this.result"
+                        "= this.result"
                     ]
                 }
             });
@@ -185,7 +185,7 @@ describe("Loops", function () {
                             "@forEach": {
                                 parallel: true,
                                 varName: "klow",
-                                items: "# this.seq",
+                                items: "= this.seq",
                                 args: function () {
                                     let self = this;
                                     return Bluebird.delay(Math.random() * 100)
@@ -195,7 +195,7 @@ describe("Loops", function () {
                                 }
                             }
                         },
-                        "# this.result"
+                        "= this.result"
                     ]
                 }
             });
