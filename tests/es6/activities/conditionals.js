@@ -147,6 +147,63 @@ describe("conditionals", function () {
                     assert.equal(result, 42);
                 }).nodeify(done);
         });
+
+        it("then should be a block", function (done) {
+            let block = activityMarkup.parse({
+                "@block": {
+                    v: 5,
+                    args: [
+                        {
+                            "@if": {
+                                condition: "= this.v == 5",
+                                then: [
+                                    5,
+                                    function () {
+                                        let self = this;
+                                        return Bluebird.delay(100)
+                                            .then(function () {
+                                                self.v = 7;
+                                            });
+                                    },
+                                    "= this.v "
+                                ]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            let engine = new ActivityExecutionEngine(block);
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(7, result);
+                }).nodeify(done);
+        });
+
+        it("else should be a block", function (done) {
+            let block = activityMarkup.parse({
+                "@block": {
+                    v: 1,
+                    args: [
+                        {
+                            "@if": {
+                                condition: "= this.v == 5",
+                                then: [1, 2],
+                                else: [
+                                    5, function () { this.v = 7; }, "= this.v"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            let engine = new ActivityExecutionEngine(block);
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(7, result);
+                }).nodeify(done);
+        });
     });
 
     describe("Switch", function () {
