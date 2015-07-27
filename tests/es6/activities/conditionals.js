@@ -11,7 +11,7 @@ let Bluebird = require("bluebird");
 let Block = wf4node.activities.Block;
 let _ = require("lodash");
 
-describe("conditionals", function() {
+describe("conditionals", function () {
     describe("If", function () {
         it("should call then", function (done) {
             let block = activityMarkup.parse({
@@ -92,6 +92,63 @@ describe("conditionals", function() {
             engine.invoke().then(
                 function (result) {
                     assert.equal(2 + 5, result);
+                }).nodeify(done);
+        });
+
+        it("then should be a block", function (done) {
+            let block = activityMarkup.parse({
+                "@block": {
+                    v: 5,
+                    args: [
+                        {
+                            "@if": {
+                                condition: "= this.v == 5",
+                                then: [
+                                    5,
+                                    function () {
+                                        let self = this;
+                                        return Bluebird.delay(100)
+                                            .then(function () {
+                                                self.v = 7;
+                                            });
+                                    },
+                                    "= this.v "
+                                ]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            let engine = new ActivityExecutionEngine(block);
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(7, result);
+                }).nodeify(done);
+        });
+
+        it("else should be a block", function (done) {
+            let block = activityMarkup.parse({
+                "@block": {
+                    v: 1,
+                    args: [
+                        {
+                            "@if": {
+                                condition: "= this.v == 5",
+                                then: [1, 2],
+                                else: [
+                                    5, function () { this.v = 7; }, "= this.v"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            });
+
+            let engine = new ActivityExecutionEngine(block);
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(7, result);
                 }).nodeify(done);
         });
     });
@@ -219,7 +276,7 @@ describe("conditionals", function() {
                             },
                             {
                                 "@when": {
-                                    condition: function() {
+                                    condition: function () {
                                         return Bluebird.resolve(42);
                                     },
                                     args: function () {
