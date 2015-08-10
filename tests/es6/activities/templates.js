@@ -110,4 +110,33 @@ describe("templates", function () {
             assert.equal(result[0].$project.$literal, 22);
         }).nodeify(done);
     });
+
+    it("should ignore escaped markup", function (done) {
+        let engine = new ActivityExecutionEngine({
+            "@block": {
+                id: "poo",
+                stuff: {
+                    _: {
+                        sayHello: function (name) {
+                            return "Hello, " + name + "!";
+                        }
+                    }
+                },
+                args: [
+                    {
+                        "@func": {
+                            args: " = this.poo.stuff.sayHello",
+                            code: function(f) {
+                                return f("Gabor");
+                            }
+                        }
+                    }
+                ]
+            }
+        });
+
+        engine.invoke().then(function (result) {
+            assert.equal(result, "Hello, Gabor!");
+        }).nodeify(done);
+    });
 });

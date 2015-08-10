@@ -33,14 +33,14 @@
     "traceur": "*"
   },
   "dependencies": {
-    "backpack-node": "^0.2.0",
-    "bluebird": "^2.9.30",
-    "date-utils": "^1.2.17",
-    "debug": "^2.1.3",
-    "lodash": "^3.9.3",
-    "mongodb": "^2.0.34",
-    "node-proxy": "^0.9.0",
-    "node-uuid": "^1.4.3",
+    "backpack-node": "*",
+    "bluebird": "*",
+    "date-utils": "1",
+    "debug": "*",
+    "lodash": "*",
+    "mongodb": "2",
+    "node-proxy": "*",
+    "node-uuid": "*",
     "traceur-runtime": "*"
   }
 }
