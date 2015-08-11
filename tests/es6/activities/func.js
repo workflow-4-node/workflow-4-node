@@ -8,6 +8,7 @@ let activityMarkup = wf4node.activities.activityMarkup;
 let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
 let assert = require("assert");
 let Bluebird = require("bluebird");
+let _ = require("lodash");
 
 describe("Func", function () {
     it("should run with a synchronous code", function (done) {
@@ -122,6 +123,33 @@ describe("Func", function () {
         engine.invoke().then(
             function (result) {
                 assert.equal(result, expected.name);
+            }).nodeify(done);
+    });
+
+    it("should include lodash as last argument", function (done) {
+        let expected = { name: "GaborMezo" };
+
+        let fop = activityMarkup.parse(
+            {
+                "@func": {
+                    args: {
+                        "@func": {
+                            code: function () {
+                                return expected;
+                            }
+                        }
+                    },
+                    code: function (obj, __) {
+                        return __.camelCase(obj.name);
+                    }
+                }
+            });
+
+        let engine = new ActivityExecutionEngine(fop);
+
+        engine.invoke().then(
+            function (result) {
+                assert.equal(result, _.camelCase(expected.name));
             }).nodeify(done);
     });
 });

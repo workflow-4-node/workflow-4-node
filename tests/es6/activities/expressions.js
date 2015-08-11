@@ -73,5 +73,32 @@ describe("expressions", function () {
                     assert.equal(result, 4);
                 }).nodeify(done);
         });
+
+        it("should evaluate lodash", function (done) {
+            let block = activityMarkup.parse(
+                {
+                    "@block": {
+                        id: "me",
+                        v: 2.11,
+                        args: [
+                            {
+                                "@func": {
+                                    args: [ "= this.v", "= this.$parent.v  ", "= _.round(this.me.v)" ],
+                                    code: function(a, b, c) {
+                                        return a + b + c;
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(block);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, 2.11 + 2.11 + 2);
+                }).nodeify(done);
+        });
     });
 });
