@@ -6,8 +6,8 @@ let WorkflowHost = wf4node.hosting.WorkflowHost;
 let ConsoleTracker = wf4node.activities.ConsoleTracker;
 let _ = require("lodash");
 let asyncHelpers = wf4node.common.asyncHelpers;
-let Promise = require("bluebird");
-let async = Promise.coroutine;
+let Bluebird = require("bluebird");
+let async = Bluebird.coroutine;
 let assert = require("assert");
 require("date-utils");
 
@@ -69,7 +69,7 @@ module.exports = {
 
         // Verify promotedProperties:
         if (hostOptions && hostOptions.persistence) {
-            let promotedProperties = yield (Promise.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
+            let promotedProperties = yield (Bluebird.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
             assert.ok(promotedProperties);
             assert.equal(promotedProperties.v, 25);
             assert.equal(promotedProperties.x, 666);
@@ -220,7 +220,7 @@ module.exports = {
                 }
             });
 
-        let host = new WorkflowHost(hostOptions);
+        var host = new WorkflowHost(hostOptions);
 
         host.registerWorkflow(workflow);
         //host.addTracker(new ConsoleTracker());
@@ -234,7 +234,8 @@ module.exports = {
         yield (host.invokeMethod("calculator", "add", [arg]));
 
         if (hostOptions && hostOptions.persistence) {
-            let host = new WorkflowHost(hostOptions);
+            host.shutdown();
+            host = new WorkflowHost(hostOptions);
             host.registerWorkflow(workflow);
         }
 
@@ -343,5 +344,8 @@ module.exports = {
         // That should do nothing particular, but should work:
         result = yield (host.invokeMethod("wf", "start", id));
         assert(!result);
+        
+        // Let's wait.
+        yield Bluebird.delay(250);
     })
 };
