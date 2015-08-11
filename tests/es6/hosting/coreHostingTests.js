@@ -43,6 +43,12 @@ describe("WorkflowHost", function () {
         });
     }
 
+    function testDelayTo(options) {
+        it("should run by: " + getInfo(options), function (done) {
+            hostingTestCommon.doDelayToTest(options).nodeify(done);
+        });
+    }
+
     let allOptions = [
         {
             persistence: null,
@@ -98,6 +104,12 @@ describe("WorkflowHost", function () {
         describe("Calculator Example", function () {
             for (let opt of allOptions) {
                 testCalc(opt);
+            }
+        });
+
+        describe("DelayTo Example", function () {
+            for (let opt of allOptions) {
+                testDelayTo(opt);
             }
         });
     });

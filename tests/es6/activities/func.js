@@ -152,4 +152,87 @@ describe("Func", function () {
                 assert.equal(result, _.camelCase(expected.name));
             }).nodeify(done);
     });
+
+    describe("calling other methods", function() {
+        it("should run when created from markup", function (done) {
+            let markup = activityMarkup.parse(
+                {
+                    "@block": {
+                        id: "block",
+                        "code": {
+                            _: function (obj) {
+                                return obj.name;
+                            }
+                        },
+                        args: {
+                            "@func": {
+                                code: "= this.block.code",
+                                args: { name: "Gabor" }
+                            }
+                        }
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(markup);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, "Gabor");
+                }).nodeify(done);
+        });
+
+        it("should run when code is asynchronous", function (done) {
+            let markup = activityMarkup.parse(
+                {
+                    "@block": {
+                        id: "block",
+                        "code": {
+                            _: function (obj) {
+                                return Bluebird.delay(10).then(function () { return obj.name; });
+                            }
+                        },
+                        args: {
+                            "@func": {
+                                code: "= this.block.code",
+                                args: { name: "Gabor" }
+                            }
+                        }
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(markup);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, "Gabor");
+                }).nodeify(done);
+        });
+
+        it("should include lodash as last argument", function (done) {
+            let markup = activityMarkup.parse(
+                {
+                    "@block": {
+                        id: "block",
+                        "code": {
+                            _: function (obj, __) {
+                                return Bluebird.delay(10).then(function () { return __.camelCase(obj.name); });
+                            }
+                        },
+                        args: {
+                            "@func": {
+                                code: "= this.block.code",
+                                args: { name: "GaborMezo" }
+                            }
+                        }
+                    }
+                });
+
+            let engine = new ActivityExecutionEngine(markup);
+
+            engine.invoke().then(
+                function (result) {
+                    assert.equal(result, _.camelCase("GaborMezo"));
+                }).nodeify(done);
+        });
+    });
 });

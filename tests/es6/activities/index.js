@@ -1,5 +1,4 @@
 require("./func");
-require("./call");
 require("./declarators");
 require("./expressions");
 require("./conditionals");
