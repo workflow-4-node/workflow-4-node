@@ -10,6 +10,7 @@ let Bluebird = require("bluebird");
 let async = Bluebird.coroutine;
 let assert = require("assert");
 require("date-utils");
+let errors = wf4node.common.errors;
 
 module.exports = {
     doBasicHostTest: async(function* (hostOptions) {
@@ -59,26 +60,37 @@ module.exports = {
                 }
             });
 
+        let error = null;
         let host = new WorkflowHost(hostOptions);
-        //host.addTracker(new ConsoleTracker());
+        host.once("error", function(e) {
+            error = e;
+        });
+        try {
+            //host.addTracker(new ConsoleTracker());
 
-        host.registerWorkflow(workflow);
-        let result = yield (host.invokeMethod("wf", "foo", [5]));
+            host.registerWorkflow(workflow);
+            let result = yield (host.invokeMethod("wf", "foo", [5]));
 
-        assert.equal(result, 25);
+            assert.equal(result, 25);
 
-        // Verify promotedProperties:
-        if (hostOptions && hostOptions.persistence) {
-            let promotedProperties = yield (Bluebird.resolve(hostOptions.persistence.loadPromotedProperties("wf", 5)));
-            assert.ok(promotedProperties);
-            assert.equal(promotedProperties.v, 25);
-            assert.equal(promotedProperties.x, 666);
-            assert.equal(_.keys(promotedProperties).length, 2);
+            // Verify promotedProperties:
+            if (hostOptions && hostOptions.persistence) {
+                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", 5);
+                assert.ok(promotedProperties);
+                assert.equal(promotedProperties.v, 25);
+                assert.equal(promotedProperties.x, 666);
+                assert.equal(_.keys(promotedProperties).length, 2);
+            }
+
+            result = yield (host.invokeMethod("wf", "bar", [5]));
+
+            assert.equal(result, 50);
+        }
+        finally {
+            host.shutdown();
         }
 
-        result = yield (host.invokeMethod("wf", "bar", [5]));
-
-        assert.equal(result, 50);
+        assert.deepEqual(e, null);
     }),
 
     doCalculatorTest: async(function* (hostOptions) {
@@ -220,59 +232,77 @@ module.exports = {
                 }
             });
 
-        var host = new WorkflowHost(hostOptions);
+        let error = null;
+        let host = new WorkflowHost(hostOptions);
+        host.once("error", function(e) {
+            error = e;
+        });
 
-        host.registerWorkflow(workflow);
-        //host.addTracker(new ConsoleTracker());
-
-        let arg = { id: Math.floor((Math.random() * 1000000000) + 1) };
-
-        let result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 0);
-
-        arg.value = 55;
-        yield (host.invokeMethod("calculator", "add", [arg]));
-
-        if (hostOptions && hostOptions.persistence) {
-            host.shutdown();
-            host = new WorkflowHost(hostOptions);
+        try {
             host.registerWorkflow(workflow);
+            //host.addTracker(new ConsoleTracker());
+
+            let arg = { id: Math.floor((Math.random() * 1000000000) + 1) };
+
+            let result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 0);
+
+            arg.value = 55;
+            yield (host.invokeMethod("calculator", "add", [arg]));
+
+            if (hostOptions && hostOptions.persistence) {
+                host.shutdown();
+                host = new WorkflowHost(hostOptions);
+                host.once("error", function(e) {
+                    error = e;
+                });
+                host.registerWorkflow(workflow);
+            }
+
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 55);
+
+            arg.value = 5;
+            yield (host.invokeMethod("calculator", "divide", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 11);
+
+            arg.value = 1;
+            yield (host.invokeMethod("calculator", "subtract", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 10);
+
+            arg.value = 100;
+            yield (host.invokeMethod("calculator", "multiply", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 1000);
+
+            delete arg.value;
+            yield (host.invokeMethod("calculator", "reset", [arg]));
+            result = yield (host.invokeMethod("calculator", "equals", [arg]));
+            assert.equal(result, 0);
+
+            delete arg.value;
+            yield (host.invokeMethod("calculator", "reset", [arg]));
+        }
+        finally {
+            host.shutdown();
         }
 
-        result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 55);
-
-        arg.value = 5;
-        yield (host.invokeMethod("calculator", "divide", [arg]));
-        result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 11);
-
-        arg.value = 1;
-        yield (host.invokeMethod("calculator", "subtract", [arg]));
-        result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 10);
-
-        arg.value = 100;
-        yield (host.invokeMethod("calculator", "multiply", [arg]));
-        result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 1000);
-
-        delete arg.value;
-        yield (host.invokeMethod("calculator", "reset", [arg]));
-        result = yield (host.invokeMethod("calculator", "equals", [arg]));
-        assert.equal(result, 0);
-
-        delete arg.value;
-        yield (host.invokeMethod("calculator", "reset", [arg]));
+        assert.deepEqual(error, null);
     }),
 
     doDelayToTest: async(function* (hostOptions) {
         hostOptions = _.extend(
             {
-                enablePromotions: true
+                enablePromotions: true,
+                wakeUpOptions: {
+                    interval: 50
+                }
             },
             hostOptions);
 
+        var i = 0;
         let workflow = activityMarkup.parse(
             {
                 "@workflow": {
@@ -321,6 +351,9 @@ module.exports = {
                                                     to: "i",
                                                     value: "= this.i + 1"
                                                 }
+                                            },
+                                            function() {
+                                                i = this.i;
                                             }
                                         ]
                                     }
@@ -331,21 +364,66 @@ module.exports = {
                 }
             });
 
+        let error = null;
         let host = new WorkflowHost(hostOptions);
-        //host.addTracker(new ConsoleTracker());
-        host.registerWorkflow(workflow);
+        host.once("error", function(e) {
+            error = e;
+        });
+        try {
+            //host.addTracker(new ConsoleTracker());
+            host.registerWorkflow(workflow);
 
-        let id = "1";
+            let id = "1";
 
-        // That should start the workflow:
-        let result = yield (host.invokeMethod("wf", "start", id));
-        assert(!result);
+            // That should start the workflow:
+            let result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
 
-        // That should do nothing particular, but should work:
-        result = yield (host.invokeMethod("wf", "start", id));
-        assert(!result);
-        
-        // Let's wait.
-        yield Bluebird.delay(250);
+            // That should do nothing particular, but should work:
+            result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
+
+            // Calling unexisted method should throw:
+            try {
+                yield (host.invokeMethod("wf", "pupu", id));
+                assert(false, "That should throw!");
+            }
+            catch(e) {
+                if (!(e instanceof errors.MethodIsNotAccessibleError)) {
+                    throw e;
+                }
+            }
+
+            // That should do nothing particular, but should work again:
+            result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
+
+            // Let's wait.
+            yield Bluebird.delay(250);
+
+            // Verify promotedProperties:
+            if (hostOptions && hostOptions.persistence) {
+                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+                assert(promotedProperties);
+                assert(promotedProperties.i > 0);
+                assert.equal(_.keys(promotedProperties).length, 1);
+            }
+            else {
+                assert(i > 0);
+            }
+
+            // That should do nothing particular, but should work again:
+            result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
+
+            // Stop:
+            result = yield (host.invokeMethod("wf", "stop", id));
+            assert(!result);
+        }
+        finally {
+            host.shutdown();
+        }
+
+        assert.deepEqual(error, null);
     })
 };
