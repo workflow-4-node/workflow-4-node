@@ -90,7 +90,7 @@ module.exports = {
             host.shutdown();
         }
 
-        assert.deepEqual(e, null);
+        assert.deepEqual(error, null);
     }),
 
     doCalculatorTest: async(function* (hostOptions) {
