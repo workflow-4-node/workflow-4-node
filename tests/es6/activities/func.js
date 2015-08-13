@@ -153,7 +153,7 @@ describe("Func", function () {
             }).nodeify(done);
     });
 
-    describe("calling other methods", function() {
+    describe("calling other methods", function () {
         it("should run when created from markup", function (done) {
             let markup = activityMarkup.parse(
                 {
@@ -232,6 +232,27 @@ describe("Func", function () {
             engine.invoke().then(
                 function (result) {
                     assert.equal(result, _.camelCase("GaborMezo"));
+                }).nodeify(done);
+        });
+
+        it("should fail with error", function (done) {
+            let markup = activityMarkup.parse(
+                {
+                    "@block": [
+                        function () {
+                            throw new Error("Boo.");
+                        }
+                    ]
+                });
+
+            let engine = new ActivityExecutionEngine(markup);
+
+            engine.invoke()
+                .then(function (result) {
+                    assert(false);
+                },
+                function (e) {
+                    assert(/Boo/.test(e.message));
                 }).nodeify(done);
         });
     });
