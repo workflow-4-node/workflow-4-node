@@ -87,4 +87,46 @@ describe("SimpleProxy", function() {
         assert(keys[1] === "name");
         assert(obj[keys[1]] === 33);
     });
+
+    it("should accept new props on update", function() {
+        let backend = {
+            name: "Gabor",
+            getKeys: function(proxy) {
+                return _.keys(this);
+            },
+            getValue: function(proxy, name) {
+                let v = this[name];
+                if (_.isUndefined(v)) {
+                    throw new Error(`${name} doesn't exists.`);
+                }
+                return v;
+            },
+            setValue: function(proxy, name, value) {
+                return this[name] = value;
+            }
+        };
+        let obj = new SimpleProxy(backend);
+
+        assert(backend.name === "Gabor");
+        assert(obj.name === "Gabor");
+
+        obj.klow = "mudz";
+
+        assert(obj.klow === "mudz");
+        try {
+            assert(backend.klow === "mudz");
+            assert(false);
+        }
+        catch (e) {
+            _.noop(e);
+        }
+        obj.update();
+        assert(obj.klow === "mudz");
+        assert(backend.klow === "mudz");
+
+        // Ensure that the value originates itself from the backend:
+        backend.klow = "foo";
+        assert(obj.klow === "foo");
+        assert(backend.klow === "foo");
+    });
 });
