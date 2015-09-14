@@ -297,7 +297,7 @@ module.exports = {
             {
                 enablePromotions: true,
                 wakeUpOptions: {
-                    interval: 50
+                    interval: 100
                 }
             },
             hostOptions);
