@@ -292,7 +292,7 @@ module.exports = {
         assert.deepEqual(error, null);
     }),
 
-    doDelayToTest: async(function* (hostOptions) {
+    doDelayTest: async(function* (hostOptions) {
         hostOptions = _.extend(
             {
                 enablePromotions: true,
@@ -340,10 +340,8 @@ module.exports = {
                                     {
                                         "@block": [
                                             {
-                                                "@delayTo": {
-                                                    to: function () {
-                                                        return new Date().addMilliseconds(100);
-                                                    }
+                                                "@delay": {
+                                                    ms: 100
                                                 }
                                             },
                                             {
