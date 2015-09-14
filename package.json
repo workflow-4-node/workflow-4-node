@@ -42,5 +42,8 @@
     "mongodb": "2",
     "node-uuid": "*",
     "traceur-runtime": "*"
+  },
+  "optionalDependencies": {
+    "node-proxy": "*"
   }
 }
