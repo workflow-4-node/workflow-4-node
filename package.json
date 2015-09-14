@@ -40,7 +40,6 @@
     "debug": "*",
     "lodash": "*",
     "mongodb": "2",
-    "node-proxy": "*",
     "node-uuid": "*",
     "traceur-runtime": "*"
   }
