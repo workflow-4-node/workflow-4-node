@@ -17,7 +17,12 @@ Adder.prototype._argsGot = function(callContext, reason, result) {
     if (reason == Activity.states.complete) {
         var sum = 0;
         result.forEach(function (a) {
-            if (_.isNumber(a)) sum += a;
+            if (_.isNumber(a)) {
+                sum += a;
+            }
+            else if (_.isArray(a)) {
+                sum += _.sum(a);
+            }
         });
         callContext.complete(sum);
     }
