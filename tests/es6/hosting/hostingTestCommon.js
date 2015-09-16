@@ -397,7 +397,7 @@ module.exports = {
             assert(!result);
 
             // Let's wait.
-            yield Bluebird.delay(250);
+            yield Bluebird.delay(400);
 
             // Verify promotedProperties:
             if (hostOptions && hostOptions.persistence) {
