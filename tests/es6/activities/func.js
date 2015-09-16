@@ -79,6 +79,20 @@ describe("Func", function () {
             }).nodeify(done);
     });
 
+    it("should run asynchronously when code is a generator", function (done) {
+        let fop = Func.async(function* (a) {
+            yield Bluebird.delay(100);
+            return a.name;
+        });
+
+        let engine = new ActivityExecutionEngine(fop);
+
+        engine.invoke({ name: "Mezo" }).then(
+            function (result) {
+                assert.equal(result, "Mezo");
+            }).nodeify(done);
+    });
+
     it("should accept external parameters those are functions also", function (done) {
         let expected = { name: "Gabor" };
         let fop = new Func();
