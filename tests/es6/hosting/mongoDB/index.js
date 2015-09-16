@@ -7,12 +7,15 @@ let MongoDDPersistence = wf4node.hosting.mongoDB.MongoDDPersistence;
 let hostingTestCommon = require("../hostingTestCommon");
 let Serializer = require("backpack-node").system.Serializer;
 
-let connStr = process.env.TEST_MONGODB_CONN;
+let connStr = process.env.MONGO_URL;
 let persistence = connStr ? new MongoDDPersistence({connection: connStr}) : null;
 
 if (persistence) {
     describe("WorkflowHost", function () {
         this.timeout(5000);
+        this.beforeEach(function(done) {
+            persistence.__clear().nodeify(done);
+        });
 
         function getInfo(options) {
             return `lazy: ${options.lazyPersistence ? "yes" : "no"}, serializer: ${options.serializer ? "yes" : "no"}, alwaysLoad: ${options.alwaysLoadState ? "yes" : "no"}`;
