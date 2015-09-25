@@ -9,3 +9,4 @@ require("./bookmarking");
 require("./activityMarkup");
 require("./templates");
 require("./exceptions");
+require("./delays");
