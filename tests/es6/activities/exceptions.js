@@ -181,7 +181,7 @@ describe("exceptions", function () {
                                         }
                                     }
                                 ],
-                                finally: function() {
+                                finally: function () {
                                     x = "OK";
                                 }
                             }
@@ -220,14 +220,14 @@ describe("exceptions", function () {
                                     }
                                 ],
                                 catch: [
-                                    function() {
-                                      ge = this.e;
+                                    function () {
+                                        ge = this.e;
                                     },
                                     {
                                         "@throw": {}
                                     }
                                 ],
-                                finally: function() {
+                                finally: function () {
                                     gf = "OK";
                                 }
                             }
@@ -267,7 +267,7 @@ describe("exceptions", function () {
                                     }
                                 ],
                                 catch: [
-                                    function() {
+                                    function () {
                                         ge = this.e;
                                     },
                                     {
@@ -276,7 +276,7 @@ describe("exceptions", function () {
                                         }
                                     }
                                 ],
-                                finally: function() {
+                                finally: function () {
                                     gf = "OK";
                                 }
                             }
@@ -320,7 +320,7 @@ describe("exceptions", function () {
                                             }
                                         ],
                                         catch: [
-                                            function() {
+                                            function () {
                                                 ge = this.e;
                                             },
                                             {
@@ -329,12 +329,12 @@ describe("exceptions", function () {
                                                 }
                                             }
                                         ],
-                                        finally: function() {
+                                        finally: function () {
                                             gf = "OK";
                                         }
                                     }
                                 },
-                                catch: [ "= this.err" ]
+                                catch: ["= this.err"]
                             }
                         }
                     ]
@@ -348,6 +348,74 @@ describe("exceptions", function () {
                 assert(ge instanceof Error);
                 assert(ge.message === "foo");
                 assert(gf === "OK");
+            })().nodeify(done);
+        });
+    });
+
+    describe("behavior", function () {
+        it("should cancel other branches", function (done) {
+            async(function*() {
+                let x = false;
+                let engine = new ActivityExecutionEngine({
+                    "@parallel": {
+                        args: [
+                            function() {
+                                return Bluebird.delay(200).then(function() {
+                                    throw new Error("b+");
+                                });
+                            },
+                            {
+                                "@block": [
+                                    {
+                                        "@delay": {
+                                            ms: 200
+                                        }
+                                    },
+                                    function () {
+                                        x = true;
+                                    }
+                                ]
+                            },
+                            {
+                                "@block": [
+                                    {
+                                        "@delay": {
+                                            ms: 100
+                                        }
+                                    },
+                                    {
+                                        "@throw": {
+                                            error: "foo"
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                "@block": [
+                                    {
+                                        "@delay": {
+                                            ms: 50
+                                        }
+                                    },
+                                    {
+                                        "@throw": {
+                                            error: "boo"
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                });
+
+                try {
+                    yield engine.invoke();
+                    assert(false);
+                }
+                catch (e) {
+                    assert(e.message === "boo");
+                    assert(!x);
+                }
             })().nodeify(done);
         });
     });

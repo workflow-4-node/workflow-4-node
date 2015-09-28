@@ -15,8 +15,8 @@ describe("delays", function () {
     describe("DelayTo", function () {
         it("should wait for 200ms", function (done) {
             let engine = new ActivityExecutionEngine({
-                "@delayTo": {
-                    to: "= new Date().addMilliseconds(200)"
+                "@delay": {
+                    ms: 200
                 }
             });
 
