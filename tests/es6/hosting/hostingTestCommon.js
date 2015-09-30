@@ -62,7 +62,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function(e) {
+        host.once("error", function (e) {
             error = e;
         });
         try {
@@ -234,7 +234,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function(e) {
+        host.once("error", function (e) {
             error = e;
         });
 
@@ -253,7 +253,7 @@ module.exports = {
             if (hostOptions && hostOptions.persistence) {
                 host.shutdown();
                 host = new WorkflowHost(hostOptions);
-                host.once("error", function(e) {
+                host.once("error", function (e) {
                     error = e;
                 });
                 host.registerWorkflow(workflow);
@@ -350,7 +350,7 @@ module.exports = {
                                                     value: "= this.i + 1"
                                                 }
                                             },
-                                            function() {
+                                            function () {
                                                 i = this.i;
                                             }
                                         ]
@@ -364,7 +364,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function(e) {
+        host.once("error", function (e) {
             error = e;
         });
         try {
@@ -386,7 +386,7 @@ module.exports = {
                 yield (host.invokeMethod("wf", "pupu", id));
                 assert(false, "That should throw!");
             }
-            catch(e) {
+            catch (e) {
                 if (!(e instanceof errors.MethodIsNotAccessibleError)) {
                     throw e;
                 }
@@ -417,6 +417,194 @@ module.exports = {
             // Stop:
             result = yield (host.invokeMethod("wf", "stop", id));
             assert(!result);
+        }
+        finally {
+            host.shutdown();
+        }
+
+        assert.deepEqual(error, null);
+    }),
+
+    doStopOutdatedVersionsTest: async(function* (hostOptions) {
+        hostOptions = _.extend(
+            {
+                enablePromotions: true,
+                wakeUpOptions: {
+                    interval: 1000
+                }
+            },
+            hostOptions);
+
+        let trace = [];
+        let i = 0;
+        let def = {
+            "@workflow": {
+                name: "wf",
+                "!i": 0,
+                args: [
+                    function() {
+                        this.i++;
+                        i++;
+                    },
+                    {
+                        "@method": {
+                            canCreateInstance: true,
+                            methodName: "start",
+                            instanceIdPath: "[0]"
+                        }
+                    },
+                    {
+                        "@func": {
+                            args: {
+                                "@instanceData": {}
+                            },
+                            code: function(data) {
+                                trace.push(data);
+                            }
+                        }
+                    },
+                    {
+                        "@delay": {
+                            ms: 100000
+                        }
+                    },
+                    {
+                        "@func": {
+                            args: {
+                                "@instanceData": {}
+                            },
+                            code: function(data) {
+                                trace.push(data);
+                            }
+                        }
+                    },
+                    function() {
+                        this.i++;
+                        i++;
+                    },
+                    { "@throw": { error: "Huh." } }
+                ]
+            }
+        };
+        let workflow0 = activityMarkup.parse(def);
+        def["@workflow"].version = 1;
+        let workflow1 = activityMarkup.parse(def);
+
+        let error = null;
+        let host = new WorkflowHost(hostOptions);
+        host.once("error", function (e) {
+            error = e;
+        });
+        try {
+            host.registerWorkflow(workflow0);
+
+            let id = "1";
+
+            // That should start the workflow:
+            let result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
+
+            // That should fail, because control flow has been stepped over:
+            try {
+                result = yield (host.invokeMethod("wf", "start", id));
+                assert(false);
+            }
+            catch(e) {
+                assert(e.message.indexOf("bookmark doesn't exist") > 0);
+                error = null;
+            }
+
+            // Let's wait.
+            yield Bluebird.delay(100);
+
+            // Verify promotedProperties:
+            if (hostOptions && hostOptions.persistence) {
+                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+                assert(promotedProperties);
+                assert(promotedProperties.i === 1);
+                assert.equal(_.keys(promotedProperties).length, 1);
+            }
+            else {
+                assert(i === 1);
+            }
+
+            if (hostOptions.persistence) {
+                // Start another:
+                host.shutdown();
+                host = new WorkflowHost(hostOptions);
+                host.once("error", function (e) {
+                    error = e;
+                });
+            }
+
+            host.registerWorkflow(workflow1);
+
+            // That should fail, because an older version is already running:
+            try {
+                result = yield (host.invokeMethod("wf", "start", id));
+                assert(false);
+            }
+            catch (e) {
+                if (hostOptions.persistence) {
+                    // In persistence it's a version 0 workflow, but that's not registered in the new host, so if fails:
+                    assert(e.message.indexOf("has not been registered") > 0);
+                }
+                else {
+                    // We have workflow version 0 and 1 registered, and try to start the already started instance 1, so it should fail with BM doesn't exists:
+                    assert(e.message.indexOf("bookmark doesn't exist") > 0);
+                }
+                error = null;
+            }
+
+            // Now, we're stopping all old instances:
+            yield host.stopOutdatedVersions("wf");
+
+            // Verify promotedProperties:
+            if (hostOptions && hostOptions.persistence) {
+                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+                assert(promotedProperties === null);
+            }
+            else {
+                assert(i === 1);
+            }
+
+            // Ok, let's start over!
+
+            // That should start the workflow:
+            result = yield (host.invokeMethod("wf", "start", id));
+            assert(!result);
+
+            // That should fail, because control flow has been stepped over:
+            try {
+                result = yield (host.invokeMethod("wf", "start", id));
+                assert(false);
+            }
+            catch(e) {
+                assert(e.message.indexOf("bookmark doesn't exist") > 0);
+                error = null;
+            }
+
+            // Let's wait.
+            yield Bluebird.delay(100);
+
+            // Verify promotedProperties:
+            if (hostOptions && hostOptions.persistence) {
+                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+                assert(promotedProperties);
+                assert(promotedProperties.i === 1);
+                assert.equal(_.keys(promotedProperties).length, 1);
+            }
+            else {
+                assert(i === 2);
+            }
+
+            assert(trace.length === 2);
+            assert(trace[0].workflowName === "wf");
+            assert(trace[0].workflowVersion === 0);
+            assert(trace[0].instanceId === id);
+            assert(trace[1].workflowName === "wf");
+            assert(trace[1].workflowVersion === 1);
+            assert(trace[1].instanceId === id);
         }
         finally {
             host.shutdown();

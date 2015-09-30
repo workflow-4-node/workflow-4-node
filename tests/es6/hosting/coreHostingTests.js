@@ -25,7 +25,7 @@ describe("InstanceIdParser", function () {
 });
 
 describe("WorkflowHost", function () {
-    this.timeout(5000);
+    this.timeout(60000);
 
     function getInfo(options) {
         return `persistence: ${options.persistence ? "on" : "off"}, lazy: ${options.lazyPersistence ? "yes" : "no"}, serializer: ${options.serializer ? "yes" : "no"}, alwaysLoad: ${options.alwaysLoadState ? "yes" : "no"}`;
@@ -46,6 +46,12 @@ describe("WorkflowHost", function () {
     function testDelayTo(options) {
         it("should run by: " + getInfo(options), function (done) {
             hostingTestCommon.doDelayTest(options).nodeify(done);
+        });
+    }
+
+    function testStopOutdatedVersions(options) {
+        it("should run by: " + getInfo(options), function (done) {
+            hostingTestCommon.doStopOutdatedVersionsTest(options).nodeify(done);
         });
     }
 
@@ -110,6 +116,12 @@ describe("WorkflowHost", function () {
         describe("DelayTo Example", function () {
             for (let opt of allOptions) {
                 testDelayTo(opt);
+            }
+        });
+
+        describe("StopOutdatedVersions Example", function () {
+            for (let opt of allOptions) {
+                testStopOutdatedVersions(opt);
             }
         });
     });
