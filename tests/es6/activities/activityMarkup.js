@@ -57,30 +57,4 @@ describe("activityMarkup", function () {
                 assert.equal(result, 1 + 2 + 3);
             }).nodeify(done);
     });
-
-    it("should schedule sub activities", function (done) {
-        let activity = activityMarkup.parse({
-            "@require": [ path.join(__dirname, "/customActivities/adder") ],
-            "@block": {
-                a: 1,
-                b: 2,
-                c: 3,
-                "`expr": new Expression("this.a"),
-                "`exprArr": [ new Expression("this.b"), "= this.c"],
-                args: [
-                    {
-                        "@adder": [ function() { return this.expr; }, "= this.exprArr" ]
-                    }
-                ]
-            }
-        });
-
-        let engine = new ActivityExecutionEngine(activity);
-
-        engine.invoke()
-            .then(
-            function (result) {
-                assert.equal(result, 1 + 2 + 3);
-            }).nodeify(done);
-    });
 });

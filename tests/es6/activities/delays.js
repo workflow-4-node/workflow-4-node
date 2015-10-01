@@ -4,6 +4,7 @@
 
 let wf4node = require("../../../");
 let Func = wf4node.activities.Func;
+let ConsoleTracker = wf4node.activities.ConsoleTracker;
 let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
 let assert = require("better-assert");
 let Bluebird = require("bluebird");
@@ -25,6 +26,44 @@ describe("delays", function () {
                 yield engine.invoke();
                 let d = new Date() - now;
                 assert(d > 200 && d < 400);
+            })().nodeify(done);
+        });
+    });
+
+    describe("Repeat", function () {
+        it("should repeat its args", function (done) {
+            let i = 0;
+            let engine = new ActivityExecutionEngine({
+                "@repeat": {
+                    intervalType: "secondly",
+                    intervalValue: 0.2,
+                    args: [
+                        function () {
+                            if (i++ === 3) {
+                                throw new Error("OK");
+                            }
+                            return i;
+                        }
+                    ]
+                }
+            });
+
+            async(function*() {
+                let now = new Date();
+                try {
+                    yield engine.invoke();
+                    assert(false);
+                }
+                catch (e) {
+                    if (e.message === "OK") {
+                        let d = new Date() - now;
+                        assert(d > 400 && d < 500);
+                        assert(i === 4);
+                    }
+                    else {
+                        throw e;
+                    }
+                }
             })().nodeify(done);
         });
     });
