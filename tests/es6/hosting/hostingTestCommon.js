@@ -20,45 +20,44 @@ module.exports = {
             },
             hostOptions);
 
-        let workflow = activityMarkup.parse(
-            {
-                "@workflow": {
-                    name: "wf",
-                    "!v": null,
-                    "!x": 0,
-                    args: [
-                        {
-                            "@beginMethod": {
-                                methodName: "foo",
-                                canCreateInstance: true,
-                                instanceIdPath: "[0]",
-                                "@to": "v"
-                            }
-                        },
-                        {
-                            "@endMethod": {
-                                methodName: "foo",
-                                result: "= this.v[0] * this.v[0]",
-                                "@to": "v"
-                            }
-                        },
-                        {
-                            "@assign": {
-                                value: 666,
-                                to: "x"
-                            }
-                        },
-                        {
-                            "@method": {
-                                methodName: "bar",
-                                instanceIdPath: "[0]",
-                                result: "= this.v * 2"
-                            }
-                        },
-                        "some string for wf result but not for the method result"
-                    ]
-                }
-            });
+        let workflow = {
+            "@workflow": {
+                name: "wf",
+                "!v": null,
+                "!x": 0,
+                args: [
+                    {
+                        "@beginMethod": {
+                            methodName: "foo",
+                            canCreateInstance: true,
+                            instanceIdPath: "[0]",
+                            "@to": "v"
+                        }
+                    },
+                    {
+                        "@endMethod": {
+                            methodName: "foo",
+                            result: "= this.v[0] * this.v[0]",
+                            "@to": "v"
+                        }
+                    },
+                    {
+                        "@assign": {
+                            value: 666,
+                            to: "x"
+                        }
+                    },
+                    {
+                        "@method": {
+                            methodName: "bar",
+                            instanceIdPath: "[0]",
+                            result: "= this.v * 2"
+                        }
+                    },
+                    "some string for wf result but not for the method result"
+                ]
+            }
+        };
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
@@ -94,143 +93,142 @@ module.exports = {
     }),
 
     doCalculatorTest: async(function* (hostOptions) {
-        let workflow = activityMarkup.parse(
-            {
-                "@workflow": {
-                    name: "calculator",
-                    running: true,
-                    inputArgs: null,
-                    currentValue: 0,
-                    args: [
-                        {
-                            "@while": {
-                                condition: "= this.running",
-                                args: {
-                                    "@pick": [
-                                        {
-                                            "@block": {
-                                                displayName: "Add block",
-                                                args: [
-                                                    {
-                                                        "@method": {
-                                                            displayName: "Add method",
-                                                            methodName: "add",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        "@assign": {
-                                                            value: "= this.currentValue + this.inputArgs[0].value",
-                                                            to: "currentValue"
-                                                        }
+        let workflow = {
+            "@workflow": {
+                name: "calculator",
+                running: true,
+                inputArgs: null,
+                currentValue: 0,
+                args: [
+                    {
+                        "@while": {
+                            condition: "= this.running",
+                            args: {
+                                "@pick": [
+                                    {
+                                        "@block": {
+                                            displayName: "Add block",
+                                            args: [
+                                                {
+                                                    "@method": {
+                                                        displayName: "Add method",
+                                                        methodName: "add",
+                                                        instanceIdPath: "[0].id",
+                                                        canCreateInstance: true,
+                                                        "@to": "inputArgs"
                                                     }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "@block": {
-                                                displayName: "Subtract block",
-                                                args: [
-                                                    {
-                                                        "@method": {
-                                                            displayName: "Subtract method",
-                                                            methodName: "subtract",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        "@assign": {
-                                                            value: "= this.currentValue - this.inputArgs[0].value",
-                                                            to: "currentValue"
-                                                        }
+                                                },
+                                                {
+                                                    "@assign": {
+                                                        value: "= this.currentValue + this.inputArgs[0].value",
+                                                        to: "currentValue"
                                                     }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "@block": {
-                                                displayName: "Multiply block",
-                                                args: [
-                                                    {
-                                                        "@method": {
-                                                            displayName: "Multiply method",
-                                                            methodName: "multiply",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        "@assign": {
-                                                            value: "= this.currentValue * this.inputArgs[0].value",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "@block": {
-                                                displayName: "Divide block",
-                                                args: [
-                                                    {
-                                                        "@method": {
-                                                            displayName: "Divide method",
-                                                            methodName: "divide",
-                                                            instanceIdPath: "[0].id",
-                                                            canCreateInstance: true,
-                                                            "@to": "inputArgs"
-                                                        }
-                                                    },
-                                                    {
-                                                        "@assign": {
-                                                            value: "= this.currentValue / this.inputArgs[0].value",
-                                                            to: "currentValue"
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "@method": {
-                                                displayName: "Equals method",
-                                                methodName: "equals",
-                                                instanceIdPath: "[0].id",
-                                                canCreateInstance: true,
-                                                result: "= this.currentValue"
-                                            }
-                                        },
-                                        {
-                                            "@block": {
-                                                displayName: "Reset block",
-                                                args: [
-                                                    {
-                                                        "@method": {
-                                                            displayName: "Reset method",
-                                                            methodName: "reset",
-                                                            instanceIdPath: "[0].id"
-                                                        }
-                                                    },
-                                                    {
-                                                        "@assign": {
-                                                            value: false,
-                                                            to: "running"
-                                                        }
-                                                    }
-                                                ]
-                                            }
+                                                }
+                                            ]
                                         }
-                                    ]
-                                }
+                                    },
+                                    {
+                                        "@block": {
+                                            displayName: "Subtract block",
+                                            args: [
+                                                {
+                                                    "@method": {
+                                                        displayName: "Subtract method",
+                                                        methodName: "subtract",
+                                                        instanceIdPath: "[0].id",
+                                                        canCreateInstance: true,
+                                                        "@to": "inputArgs"
+                                                    }
+                                                },
+                                                {
+                                                    "@assign": {
+                                                        value: "= this.currentValue - this.inputArgs[0].value",
+                                                        to: "currentValue"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "@block": {
+                                            displayName: "Multiply block",
+                                            args: [
+                                                {
+                                                    "@method": {
+                                                        displayName: "Multiply method",
+                                                        methodName: "multiply",
+                                                        instanceIdPath: "[0].id",
+                                                        canCreateInstance: true,
+                                                        "@to": "inputArgs"
+                                                    }
+                                                },
+                                                {
+                                                    "@assign": {
+                                                        value: "= this.currentValue * this.inputArgs[0].value",
+                                                        to: "currentValue"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "@block": {
+                                            displayName: "Divide block",
+                                            args: [
+                                                {
+                                                    "@method": {
+                                                        displayName: "Divide method",
+                                                        methodName: "divide",
+                                                        instanceIdPath: "[0].id",
+                                                        canCreateInstance: true,
+                                                        "@to": "inputArgs"
+                                                    }
+                                                },
+                                                {
+                                                    "@assign": {
+                                                        value: "= this.currentValue / this.inputArgs[0].value",
+                                                        to: "currentValue"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "@method": {
+                                            displayName: "Equals method",
+                                            methodName: "equals",
+                                            instanceIdPath: "[0].id",
+                                            canCreateInstance: true,
+                                            result: "= this.currentValue"
+                                        }
+                                    },
+                                    {
+                                        "@block": {
+                                            displayName: "Reset block",
+                                            args: [
+                                                {
+                                                    "@method": {
+                                                        displayName: "Reset method",
+                                                        methodName: "reset",
+                                                        instanceIdPath: "[0].id"
+                                                    }
+                                                },
+                                                {
+                                                    "@assign": {
+                                                        value: false,
+                                                        to: "running"
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
                             }
                         }
-                    ]
-                }
-            });
+                    }
+                ]
+            }
+        };
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
@@ -303,64 +301,63 @@ module.exports = {
             hostOptions);
 
         var i = 0;
-        let workflow = activityMarkup.parse(
-            {
-                "@workflow": {
-                    name: "wf",
-                    done: false,
-                    "!i": 0,
-                    args: {
-                        "@while": {
-                            condition: "= !this.done",
-                            args: {
-                                "@pick": [
-                                    {
-                                        "@method": {
-                                            canCreateInstance: true,
-                                            methodName: "start",
-                                            instanceIdPath: "[0]"
-                                        }
-                                    },
-                                    {
-                                        "@block": [
-                                            {
-                                                "@method": {
-                                                    methodName: "stop",
-                                                    instanceIdPath: "[0]"
-                                                }
-                                            },
-                                            {
-                                                "@assign": {
-                                                    to: "done",
-                                                    value: true
-                                                }
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "@block": [
-                                            {
-                                                "@delay": {
-                                                    ms: 100
-                                                }
-                                            },
-                                            {
-                                                "@assign": {
-                                                    to: "i",
-                                                    value: "= this.i + 1"
-                                                }
-                                            },
-                                            function () {
-                                                i = this.i;
-                                            }
-                                        ]
+        let workflow = {
+            "@workflow": {
+                name: "wf",
+                done: false,
+                "!i": 0,
+                args: {
+                    "@while": {
+                        condition: "= !this.done",
+                        args: {
+                            "@pick": [
+                                {
+                                    "@method": {
+                                        canCreateInstance: true,
+                                        methodName: "start",
+                                        instanceIdPath: "[0]"
                                     }
-                                ]
-                            }
+                                },
+                                {
+                                    "@block": [
+                                        {
+                                            "@method": {
+                                                methodName: "stop",
+                                                instanceIdPath: "[0]"
+                                            }
+                                        },
+                                        {
+                                            "@assign": {
+                                                to: "done",
+                                                value: true
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "@block": [
+                                        {
+                                            "@delay": {
+                                                ms: 100
+                                            }
+                                        },
+                                        {
+                                            "@assign": {
+                                                to: "i",
+                                                value: "= this.i + 1"
+                                            }
+                                        },
+                                        function () {
+                                            i = this.i;
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     }
                 }
-            });
+            }
+        };
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
@@ -442,7 +439,7 @@ module.exports = {
                 name: "wf",
                 "!i": 0,
                 args: [
-                    function() {
+                    function () {
                         this.i++;
                         i++;
                     },
@@ -458,7 +455,7 @@ module.exports = {
                             args: {
                                 "@instanceData": {}
                             },
-                            code: function(data) {
+                            code: function (data) {
                                 trace.push(data);
                             }
                         }
@@ -473,12 +470,12 @@ module.exports = {
                             args: {
                                 "@instanceData": {}
                             },
-                            code: function(data) {
+                            code: function (data) {
                                 trace.push(data);
                             }
                         }
                     },
-                    function() {
+                    function () {
                         this.i++;
                         i++;
                     },
@@ -509,7 +506,7 @@ module.exports = {
                 result = yield (host.invokeMethod("wf", "start", id));
                 assert(false);
             }
-            catch(e) {
+            catch (e) {
                 assert(e.message.indexOf("bookmark doesn't exist") > 0);
                 error = null;
             }
@@ -579,7 +576,7 @@ module.exports = {
                 result = yield (host.invokeMethod("wf", "start", id));
                 assert(false);
             }
-            catch(e) {
+            catch (e) {
                 assert(e.message.indexOf("bookmark doesn't exist") > 0);
                 error = null;
             }
