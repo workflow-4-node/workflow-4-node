@@ -43,7 +43,7 @@ describe("serializing", function() {
                 aSet: null,
                 aResult: null,
                 aRegExp: null,
-                "`aCode": function() { // TODO: in this case that should be threated as a function instead of a Func
+                "`aCode": function() {
                     return "Hello!";
                 },
                 args: {
@@ -96,9 +96,18 @@ describe("serializing", function() {
                             },
                             {
                                 "@method": {
-                                    methodName: "get",
+                                    methodName: "getArr",
                                     canCreateInstance: true,
-                                    instanceIdPath: "[0]"
+                                    instanceIdPath: "[0]",
+                                    result: "= [this.aDate, this.aMap, this.aSet, this.aRegExp, this.aCode.code, this.p.name]"
+                                }
+                            },
+                            {
+                                "@method": {
+                                    methodName: "getObj",
+                                    canCreateInstance: true,
+                                    instanceIdPath: "[0]",
+                                    result: "= { aDate: this.aDate, aMap: this.aMap, aSet: this.aSet, aRegExp: this.aRegExp, code: this.aCode.code, name: this.p.name }"
                                 }
                             },
                             {
@@ -137,28 +146,75 @@ describe("serializing", function() {
                 err = e;
             });
 
-            yield host.invokeMethod("serializerWF", "get", "0");
+            let arrayResult = yield host.invokeMethod("serializerWF", "getArr", "0");
+            assert(_.isArray(arrayResult));
+            assert(arrayResult.length === 6);
+
+            let objResult = yield host.invokeMethod("serializerWF", "getObj", "0");
+            assert(_.isPlainObject(objResult));
+            assert(_.keys(objResult).length === 6);
 
             assert(_.isDate(aDate));
             assert(aDate.getTime() === now.getTime());
+
+            assert(_.isDate(arrayResult[0]));
+            assert(arrayResult[0].getTime() === now.getTime());
 
             assert(aMap instanceof Map);
             assert(aMap.get(1) === "1");
             assert(aMap.get(2) === "2");
             assert(aMap.size === 2);
 
+            assert(arrayResult[1] instanceof Map);
+            assert(arrayResult[1].get(1) === "1");
+            assert(arrayResult[1].get(2) === "2");
+            assert(arrayResult[1].size === 2);
+
+            assert(objResult.aMap instanceof Map);
+            assert(objResult.aMap.get(1) === "1");
+            assert(objResult.aMap.get(2) === "2");
+            assert(objResult.aMap.size === 2);
+
             assert(aSet instanceof Set);
             assert(aSet.has(1));
             assert(aSet.has(2));
             assert(aSet.size === 2);
 
+            assert(arrayResult[2] instanceof Set);
+            assert(arrayResult[2].has(1));
+            assert(arrayResult[2].has(2));
+            assert(arrayResult[2].size === 2);
+
+            assert(objResult.aSet instanceof Set);
+            assert(objResult.aSet.has(1));
+            assert(objResult.aSet.has(2));
+            assert(objResult.aSet.size === 2);
+
             assert(aRegExp instanceof RegExp);
             assert(aRegExp.pattern === rex.pattern);
             assert(aRegExp.flags === rex.flags);
 
+            assert(arrayResult[3] instanceof RegExp);
+            assert(arrayResult[3].pattern === rex.pattern);
+            assert(arrayResult[3].flags === rex.flags);
+
+            assert(objResult.aRegExp instanceof RegExp);
+            assert(objResult.aRegExp.pattern === rex.pattern);
+            assert(objResult.aRegExp.flags === rex.flags);
+
             assert(aResult === "Hello!");
 
             assert(aProp === "serializerWF");
+
+            assert(_.isFunction(arrayResult[4]));
+            assert(arrayResult[4]() === "Hello!");
+
+            assert(_.isFunction(objResult.code));
+            assert(objResult.code() === "Hello!");
+
+            assert(arrayResult[5] === "serializerWF");
+
+            assert(objResult.name === "serializerWF");
 
             if (err) {
                 throw err;
