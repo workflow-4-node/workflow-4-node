@@ -7,7 +7,7 @@ let ConsoleTracker = wf4node.activities.ConsoleTracker;
 let _ = require("lodash");
 let asyncHelpers = wf4node.common.asyncHelpers;
 let Bluebird = require("bluebird");
-let async = Bluebird.coroutine;
+let async = asyncHelpers.async;
 let assert = require("assert");
 require("date-utils");
 let errors = wf4node.common.errors;

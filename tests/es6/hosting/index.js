@@ -1,1 +1,2 @@
 require("./coreHostingTests");
+require("./serializing");
