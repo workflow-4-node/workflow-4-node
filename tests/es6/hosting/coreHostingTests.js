@@ -103,24 +103,36 @@ describe("WorkflowHost", function () {
     describe("Without Persistence and With Memory Persistence", function () {
         describe("Basic Example", function () {
             for (let opt of allOptions) {
+                if (opt.persistence) {
+                    opt.persistence.clear();
+                }
                 testBasic(opt);
             }
         });
 
         describe("Calculator Example", function () {
             for (let opt of allOptions) {
+                if (opt.persistence) {
+                    opt.persistence.clear();
+                }
                 testCalc(opt);
             }
         });
 
         describe("DelayTo Example", function () {
             for (let opt of allOptions) {
+                if (opt.persistence) {
+                    opt.persistence.clear();
+                }
                 testDelayTo(opt);
             }
         });
 
         describe("StopOutdatedVersions Example", function () {
             for (let opt of allOptions) {
+                if (opt.persistence) {
+                    opt.persistence.clear();
+                }
                 testStopOutdatedVersions(opt);
             }
         });

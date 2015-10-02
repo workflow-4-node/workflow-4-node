@@ -295,7 +295,7 @@ module.exports = {
             {
                 enablePromotions: true,
                 wakeUpOptions: {
-                    interval: 100
+                    interval: 500
                 }
             },
             hostOptions);
@@ -394,7 +394,7 @@ module.exports = {
             assert(!result);
 
             // Let's wait.
-            yield Bluebird.delay(400);
+            yield Bluebird.delay(1000);
 
             // Verify promotedProperties:
             if (hostOptions && hostOptions.persistence) {

@@ -97,7 +97,6 @@ describe("serializing", function() {
                             {
                                 "@method": {
                                     methodName: "getArr",
-                                    canCreateInstance: true,
                                     instanceIdPath: "[0]",
                                     result: "= [this.aDate, this.aMap, this.aSet, this.aRegExp, this.aCode.code, this.p.name]"
                                 }
@@ -105,7 +104,6 @@ describe("serializing", function() {
                             {
                                 "@method": {
                                     methodName: "getObj",
-                                    canCreateInstance: true,
                                     instanceIdPath: "[0]",
                                     result: "= { aDate: this.aDate, aMap: this.aMap, aSet: this.aSet, aRegExp: this.aRegExp, code: this.aCode.code, name: this.p.name }"
                                 }
