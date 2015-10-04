@@ -98,14 +98,30 @@ describe("serializing", function() {
                                 "@method": {
                                     methodName: "getArr",
                                     instanceIdPath: "[0]",
-                                    result: "= [this.aDate, this.aMap, this.aSet, this.aRegExp, this.aCode.code, this.p.name]"
+                                    //result: "= [this.aDate, this.aMap, this.aSet, this.aRegExp, this.aCode.code, this.p.name]"
+                                    result: [
+                                        "= this.aDate",
+                                        "= this.aMap",
+                                        "= this.aSet",
+                                        "= this.aRegExp",
+                                        "= this.aCode.code",
+                                        "= this.p.name"
+                                    ]
                                 }
                             },
                             {
                                 "@method": {
                                     methodName: "getObj",
                                     instanceIdPath: "[0]",
-                                    result: "= { aDate: this.aDate, aMap: this.aMap, aSet: this.aSet, aRegExp: this.aRegExp, code: this.aCode.code, name: this.p.name }"
+                                    //result: "= { aDate: this.aDate, aMap: this.aMap, aSet: this.aSet, aRegExp: this.aRegExp, code: this.aCode.code, name: this.p.name }"
+                                    result: {
+                                        aDate: "= this.aDate",
+                                        aMap: "= this.aMap",
+                                        aSet: "= this.aSet",
+                                        aRegExp: "= this.aRegExp",
+                                        code: "= this.aCode.code",
+                                        name: "= this.p.name"
+                                    }
                                 }
                             },
                             {
