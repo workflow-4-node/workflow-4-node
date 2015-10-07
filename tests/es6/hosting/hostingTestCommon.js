@@ -423,6 +423,11 @@ module.exports = {
     }),
 
     doStopOutdatedVersionsTest: async(function* (hostOptions) {
+        if (!hostOptions.persistence) {
+            // This method has no meaning if there is no persistence.
+            return;
+        }
+
         hostOptions = _.extend(
             {
                 enablePromotions: true,
@@ -433,7 +438,6 @@ module.exports = {
             hostOptions);
 
         let trace = [];
-        let i = 0;
         let def = {
             "@workflow": {
                 name: "wf",
@@ -441,7 +445,6 @@ module.exports = {
                 args: [
                     function () {
                         this.i++;
-                        i++;
                     },
                     {
                         "@method": {
@@ -477,7 +480,6 @@ module.exports = {
                     },
                     function () {
                         this.i++;
-                        i++;
                     },
                     { "@throw": { error: "Huh." } }
                 ]
@@ -515,24 +517,17 @@ module.exports = {
             yield Bluebird.delay(100);
 
             // Verify promotedProperties:
-            if (hostOptions && hostOptions.persistence) {
-                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
-                assert(promotedProperties);
-                assert(promotedProperties.i === 1);
-                assert.equal(_.keys(promotedProperties).length, 1);
-            }
-            else {
-                assert(i === 1);
-            }
+            let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+            assert(promotedProperties);
+            assert(promotedProperties.i === 1);
+            assert.equal(_.keys(promotedProperties).length, 1);
 
-            if (hostOptions.persistence) {
-                // Start another:
-                host.shutdown();
-                host = new WorkflowHost(hostOptions);
-                host.once("error", function (e) {
-                    error = e;
-                });
-            }
+            // Start another:
+            host.shutdown();
+            host = new WorkflowHost(hostOptions);
+            host.once("error", function (e) {
+                error = e;
+            });
 
             host.registerWorkflow(workflow1);
 
@@ -542,28 +537,17 @@ module.exports = {
                 assert(false);
             }
             catch (e) {
-                if (hostOptions.persistence) {
-                    // In persistence it's a version 0 workflow, but that's not registered in the new host, so if fails:
-                    assert(e.message.indexOf("has not been registered") > 0);
-                }
-                else {
-                    // We have workflow version 0 and 1 registered, and try to start the already started instance 1, so it should fail with BM doesn't exists:
-                    assert(e.message.indexOf("bookmark doesn't exist") > 0);
-                }
+                // In persistence it's a version 0 workflow, but that's not registered in the new host, so if fails:
+                assert(e.message.indexOf("has not been registered") > 0);
                 error = null;
             }
 
             // Now, we're stopping all old instances:
-            yield host.stopOutdatedVersions("wf");
+            yield host.stopDeprecatedVersions("wf");
 
             // Verify promotedProperties:
-            if (hostOptions && hostOptions.persistence) {
-                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
-                assert(promotedProperties === null);
-            }
-            else {
-                assert(i === 1);
-            }
+            promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+            assert(promotedProperties === null);
 
             // Ok, let's start over!
 
@@ -585,23 +569,21 @@ module.exports = {
             yield Bluebird.delay(100);
 
             // Verify promotedProperties:
-            if (hostOptions && hostOptions.persistence) {
-                let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
-                assert(promotedProperties);
-                assert(promotedProperties.i === 1);
-                assert.equal(_.keys(promotedProperties).length, 1);
-            }
-            else {
-                assert(i === 2);
-            }
+            promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
+            assert(promotedProperties);
+            assert(promotedProperties.i === 1);
+            assert.equal(_.keys(promotedProperties).length, 1);
 
             assert(trace.length === 2);
             assert(trace[0].workflowName === "wf");
-            assert(trace[0].workflowVersion === 0);
+            assert(_.isString(trace[0].workflowVersion));
+            assert(trace[0].workflowVersion.length > 0);
             assert(trace[0].instanceId === id);
             assert(trace[1].workflowName === "wf");
-            assert(trace[1].workflowVersion === 1);
+            assert(_.isString(trace[1].workflowVersion));
+            assert(trace[1].workflowVersion.length > 0);
             assert(trace[1].instanceId === id);
+            assert(trace[0].workflowVersion !== trace[1].workflowVersion);
         }
         finally {
             host.shutdown();
