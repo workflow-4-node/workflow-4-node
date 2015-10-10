@@ -61,7 +61,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function (e) {
+        host.once(WorkflowHost.events.warn, function (e) {
             error = e;
         });
         try {
@@ -232,7 +232,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function (e) {
+        host.once(WorkflowHost.events.warn, function (e) {
             error = e;
         });
 
@@ -361,7 +361,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function (e) {
+        host.once(WorkflowHost.events.warn, function (e) {
             error = e;
         });
         try {
@@ -396,6 +396,12 @@ module.exports = {
             // Let's wait.
             yield Bluebird.delay(1000);
 
+            if (error) {
+                let pError = error;
+                error = null;
+                throw pError;
+            }
+
             // Verify promotedProperties:
             if (hostOptions && hostOptions.persistence) {
                 let promotedProperties = yield host.persistence.loadPromotedProperties("wf", id);
@@ -414,6 +420,11 @@ module.exports = {
             // Stop:
             result = yield (host.invokeMethod("wf", "stop", id));
             assert(!result);
+        }
+        catch (e) {
+            if (!/is not supported without persistence/.test(e.message)) {
+                throw e;
+            }
         }
         finally {
             host.shutdown();
@@ -491,7 +502,7 @@ module.exports = {
 
         let error = null;
         let host = new WorkflowHost(hostOptions);
-        host.once("error", function (e) {
+        host.once(WorkflowHost.events.warn, function (e) {
             error = e;
         });
         try {
