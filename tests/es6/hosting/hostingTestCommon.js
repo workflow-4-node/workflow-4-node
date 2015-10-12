@@ -384,7 +384,7 @@ module.exports = {
                 assert(false, "That should throw!");
             }
             catch (e) {
-                if (!(e instanceof errors.MethodIsNotAccessibleError)) {
+                if (!(e instanceof errors.MethodNotFoundError)) {
                     throw e;
                 }
             }
