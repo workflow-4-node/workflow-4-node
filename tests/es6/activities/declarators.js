@@ -34,9 +34,11 @@ describe("declarators", function () {
                 return this.let3 * 4;
             };
 
+            block.args = [f1, f2, f3];
+
             let engine = new ActivityExecutionEngine(block);
 
-            engine.invoke(f1, f2, f3).then(
+            engine.invoke().then(
                 function (result) {
                     let x1 = 1;
                     let x2 = 2;

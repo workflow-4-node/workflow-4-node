@@ -9,6 +9,7 @@ let ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
 let assert = require("assert");
 let Bluebird = require("bluebird");
 let _ = require("lodash");
+let errors = wf4node.common.errors;
 
 describe("Func", function () {
     it("should run with a synchronous code", function (done) {
@@ -19,7 +20,7 @@ describe("Func", function () {
 
         let engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Gabor" }).then(
+        engine.invoke({name: "Gabor"}).then(
             function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
@@ -37,7 +38,7 @@ describe("Func", function () {
 
         let engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Gabor" }).then(
+        engine.invoke({name: "Gabor"}).then(
             function (result) {
                 assert.equal(result, "Gabor");
             }).nodeify(done);
@@ -55,10 +56,10 @@ describe("Func", function () {
 
         let engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Gabor" })
+        engine.invoke({name: "Gabor"})
             .then(function (result) {
                 assert.equal(result, "Gabor");
-                return engine.invoke({ name: "Pisti" })
+                return engine.invoke({name: "Pisti"})
                     .then(function (result2) {
                         assert.equal(result2, "Pisti");
                     });
@@ -73,7 +74,7 @@ describe("Func", function () {
 
         let engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Mezo" }).then(
+        engine.invoke({name: "Mezo"}).then(
             function (result) {
                 assert.equal(result, "Mezo");
             }).nodeify(done);
@@ -87,14 +88,14 @@ describe("Func", function () {
 
         let engine = new ActivityExecutionEngine(fop);
 
-        engine.invoke({ name: "Mezo" }).then(
+        engine.invoke({name: "Mezo"}).then(
             function (result) {
                 assert.equal(result, "Mezo");
             }).nodeify(done);
     });
 
-    it("should accept external parameters those are functions also", function (done) {
-        let expected = { name: "Gabor" };
+    it("should not accept activities as arguments", function (done) {
+        let expected = {name: "Gabor"};
         let fop = new Func();
         fop.code = function (obj) {
             return obj.name;
@@ -105,16 +106,18 @@ describe("Func", function () {
         };
 
         let engine = new ActivityExecutionEngine(fop);
-        //engine.addTracker(new ConsoleTracker());
 
-        engine.invoke(fopin).then(
-            function (result) {
-                assert.equal(result, expected.name);
+        engine.invoke(fopin)
+            .then(function (result) {
+                assert(false);
+            },
+            function (e) {
+                assert(e instanceof errors.ActivityStateExceptionError);
             }).nodeify(done);
     });
 
     it("should work as an agument", function (done) {
-        let expected = { name: "Gabor" };
+        let expected = {name: "Gabor"};
 
         let fop = activityMarkup.parse(
             {
@@ -141,7 +144,7 @@ describe("Func", function () {
     });
 
     it("should include lodash as last argument", function (done) {
-        let expected = { name: "GaborMezo" };
+        let expected = {name: "GaborMezo"};
 
         let fop = activityMarkup.parse(
             {
@@ -181,7 +184,7 @@ describe("Func", function () {
                         args: {
                             "@func": {
                                 code: "= this.block.code",
-                                args: { name: "Gabor" }
+                                args: {name: "Gabor"}
                             }
                         }
                     }
@@ -202,13 +205,15 @@ describe("Func", function () {
                         id: "block",
                         "code": {
                             _: function (obj) {
-                                return Bluebird.delay(10).then(function () { return obj.name; });
+                                return Bluebird.delay(10).then(function () {
+                                    return obj.name;
+                                });
                             }
                         },
                         args: {
                             "@func": {
                                 code: "= this.block.code",
-                                args: { name: "Gabor" }
+                                args: {name: "Gabor"}
                             }
                         }
                     }
@@ -229,13 +234,15 @@ describe("Func", function () {
                         id: "block",
                         "code": {
                             _: function (obj, __) {
-                                return Bluebird.delay(10).then(function () { return __.camelCase(obj.name); });
+                                return Bluebird.delay(10).then(function () {
+                                    return __.camelCase(obj.name);
+                                });
                             }
                         },
                         args: {
                             "@func": {
                                 code: "= this.block.code",
-                                args: { name: "GaborMezo" }
+                                args: {name: "GaborMezo"}
                             }
                         }
                     }
