@@ -1,0 +1,1 @@
+{"version":3,"names":[],"mappings":"","sources":["hosting/index.js"],"sourcesContent":["require(\"./coreHostingTests\");\r\nrequire(\"./serializing\");"],"file":"hosting/index.js","sourceRoot":"/source/"}

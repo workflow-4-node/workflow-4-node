@@ -1,4 +1,5 @@
 "use strict";
 require("./coreHostingTests");
 require("./serializing");
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImluZGV4LmpzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiJBQUFBO0FBQUEsTUFBTSxBQUFDLENBQUMsb0JBQW1CLENBQUMsQ0FBQztBQUM3QixNQUFNLEFBQUMsQ0FBQyxlQUFjLENBQUMsQ0FBQztBQUFBIiwiZmlsZSI6Imhvc3RpbmcvaW5kZXguanMiLCJzb3VyY2VSb290IjoidGVzdHMvZXM2Iiwic291cmNlc0NvbnRlbnQiOlsicmVxdWlyZShcIi4vY29yZUhvc3RpbmdUZXN0c1wiKTtcclxucmVxdWlyZShcIi4vc2VyaWFsaXppbmdcIik7Il19
+
+//# sourceMappingURL=index.js.map
