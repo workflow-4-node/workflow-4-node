@@ -112,7 +112,7 @@ describe("Func", function () {
                 assert(false);
             },
             function (e) {
-                assert(e instanceof errors.ActivityStateExceptionError);
+                assert(e instanceof errors.ActivityRuntimeError);
             }).nodeify(done);
     });
 
