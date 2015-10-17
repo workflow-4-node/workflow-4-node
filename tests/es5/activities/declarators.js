@@ -26,8 +26,9 @@ describe("declarators", function() {
       f3.code = function() {
         return this.let3 * 4;
       };
+      block.args = [f1, f2, f3];
       var engine = new ActivityExecutionEngine(block);
-      engine.invoke(f1, f2, f3).then(function(result) {
+      engine.invoke().then(function(result) {
         var x1 = 1;
         var x2 = 2;
         var x3 = 3;

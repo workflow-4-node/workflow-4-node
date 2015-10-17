@@ -6,6 +6,7 @@ var ActivityExecutionEngine = wf4node.activities.ActivityExecutionEngine;
 var assert = require("assert");
 var Bluebird = require("bluebird");
 var _ = require("lodash");
+var errors = wf4node.common.errors;
 describe("Func", function() {
   it("should run with a synchronous code", function(done) {
     var fop = new Func();
@@ -74,7 +75,7 @@ describe("Func", function() {
       assert.equal(result, "Mezo");
     }).nodeify(done);
   });
-  it("should accept external parameters those are functions also", function(done) {
+  it("should not accept activities as arguments", function(done) {
     var expected = {name: "Gabor"};
     var fop = new Func();
     fop.code = function(obj) {
@@ -86,7 +87,9 @@ describe("Func", function() {
     };
     var engine = new ActivityExecutionEngine(fop);
     engine.invoke(fopin).then(function(result) {
-      assert.equal(result, expected.name);
+      assert(false);
+    }, function(e) {
+      assert(e instanceof errors.ActivityRuntimeError);
     }).nodeify(done);
   });
   it("should work as an agument", function(done) {

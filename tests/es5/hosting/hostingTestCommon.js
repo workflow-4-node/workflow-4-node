@@ -560,6 +560,7 @@ module.exports = {
             if (!/is not supported without persistence/.test(e.message)) {
               throw e;
             }
+            assert(!hostOptions.persistence);
             $ctx.state = 64;
             $ctx.finallyFallThrough = 68;
             break;
