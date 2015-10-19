@@ -29,13 +29,14 @@ async(function* () {
                 {
                     // Pick executes its arguments in parallel,
                     // and if a branch gets completed,
-                    // the others gets cancelled.
-                    // So, it will execute the loop until,
-                    // the "stop" method gets invoked.
-                    // After "stop" the branch gets completed,
+                    // the others gets cancelled asap.
+                    // So, it executes the loop and
+                    // when "stop" called the branch
+                    // of that method gets completed,
                     // and the loop gets cancelled,
                     // so the workflow finishes.
                     "@pick": [
+                        // pick's branch #1:
                         {
                             "@while": {
                                 condition: true,
@@ -66,6 +67,7 @@ async(function* () {
                                 ]
                             }
                         },
+                        // pick's branch #2:
                         {
                             "@method": {
                                 methodName: "stop",
@@ -79,7 +81,9 @@ async(function* () {
     };
 
     let host = new WorkflowHost({
-        // To get delays work, we need a persistence provider:
+        // To get delays work, we need a persistence provider.
+        // Memory persistence can be used if there is no other cluster forks
+        // or server instances exists, when there is no need for correlation.
         persistence: new MemoryPersistence(),
         wakeUpOptions: {
             // This is the instance check interval.
