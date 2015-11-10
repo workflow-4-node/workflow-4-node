@@ -39,10 +39,10 @@ describe("delays", function () {
                     intervalValue: 0.2,
                     args: [
                         function () {
-                            if (i++ === 3) {
-                                throw new Error("OK");
+                            if (++i < 3) {
+                                return i;
                             }
-                            return i;
+                            throw new Error("OK");
                         }
                     ]
                 }
@@ -57,8 +57,9 @@ describe("delays", function () {
                 catch (e) {
                     if (e.message === "OK") {
                         let d = new Date() - now;
-                        assert(d > 400 && d < 500);
-                        assert(i === 4);
+                        console.log(d);
+                        assert(d > 400 && d < 1000);
+                        assert(i === 3);
                     }
                     else {
                         throw e;
