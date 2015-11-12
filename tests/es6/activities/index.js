@@ -11,3 +11,4 @@ require("./templates");
 require("./exceptions");
 require("./delays");
 require("./cancellation");
+require("./compositing");

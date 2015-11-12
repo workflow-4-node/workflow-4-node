@@ -21,12 +21,12 @@ describe("declarators", function () {
 
             let f1 = new Func();
             f1.code = function () {
-                return this.let3 = (this.let3 + this.let1 * 2);
+                return (this.let3 = (this.let3 + this.let1 * 2));
             };
 
             let f2 = new Func();
             f2.code = function () {
-                return this.let3 = (this.let3 + this.let2 * 3);
+                return (this.let3 = (this.let3 + this.let2 * 3));
             };
 
             let f3 = new Func();
@@ -113,14 +113,14 @@ describe("declarators", function () {
                         {
                             "@func": {
                                 code: function bubu() {
-                                    return this.let3 = this.let3 + this.let1 * 2;
+                                    return (this.let3 = this.let3 + this.let1 * 2);
                                 }
                             }
                         },
                         {
                             "@func": {
                                 code: function kittyfuck() {
-                                    return this.let3 = this.let3 + this.let2 * 3;
+                                    return (this.let3 = this.let3 + this.let2 * 3);
                                 }
                             }
                         },
