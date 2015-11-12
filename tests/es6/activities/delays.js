@@ -39,7 +39,7 @@ describe("delays", function () {
                     intervalValue: 0.2,
                     args: [
                         function () {
-                            if (++i < 3) {
+                            if (++i < 4) {
                                 return i;
                             }
                             throw new Error("OK");
@@ -59,7 +59,7 @@ describe("delays", function () {
                         let d = new Date() - now;
                         console.log(d);
                         assert(d > 400 && d < 1000);
-                        assert(i === 3);
+                        assert(i === 4);
                     }
                     else {
                         throw e;

@@ -17,7 +17,7 @@ util.inherits(Hello, Composite);
 Hello.prototype.createImplementation = function() {
     return {
         "@block": {
-            to: "= this.$parent.to",
+            to: "= this.to",
             args: function() {
                 return `Hello ${this.to}!`;
             }
