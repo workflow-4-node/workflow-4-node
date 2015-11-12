@@ -48,10 +48,10 @@ describe("delays", function() {
           intervalType: "secondly",
           intervalValue: 0.2,
           args: [function() {
-            if (i++ === 3) {
-              throw new Error("OK");
+            if (++i < 4) {
+              return i;
             }
-            return i;
+            throw new Error("OK");
           }]
         }});
       async($traceurRuntime.initGeneratorFunction(function $__2() {
@@ -93,7 +93,8 @@ describe("delays", function() {
               case 13:
                 if (e.message === "OK") {
                   d = new Date() - now;
-                  assert(d > 400 && d < 500);
+                  console.log(d);
+                  assert(d > 400 && d < 1000);
                   assert(i === 4);
                 } else {
                   throw e;

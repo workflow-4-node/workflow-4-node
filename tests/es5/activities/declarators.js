@@ -16,11 +16,11 @@ describe("declarators", function() {
       block.let3 = 3;
       var f1 = new Func();
       f1.code = function() {
-        return this.let3 = (this.let3 + this.let1 * 2);
+        return (this.let3 = (this.let3 + this.let1 * 2));
       };
       var f2 = new Func();
       f2.code = function() {
-        return this.let3 = (this.let3 + this.let2 * 3);
+        return (this.let3 = (this.let3 + this.let2 * 3));
       };
       var f3 = new Func();
       f3.code = function() {
@@ -70,9 +70,9 @@ describe("declarators", function() {
           let2: 2,
           let3: 3,
           args: [{"@func": {code: function bubu() {
-                return this.let3 = this.let3 + this.let1 * 2;
+                return (this.let3 = this.let3 + this.let1 * 2);
               }}}, {"@func": {code: function kittyfuck() {
-                return this.let3 = this.let3 + this.let2 * 3;
+                return (this.let3 = this.let3 + this.let2 * 3);
               }}}, {"@func": {code: function() {
                 return this.let3 * 4;
               }}}]
