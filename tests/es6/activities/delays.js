@@ -57,7 +57,6 @@ describe("delays", function () {
                 catch (e) {
                     if (e.message === "OK") {
                         let d = new Date() - now;
-                        console.log(d);
                         assert(d > 400 && d < 1000);
                         assert(i === 4);
                     }

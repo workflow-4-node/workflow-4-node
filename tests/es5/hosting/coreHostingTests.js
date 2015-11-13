@@ -86,7 +86,7 @@ describe("WorkflowHost", function() {
       var $__7 = undefined;
       try {
         for (var $__3 = void 0,
-            $__2 = (allOptions)[Symbol.iterator](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
+            $__2 = (allOptions)[$traceurRuntime.toProperty(Symbol.iterator)](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
           var opt = $__3.value;
           {
             if (opt.persistence) {
@@ -116,7 +116,7 @@ describe("WorkflowHost", function() {
       var $__7 = undefined;
       try {
         for (var $__3 = void 0,
-            $__2 = (allOptions)[Symbol.iterator](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
+            $__2 = (allOptions)[$traceurRuntime.toProperty(Symbol.iterator)](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
           var opt = $__3.value;
           {
             if (opt.persistence) {
@@ -146,7 +146,7 @@ describe("WorkflowHost", function() {
       var $__7 = undefined;
       try {
         for (var $__3 = void 0,
-            $__2 = (allOptions)[Symbol.iterator](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
+            $__2 = (allOptions)[$traceurRuntime.toProperty(Symbol.iterator)](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
           var opt = $__3.value;
           {
             if (opt.persistence) {
@@ -176,7 +176,7 @@ describe("WorkflowHost", function() {
       var $__7 = undefined;
       try {
         for (var $__3 = void 0,
-            $__2 = (allOptions)[Symbol.iterator](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
+            $__2 = (allOptions)[$traceurRuntime.toProperty(Symbol.iterator)](); !($__5 = ($__3 = $__2.next()).done); $__5 = true) {
           var opt = $__3.value;
           {
             if (opt.persistence) {

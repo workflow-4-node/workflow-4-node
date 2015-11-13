@@ -93,7 +93,6 @@ describe("delays", function() {
               case 13:
                 if (e.message === "OK") {
                   d = new Date() - now;
-                  console.log(d);
                   assert(d > 400 && d < 1000);
                   assert(i === 4);
                 } else {
