@@ -1,1 +1,1 @@
-{"version":3,"names":[],"mappings":"","sources":["index.js"],"sourcesContent":["require(\"./common\");\nrequire(\"./activities\");\nrequire(\"./hosting\");"],"file":"index.js","sourceRoot":"/source/"}
+{"version":3,"names":[],"mappings":"","sources":["index.js"],"sourcesContent":["require(\"./common\");\r\nrequire(\"./activities\");\r\nrequire(\"./hosting\");"],"file":"index.js","sourceRoot":"/source/"}

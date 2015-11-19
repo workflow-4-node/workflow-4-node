@@ -1,1 +1,1 @@
-{"version":3,"names":[],"mappings":"","sources":["common/index.js"],"sourcesContent":["\"use strict\";\n/* global describe,it */\n\ndescribe(\"common\", function() {\n    require(\"./simpleProxy\");\n});"],"file":"common/index.js","sourceRoot":"/source/"}
+{"version":3,"names":[],"mappings":"","sources":["common/index.js"],"sourcesContent":["\"use strict\";\r\n/* global describe,it */\r\n\r\ndescribe(\"common\", function() {\r\n    require(\"./simpleProxy\");\r\n});"],"file":"common/index.js","sourceRoot":"/source/"}

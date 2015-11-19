@@ -1,7 +1,5 @@
 "use strict";
-
 /* global describe,it */
-
 let wf4node = require("../../../");
 let Func = wf4node.activities.Func;
 let activityMarkup = wf4node.activities.activityMarkup;
@@ -10,6 +8,7 @@ let assert = require("assert");
 let Bluebird = require("bluebird");
 let Block = wf4node.activities.Block;
 let _ = require("lodash");
+let errors = wf4node.common.errors;
 
 describe("Loops", function () {
     describe("While", function () {
@@ -45,8 +44,8 @@ describe("Loops", function () {
         });
     });
 
-    describe('For', function () {
-        it('should work between range 0 and 10 by step 1', function (done) {
+    describe("For", function () {
+        it("should work between range 0 and 10 by step 1", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     seq: "",
@@ -57,7 +56,9 @@ describe("Loops", function () {
                                 to: {
                                     "@func": {
                                         code: function () {
-                                            return Bluebird.delay(100).then(function () { return 10; });
+                                            return Bluebird.delay(100).then(function () {
+                                                return 10;
+                                            });
                                         }
                                     }
                                 },
@@ -76,7 +77,7 @@ describe("Loops", function () {
                 }).nodeify(done);
         });
 
-        it('should work between range 10 downto 4 by step -2', function (done) {
+        it("should work between range 10 downto 4 by step -2", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     seq: "",
@@ -88,7 +89,9 @@ describe("Loops", function () {
                                 to: {
                                     "@func": {
                                         code: function () {
-                                            return Bluebird.delay(100).then(function () { return 4; });
+                                            return Bluebird.delay(100).then(function () {
+                                                return 4;
+                                            });
                                         }
                                     }
                                 },
@@ -112,8 +115,8 @@ describe("Loops", function () {
         });
     });
 
-    describe('ForEach', function () {
-        it('should work non parallel', function (done) {
+    describe("ForEach", function () {
+        it("should work non parallel", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     seq: {
@@ -143,7 +146,7 @@ describe("Loops", function () {
                 }).nodeify(done);
         });
 
-        it('should work parallel non scheduled', function (done) {
+        it("should work parallel non scheduled", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     seq: {
@@ -175,7 +178,7 @@ describe("Loops", function () {
                 }).nodeify(done);
         });
 
-        it('should work parallel scheduled', function (done) {
+        it("should work parallel scheduled", function (done) {
             let engine = new ActivityExecutionEngine({
                 "@block": {
                     seq: "function () { return [1, 2, 3, 4, 5, 6]; }",
@@ -205,6 +208,96 @@ describe("Loops", function () {
                     assert(_.isArray(result));
                     assert.equal(result.length, 6);
                     assert.equal(_(result).sum(), 6 + 5 + 4 + 3 + 2 + 1);
+                }).nodeify(done);
+        });
+
+        it("should work with generators non-parallel", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
+                    result: [],
+                    stuff: {
+                        val: -1
+                    },
+                    args: [
+                        {
+                            "@forEach": {
+                                items: {
+                                    "@func": {
+                                        args: "= this.stuff",
+                                        code: function* (stuff) {
+                                            yield -1 * stuff.val;
+                                            yield 2;
+                                            yield 3;
+                                            yield stuff.val;
+                                        }
+                                    }
+                                },
+                                args: function () {
+                                    if (this.stuff.val === -1) {
+                                        this.stuff.val = 4;
+                                    }
+                                    this.result.push(this.item);
+                                }
+                            }
+                        },
+                        "= this.result"
+                    ]
+                }
+            });
+
+            engine.invoke().then(
+                function (result) {
+                    assert(_.isArray(result));
+                    assert.equal(result.length, 4);
+                    assert.equal(result[0], 1);
+                    assert.equal(result[1], 2);
+                    assert.equal(result[2], 3);
+                    assert.equal(result[3], 4);
+                }).nodeify(done);
+        });
+
+        it("should throw with generators", function (done) {
+            let engine = new ActivityExecutionEngine({
+                "@block": {
+                    result: [],
+                    stuff: {
+                        val: -1
+                    },
+                    args: [
+                        {
+                            "@forEach": {
+                                parallel: true,
+                                items: {
+                                    "@func": {
+                                        args: "= this.stuff",
+                                        code: function* (stuff) {
+                                            yield -1 * stuff.val;
+                                            yield 2;
+                                            yield 3;
+                                            yield stuff.val;
+                                        }
+                                    }
+                                },
+                                args: function () {
+                                    if (this.stuff.val === -1) {
+                                        this.stuff.val = 4;
+                                    }
+                                    this.result.push(this.item);
+                                }
+                            }
+                        },
+                        "= this.result"
+                    ]
+                }
+            });
+
+            engine.invoke()
+                .then(function () {
+                    assert(false);
+                },
+                function(e) {
+                    assert(e instanceof errors.ActivityRuntimeError);
+                    assert(/not supported/.test(e.message));
                 }).nodeify(done);
         });
     });
