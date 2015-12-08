@@ -1,6 +1,8 @@
-"use strict";
-describe("common", function() {
-  require("./simpleProxy");
-});
+"use strict"
+/* global describe,it */
 
+;
+describe("common", function () {
+    require("./simpleProxy");
+});
 //# sourceMappingURL=index.js.map

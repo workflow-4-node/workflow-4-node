@@ -9,31 +9,31 @@ let assert = require("assert");
 
 describe("templates", function () {
     it("should parse object correctly", function (done) {
-
+        let dec = {
+            a: "foo",
+            b: [
+                "zoo",
+                {
+                    c: {
+                        "@func": {
+                            code: function () {
+                                return 6;
+                            }
+                        }
+                    }
+                },
+                "= 42"
+            ]
+        };
         let engine = new ActivityExecutionEngine({
             "@template": {
-                declare: {
-                    a: "foo",
-                    b: [
-                        "zoo",
-                        {
-                            c: {
-                                "@func": {
-                                    code: function () {
-                                        return 6;
-                                    }
-                                }
-                            }
-                        },
-                        "= 42"
-                    ]
-                }
+                declare: dec
             }
         });
 
         engine.invoke().then(function (result) {
-
             assert.ok(_.isPlainObject(result));
+            assert.notEqual(result, dec);
             assert.equal(result.a, "foo");
             assert.ok(_.isArray(result.b));
             assert.equal(result.b.length, 3);
@@ -80,6 +80,13 @@ describe("templates", function () {
     });
 
     it("should work on arrays", function (done) {
+        let arr = [
+            {
+                $project: {
+                    $literal: "= this.rule.value"
+                }
+            }
+        ];
         let engine = new ActivityExecutionEngine({
             "@block": {
                 rule: {
@@ -88,13 +95,7 @@ describe("templates", function () {
                 args: [
                     {
                         "@block": {
-                            a: [
-                                {
-                                    $project: {
-                                        $literal: "= this.rule.value"
-                                    }
-                                }
-                            ],
+                            a: arr,
                             args: [
                                 "= this.a"
                             ]
@@ -106,6 +107,7 @@ describe("templates", function () {
 
         engine.invoke().then(function (result) {
             assert.ok(_.isArray(result));
+            assert.notEqual(result, arr);
             assert.ok(_.isPlainObject(result[0].$project));
             assert.equal(result[0].$project.$literal, 22);
         }).nodeify(done);
@@ -126,7 +128,7 @@ describe("templates", function () {
                     {
                         "@func": {
                             args: " = this.poo.stuff.sayHello",
-                            code: function(f) {
+                            code: function (f) {
                                 return f("Gabor");
                             }
                         }
@@ -137,6 +139,48 @@ describe("templates", function () {
 
         engine.invoke().then(function (result) {
             assert.equal(result, "Hello, Gabor!");
+        }).nodeify(done);
+    });
+
+    it("should create cloned objects", function (done) {
+        let obj2 = {
+            foo: "bar"
+        };
+        let obj = { baz: obj2 };
+        let engine = new ActivityExecutionEngine({
+            "@block": {
+                obj: obj,
+                args: ["= this.obj"]
+            }
+        });
+
+        engine.invoke().then(function (result) {
+            assert(_.isObject(result));
+            assert(result !== obj);
+            assert(result.baz.foo === "bar");
+        }).nodeify(done);
+    });
+
+    it("should create cloned arrays", function (done) {
+        let obj2 = {
+            foo: "bar"
+        };
+        let obj = { baz: obj2 };
+        let arr = [obj];
+        let engine = new ActivityExecutionEngine({
+            "@block": {
+                arr: arr,
+                args: ["= this.arr"]
+            }
+        });
+
+        engine.invoke().then(function (result) {
+            assert(_.isArray(result));
+            assert(result.length === 1);
+            assert(result !== arr);
+            result = result[0];
+            assert(result !== obj);
+            assert(result.baz.foo === "bar");
         }).nodeify(done);
     });
 });

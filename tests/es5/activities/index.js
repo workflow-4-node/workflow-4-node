@@ -1,4 +1,5 @@
 "use strict";
+
 require("./func");
 require("./declarators");
 require("./expressions");
@@ -13,5 +14,4 @@ require("./exceptions");
 require("./delays");
 require("./cancellation");
 require("./compositing");
-
 //# sourceMappingURL=index.js.map

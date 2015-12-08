@@ -1,13 +1,16 @@
-var gulp = require("gulp");
-var traceur = require("gulp-traceur");
-var gulpSequence = require("gulp-sequence");
-var exec = require("child_process").exec;
-var sourcemaps = require("gulp-sourcemaps");
+"use strict";
+let gulp = require("gulp");
+let babel = require("gulp-babel");
+let gulpSequence = require("gulp-sequence");
+let exec = require("child_process").exec;
+let sourcemaps = require("gulp-sourcemaps");
 
 gulp.task("compile-test", function () {
     return gulp.src("tests/es6/**/*.js", {base: "tests/es6"})
         .pipe(sourcemaps.init())
-        .pipe(traceur())
+        .pipe(babel({
+            presets: ["es2015"]
+        }))
         .pipe(sourcemaps.write("."))
         .pipe(gulp.dest("tests/es5"));
 });
@@ -15,20 +18,14 @@ gulp.task("compile-test", function () {
 gulp.task("compile-lib", function () {
     return gulp.src("lib/es6/**/*.js", {base: "lib/es6"})
         .pipe(sourcemaps.init())
-        .pipe(traceur())
+        .pipe(babel({
+            presets: ["es2015"]
+        }))
         .pipe(sourcemaps.write("."))
         .pipe(gulp.dest("lib/es5"));
 });
 
-gulp.task("compile-examples", function () {
-    return gulp.src("examples/es6/**/*.js", {base: "examples/es6"})
-        .pipe(sourcemaps.init())
-        .pipe(traceur())
-        .pipe(sourcemaps.write("."))
-        .pipe(gulp.dest("examples/es5"));
-});
-
-gulp.task("compile", gulpSequence(["compile-test", "compile-lib", "compile-examples"]));
+gulp.task("compile", gulpSequence(["compile-test", "compile-lib"]));
 
 gulp.task("default", gulpSequence("compile"));
 

@@ -1,4 +1,8 @@
-"use strict";
+"use strict"
+
+/* global describe,it */
+
+;
 var wf4node = require("../../../");
 var Func = wf4node.activities.Func;
 var ConsoleTracker = wf4node.activities.ConsoleTracker;
@@ -8,105 +12,100 @@ var Bluebird = require("bluebird");
 var _ = require("lodash");
 var async = wf4node.common.asyncHelpers.async;
 require("date-utils");
-describe("delays", function() {
-  describe("DelayTo", function() {
-    it("should wait for 200ms", function(done) {
-      var engine = new ActivityExecutionEngine({"@delay": {ms: 200}});
-      async($traceurRuntime.initGeneratorFunction(function $__2() {
-        var now,
-            d;
-        return $traceurRuntime.createGeneratorInstance(function($ctx) {
-          while (true)
-            switch ($ctx.state) {
-              case 0:
-                now = new Date();
-                $ctx.state = 6;
-                break;
-              case 6:
-                $ctx.state = 2;
-                return engine.invoke();
-              case 2:
-                $ctx.maybeThrow();
-                $ctx.state = 4;
-                break;
-              case 4:
-                d = new Date() - now;
-                assert(d > 200 && d < 400);
-                $ctx.state = -2;
-                break;
-              default:
-                return $ctx.end();
-            }
-        }, $__2, this);
-      }))().nodeify(done);
-    });
-  });
-  describe("Repeat", function() {
-    it("should repeat its args", function(done) {
-      var i = 0;
-      var engine = new ActivityExecutionEngine({"@repeat": {
-          intervalType: "secondly",
-          intervalValue: 0.2,
-          args: [function() {
-            if (++i < 4) {
-              return i;
-            }
-            throw new Error("OK");
-          }]
-        }});
-      async($traceurRuntime.initGeneratorFunction(function $__2() {
-        var now,
-            d,
-            e;
-        return $traceurRuntime.createGeneratorInstance(function($ctx) {
-          while (true)
-            switch ($ctx.state) {
-              case 0:
-                now = new Date();
-                $ctx.state = 17;
-                break;
-              case 17:
-                $ctx.pushTry(7, null);
-                $ctx.state = 10;
-                break;
-              case 10:
-                $ctx.state = 2;
-                return engine.invoke();
-              case 2:
-                $ctx.maybeThrow();
-                $ctx.state = 4;
-                break;
-              case 4:
-                assert(false);
-                $ctx.state = 6;
-                break;
-              case 6:
-                $ctx.popTry();
-                $ctx.state = -2;
-                break;
-              case 7:
-                $ctx.popTry();
-                $ctx.maybeUncatchable();
-                e = $ctx.storedException;
-                $ctx.state = 13;
-                break;
-              case 13:
-                if (e.message === "OK") {
-                  d = new Date() - now;
-                  assert(d > 400 && d < 1000);
-                  assert(i === 4);
-                } else {
-                  throw e;
-                }
-                $ctx.state = -2;
-                break;
-              default:
-                return $ctx.end();
-            }
-        }, $__2, this);
-      }))().nodeify(done);
-    });
-  });
-});
 
+describe("delays", function () {
+    describe("DelayTo", function () {
+        it("should wait for 200ms", function (done) {
+            var engine = new ActivityExecutionEngine({
+                "@delay": {
+                    ms: 200
+                }
+            });
+
+            async(regeneratorRuntime.mark(function _callee() {
+                var now, d;
+                return regeneratorRuntime.wrap(function _callee$(_context) {
+                    while (1) {
+                        switch (_context.prev = _context.next) {
+                            case 0:
+                                now = new Date();
+                                _context.next = 3;
+                                return engine.invoke();
+
+                            case 3:
+                                d = new Date() - now;
+
+                                assert(d > 200 && d < 400);
+
+                            case 5:
+                            case "end":
+                                return _context.stop();
+                        }
+                    }
+                }, _callee, this);
+            }))().nodeify(done);
+        });
+    });
+
+    describe("Repeat", function () {
+        it("should repeat its args", function (done) {
+            var i = 0;
+            var engine = new ActivityExecutionEngine({
+                "@repeat": {
+                    intervalType: "secondly",
+                    intervalValue: 0.2,
+                    args: [function () {
+                        if (++i < 4) {
+                            return i;
+                        }
+                        throw new Error("OK");
+                    }]
+                }
+            });
+
+            async(regeneratorRuntime.mark(function _callee2() {
+                var now, d;
+                return regeneratorRuntime.wrap(function _callee2$(_context2) {
+                    while (1) {
+                        switch (_context2.prev = _context2.next) {
+                            case 0:
+                                now = new Date();
+                                _context2.prev = 1;
+                                _context2.next = 4;
+                                return engine.invoke();
+
+                            case 4:
+                                assert(false);
+                                _context2.next = 16;
+                                break;
+
+                            case 7:
+                                _context2.prev = 7;
+                                _context2.t0 = _context2["catch"](1);
+
+                                if (!(_context2.t0.message === "OK")) {
+                                    _context2.next = 15;
+                                    break;
+                                }
+
+                                d = new Date() - now;
+
+                                assert(d > 400 && d < 1000);
+                                assert(i === 4);
+                                _context2.next = 16;
+                                break;
+
+                            case 15:
+                                throw _context2.t0;
+
+                            case 16:
+                            case "end":
+                                return _context2.stop();
+                        }
+                    }
+                }, _callee2, this, [[1, 7]]);
+            }))().nodeify(done);
+        });
+    });
+});
 //# sourceMappingURL=delays.js.map
