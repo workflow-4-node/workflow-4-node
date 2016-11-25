@@ -37,15 +37,15 @@
     "gulp-babel": "^6.1.0"
   },
   "dependencies": {
+    "babel-polyfill": "^6.2.0",
     "backpack-node": "*",
     "better-assert": "*",
     "bluebird": "*",
     "date-utils": "1",
     "debug": "*",
     "lodash": "*",
-    "node-uuid": "*",
     "timespan": "*",
-    "babel-polyfill": "^6.2.0"
+    "uuid": "^3.0.0"
   },
   "optionalDependencies": {
     "node-proxy": "*"
