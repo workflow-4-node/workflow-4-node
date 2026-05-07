@@ -3,6 +3,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
+import eslintPluginPrettier from "eslint-plugin-prettier";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
@@ -24,7 +25,21 @@ export default tseslint.config(
     },
   },
   {
+    plugins: {
+      prettier: eslintPluginPrettier,
+    },
     rules: {
+      "prettier/prettier": [
+        "error",
+        {
+          semi: true,
+          singleQuote: true,
+          trailingComma: "all",
+          printWidth: 140,
+          tabWidth: 4,
+          arrowParens: "always",
+        },
+      ],
       // Prevent misused promises
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": [
@@ -37,6 +52,15 @@ export default tseslint.config(
       ],
       "@typescript-eslint/promise-function-async": "error",
       // Enforce type-only imports for type-only references
+      // Allow explicit any and its unsafe usages
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+        },
+      ],
       "@typescript-eslint/consistent-type-imports": [
         "error",
         {
@@ -44,6 +68,14 @@ export default tseslint.config(
           fixStyle: "inline-type-imports",
         },
       ],
+    },
+  },
+  {
+    files: ["test/**"],
+    rules: {
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
     },
   },
   {

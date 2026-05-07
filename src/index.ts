@@ -1,6 +1,3 @@
-/**
- * Returns a greeting for the given name.
- */
-export function greet(name: string): string {
-  return `Hello, ${name}!`;
-}
+export * from './common/index.js';
+export * from './errors/index.js';
+export * from './activities/index.js';

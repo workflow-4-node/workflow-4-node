@@ -23,6 +23,7 @@ A workflow execution engine will be stateless and will be able to execute multip
   - protected methods
   - private methods
 - Utility functions are exported as a part of an exported object, the file name should be the same as the object name. For example, if we have a file `utils.ts` that exports an object: `export const utils = { fn1, fn2 }`.
+- File structure: we put exported stuff at the top of the file, and move utility functions to the bottom in order of importance.
 
 # _old_
 
