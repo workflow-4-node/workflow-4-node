@@ -9,6 +9,7 @@ export * from './IdleError.js';
 export * from './MethodIsNotAccessibleError.js';
 export * from './MethodNotFoundError.js';
 export * from './TimeoutError.js';
+export * from './TypeError.js';
 export * from './ValidationError.js';
 export * from './WorkflowError.js';
 export * from './WorkflowNotFoundError.js';

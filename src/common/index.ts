@@ -3,3 +3,4 @@ export * from './enums.js';
 export * from './converters.js';
 export * from './SimpleProxy.js';
 export * from './specStrings.js';
+export * from './promiseHelpers.js';

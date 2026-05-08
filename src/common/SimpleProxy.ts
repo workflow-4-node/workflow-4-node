@@ -2,6 +2,7 @@ export interface ProxyBackend {
     getValue(property: string): any;
     setValue(property: string, value: any): void;
     getKeys(): string[];
+    hasKey(property: string): boolean;
     delete?(property: string): void;
 }
 
@@ -22,7 +23,7 @@ export class SimpleProxy {
                 return true;
             },
             has: (_, prop: string | symbol) => {
-                return typeof prop === 'symbol' || prop in this || backend.getKeys().includes(prop);
+                return typeof prop === 'symbol' || prop in this || backend.hasKey(prop);
             },
             deleteProperty: (_, prop: string | symbol) => {
                 if (typeof prop === 'symbol') return true;
@@ -37,7 +38,7 @@ export class SimpleProxy {
                 if (prop in this || typeof prop === 'symbol') {
                     return Reflect.getOwnPropertyDescriptor(this, prop);
                 }
-                if (backend.getKeys().includes(prop)) {
+                if (backend.hasKey(prop)) {
                     return {
                         enumerable: true,
                         configurable: true,

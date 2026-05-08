@@ -22,8 +22,12 @@ A workflow execution engine will be stateless and will be able to execute multip
   - public methods
   - protected methods
   - private methods
+
+  Private fields use TypeScript's `private` keyword — only prefix with `_` if absolutely necessary (like backing fields).
+  Do not add section/region divider comments between groups.
 - Utility functions are exported as a part of an exported object, the file name should be the same as the object name. For example, if we have a file `utils.ts` that exports an object: `export const utils = { fn1, fn2 }`.
 - File structure: we put exported stuff at the top of the file, and move utility functions to the bottom in order of importance.
+- When we describe a shape of a JSON object, use type. If we define protocol, use interface.
 
 # _old_
 

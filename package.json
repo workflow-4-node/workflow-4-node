@@ -62,5 +62,8 @@
     "ts-jest": "^29.4.9",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2"
+  },
+  "dependencies": {
+    "superjson": "^2.2.6"
   }
 }

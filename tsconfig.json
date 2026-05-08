@@ -14,7 +14,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "isolatedModules": true,
-    "types": ["jest"]
+    "types": ["node", "jest"]
   },
   "include": ["src", "test"],
   "exclude": ["node_modules", "dist"]

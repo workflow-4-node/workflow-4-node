@@ -17,6 +17,9 @@ function createMockBackend(overrides: Partial<ProxyBackend> = {}): ProxyBackend 
             calls.push('getKeys()');
             return [...store.keys()];
         },
+        hasKey(property: string): boolean {
+            return store.has(property);
+        },
         ...overrides,
     };
 }
