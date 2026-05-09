@@ -7,6 +7,8 @@ export interface ProxyBackend {
 }
 
 export class SimpleProxy {
+    [key: string]: any;
+
     constructor(backend: ProxyBackend) {
         return new Proxy(this, {
             get: (_, prop: string | symbol, receiver) => {
