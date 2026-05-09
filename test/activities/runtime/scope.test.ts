@@ -8,6 +8,13 @@ function getActivityById(id: string): Activity {
         instanceId: id,
         id,
         nonSerializedProperties: new Set(),
+        complete: () => {},
+        cancel: () => {},
+        idle: () => {},
+        fail: () => {},
+        end: () => {},
+        schedule: () => {},
+        createScopePart: () => ({}),
     };
 }
 

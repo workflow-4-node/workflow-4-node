@@ -158,7 +158,9 @@ Activity.prototype._initializeStructure = function (execContext) {
     }
 };
 
-Activity.prototype.initializeStructure = _.noop;
+Activity.prototype.initializeStructure = function (execContext) {
+    // virtual
+};
 
 Activity.prototype.clone = function () {
     function makeClone(value, canCloneArrays) {

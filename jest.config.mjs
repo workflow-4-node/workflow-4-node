@@ -16,6 +16,9 @@ const config = {
       },
     ],
   },
+  // Load global test setup (logger, beforeEach/afterEach hooks)
+  setupFilesAfterEnv: ['./test/setup/globalTestSetup.ts'],
+
   // Use all available CPU cores for parallel test execution
   maxWorkers: '100%',
 };

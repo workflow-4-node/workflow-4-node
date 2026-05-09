@@ -6,6 +6,13 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
         instanceId: 'act-1',
         id: 'test-activity',
         nonSerializedProperties: new Set(),
+        complete: () => {},
+        cancel: () => {},
+        idle: () => {},
+        fail: () => {},
+        end: () => {},
+        schedule: () => {},
+        createScopePart: () => ({}),
         ...overrides,
     };
 }

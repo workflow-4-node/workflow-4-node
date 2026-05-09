@@ -144,3 +144,6 @@ node_modules/
 .c9/
 .settings/
 .project
+
+# Logs
+Logs/

@@ -2,6 +2,7 @@ import type { Activity } from '../Activity.js';
 import type { ActivityExecutionState } from './ActivityExecutionState.js';
 import type { CallContext } from './CallContext.js';
 import type { Serializer } from '../../serialization/Serializer.js';
+import type { ScopeTree } from './ScopeTree.js';
 
 export interface ActivityExecutionContext {
     readonly rootActivity: Activity;
@@ -13,6 +14,8 @@ export interface ActivityExecutionContext {
     resumeBookmarkInScope(callContext: CallContext, name: string, reason: string, result: unknown): void;
     resumeBookmarkExternal(name: string, reason: string, result: unknown): void;
     processResumeBookmarkQueue(): void;
+    getKnownActivity(activityId: string): Activity;
+    getScopeTree(): ScopeTree;
     getStateAndPromotions(
         serializer?: Serializer,
         enablePromotions?: boolean,
