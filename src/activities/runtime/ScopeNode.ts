@@ -1,7 +1,23 @@
+import type { Activity } from '../Activity.js';
 import { TypeError } from '../../errors/TypeError.js';
 
+/** A serialized scope part entry — named (name + value) or raw (value only). */
+export interface SerializedScopePart {
+    name: string;
+    value: any;
+}
+
+/** JSON shape of a serialized scope tree node used in state serialization/deserialization. */
+export interface SerializedScopeNode {
+    instanceId: string;
+    userId?: string;
+    parentId: string | null;
+    /** Named (SerializedScopePart) or raw string values pushed by serialize handlers. */
+    parts: (SerializedScopePart | string)[];
+}
+
 export class ScopeNode {
-    constructor(instanceId: string, scopePart: Record<string, any>, userId?: string, activity?: unknown) {
+    constructor(instanceId: string, scopePart: Record<string, any>, userId?: string, activity?: Activity) {
         this.instanceId = instanceId;
         this.userId = userId;
         this.activity = activity ?? null;
@@ -13,7 +29,7 @@ export class ScopeNode {
 
     readonly instanceId: string;
     readonly userId?: string;
-    readonly activity: unknown = null;
+    readonly activity: Activity | null = null;
 
     private scopePartValue: Record<string, any>;
     private keys: string[] = [];
@@ -72,7 +88,7 @@ export class ScopeNode {
     }
 
     isPropertyExists(name: string): boolean {
-        return name in this.scopePartValue;
+        return this.scopePartValue[name] !== undefined;
     }
 
     getPropertyValue(name: string, canReturnPrivate?: boolean): any {
@@ -95,7 +111,7 @@ export class ScopeNode {
             }
             return false;
         }
-        if (name in this.scopePartValue) {
+        if (this.scopePartValue[name] !== undefined) {
             this.scopePartValue[name] = value;
             return true;
         }
@@ -110,7 +126,7 @@ export class ScopeNode {
     }
 
     deleteProperty(name: string, canDeletePrivate?: boolean): boolean {
-        if (!(name in this.scopePartValue)) {
+        if (this.scopePartValue[name] === undefined) {
             return false;
         }
         if (ScopeNode.isPrivate(name) && !canDeletePrivate) {

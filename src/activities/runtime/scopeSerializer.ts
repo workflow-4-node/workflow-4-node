@@ -1,10 +1,9 @@
-// TODO: Many types here are `any` (Activity, ExecutionContext, etc.) because
-// the proper interfaces don't exist yet. Once those are defined, come back
-// and replace all `any` with the correct types.
-
 import { constants } from '../../common/constants.js';
 import { specStrings } from '../../common/specStrings.js';
+import type { Activity } from '../Activity.js';
+import type { ActivityExecutionContext } from './ActivityExecutionContext.js';
 import { ScopeNode } from './ScopeNode.js';
+import type { SerializedScopeNode } from './ScopeNode.js';
 import { ActivityRuntimeError } from '../../errors/ActivityRuntimeError.js';
 import { DefaultSerializer } from '../../serialization/DefaultSerializer.js';
 import type { Serializer } from '../../serialization/Serializer.js';
@@ -17,9 +16,9 @@ type ScopePartResult = {
 interface SerializeHandler {
     serialize(
         serializer: Serializer | undefined,
-        activity: any,
-        execContext: any,
-        getActivityById: (id: string) => any,
+        activity: Activity,
+        execContext: ActivityExecutionContext,
+        getActivityById: (id: string) => Activity,
         propName: string,
         propValue: any,
         result: ScopePartResult,
@@ -27,9 +26,9 @@ interface SerializeHandler {
 
     deserialize(
         serializer: Serializer | undefined,
-        activity: any,
-        getActivityById: (id: string) => any,
-        part: { name: string; value: any },
+        activity: Activity,
+        getActivityById: (id: string) => Activity,
+        part: unknown,
         result: ScopePartResult,
     ): boolean;
 }
@@ -42,10 +41,10 @@ export const scopeSerializer = {
     },
 
     serialize(
-        execContext: any,
-        getActivityById: (id: string) => any,
-        enablePromotions: boolean | undefined,
-        nodes: ScopeNode[],
+        execContext: ActivityExecutionContext,
+        getActivityById: (id: string) => Activity,
+        enablePromotions: boolean,
+        nodes: Iterable<ScopeNode>,
         serializer?: Serializer,
     ): { state: any[]; promotedProperties: Record<string, any> | null } {
         const state: any[] = [];
@@ -89,7 +88,7 @@ export const scopeSerializer = {
             state.push(item);
 
             if (promotedProperties && activity.promotedProperties) {
-                for (const promotedPropName of activity.promotedProperties as string[]) {
+                for (const promotedPropName of activity.promotedProperties) {
                     const pv = node.getPropertyValue(promotedPropName, true);
                     if (pv !== undefined && !isActivity(pv)) {
                         const promotedEntry = promotedProperties.get(promotedPropName);
@@ -112,33 +111,40 @@ export const scopeSerializer = {
         return { state, promotedProperties: actualPromotions };
     },
 
-    *deserializeNodes(getActivityById: (id: string) => any, json: any[], serializer?: Serializer): Generator<ScopeNode> {
+    *deserializeNodes(
+        getActivityById: (id: string) => Activity,
+        json: SerializedScopeNode[],
+        serializer?: Serializer,
+    ): Generator<ScopeNode> {
         for (const item of json) {
             const scopePart: Record<string, any> = {};
-            const activity = getActivityById(item.instanceId as string);
+            const activity = getActivityById(item.instanceId);
 
-            for (const part of item.parts as Array<{ name: string; value: any }>) {
+            for (const part of item.parts) {
                 let done = false;
                 for (const handler of this.handlers) {
                     const result: ScopePartResult = { name: null, value: null };
                     if (handler.deserialize(serializer, activity, getActivityById, part, result)) {
-                        scopePart[result.name || part.name] = result.value;
+                        const sp = part as { name: string; value: any };
+                        scopePart[result.name || sp.name] = result.value;
                         done = true;
                         break;
                     }
                 }
                 if (!done) {
-                    scopePart[part.name] = part.value;
+                    const sp = part as { name: string; value: any };
+                    scopePart[sp.name] = sp.value;
                 }
             }
 
-            yield new ScopeNode(item.instanceId as string, scopePart, item.userId as string | undefined, activity);
+            yield new ScopeNode(item.instanceId, scopePart, item.userId, activity);
         }
     },
 };
 
-function isActivity(value: any): boolean {
-    return value && typeof value.instanceId === 'string' && typeof value.id === 'string';
+function isActivity(value: unknown): value is Activity {
+    const obj = value as Record<string, unknown> | null;
+    return !!obj && typeof obj.instanceId === 'string' && typeof obj.id === 'string';
 }
 
 function getSerializer(serializer?: Serializer): Serializer {
@@ -148,9 +154,9 @@ function getSerializer(serializer?: Serializer): Serializer {
 const arrayHandler: SerializeHandler = {
     serialize(
         serializer: Serializer | undefined,
-        _activity: any,
-        _execContext: any,
-        _getActivityById: (id: string) => any,
+        _activity: Activity,
+        _execContext: ActivityExecutionContext,
+        _getActivityById: (id: string) => Activity,
         propName: string,
         propValue: any,
         result: ScopePartResult,
@@ -164,7 +170,7 @@ const arrayHandler: SerializeHandler = {
 
         for (const pv of propValue) {
             if (isActivity(pv)) {
-                stuff.push(specStrings.hosting.createActivityInstancePart(pv.instanceId as string));
+                stuff.push(specStrings.hosting.createActivityInstancePart(pv.instanceId));
             } else {
                 stuff.push(serializer ? pv : ser.toJSON(pv));
             }
@@ -176,8 +182,8 @@ const arrayHandler: SerializeHandler = {
 
     deserialize(
         serializer: Serializer | undefined,
-        _activity: any,
-        getActivityById: (id: string) => any,
+        _activity: Activity,
+        getActivityById: (id: string) => Activity,
         part: { name: string; value: any },
         result: ScopePartResult,
     ): boolean {
@@ -204,9 +210,9 @@ const arrayHandler: SerializeHandler = {
 const activityHandler: SerializeHandler = {
     serialize(
         _serializer: Serializer | undefined,
-        _activity: any,
-        _execContext: any,
-        _getActivityById: (id: string) => any,
+        _activity: Activity,
+        _execContext: ActivityExecutionContext,
+        _getActivityById: (id: string) => Activity,
         propName: string,
         propValue: any,
         result: ScopePartResult,
@@ -215,14 +221,14 @@ const activityHandler: SerializeHandler = {
             return false;
         }
         result.name = propName;
-        result.value = specStrings.hosting.createActivityInstancePart(propValue.instanceId as string);
+        result.value = specStrings.hosting.createActivityInstancePart(propValue.instanceId);
         return true;
     },
 
     deserialize(
         _serializer: Serializer | undefined,
-        _activity: any,
-        getActivityById: (id: string) => any,
+        _activity: Activity,
+        getActivityById: (id: string) => Activity,
         part: { name: string; value: any },
         result: ScopePartResult,
     ): boolean {
@@ -238,9 +244,9 @@ const activityHandler: SerializeHandler = {
 const parentHandler: SerializeHandler = {
     serialize(
         _serializer: Serializer | undefined,
-        _activity: any,
-        _execContext: any,
-        _getActivityById: (id: string) => any,
+        _activity: Activity,
+        _execContext: ActivityExecutionContext,
+        _getActivityById: (id: string) => Activity,
         propName: string,
         propValue: any,
         result: ScopePartResult,
@@ -255,8 +261,8 @@ const parentHandler: SerializeHandler = {
 
     deserialize(
         _serializer: Serializer | undefined,
-        _activity: any,
-        _getActivityById: (id: string) => any,
+        _activity: Activity,
+        _getActivityById: (id: string) => Activity,
         _part: { name: string; value: any },
         _result: ScopePartResult,
     ): boolean {
@@ -267,9 +273,9 @@ const parentHandler: SerializeHandler = {
 const activityPropHandler: SerializeHandler = {
     serialize(
         _serializer: Serializer | undefined,
-        activity: any,
-        _execContext: any,
-        _getActivityById: (id: string) => any,
+        activity: Activity,
+        _execContext: ActivityExecutionContext,
+        _getActivityById: (id: string) => Activity,
         propName: string,
         propValue: any,
         result: ScopePartResult,
@@ -291,17 +297,17 @@ const activityPropHandler: SerializeHandler = {
 
     deserialize(
         _serializer: Serializer | undefined,
-        activity: any,
-        _getActivityById: (id: string) => any,
-        part: { name: string; value: any },
+        activity: Activity,
+        _getActivityById: (id: string) => Activity,
+        part: unknown,
         result: ScopePartResult,
     ): boolean {
-        const activityProperty = specStrings.hosting.getActivityPropertyName(part.value);
+        const activityProperty = specStrings.hosting.getActivityPropertyName(part);
         if (!activityProperty) {
             return false;
         }
         if (activity[activityProperty] === undefined) {
-            throw new ActivityRuntimeError(`Activity has no property '${part.value}'.`);
+            throw new ActivityRuntimeError(`Activity has no property '${String(part)}'.`);
         }
         result.name = activityProperty;
         result.value = activity[activityProperty];

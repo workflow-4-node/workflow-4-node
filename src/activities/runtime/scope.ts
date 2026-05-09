@@ -1,33 +1,42 @@
 import { SimpleProxy, type ProxyBackend } from '../../common/SimpleProxy.js';
 import { type ScopeNode } from './ScopeNode.js';
+import type { ScopeTree } from './ScopeTree.js';
 
 export const scope = {
-    create(node: ScopeNode): SimpleProxy {
+    create(scopeTree: ScopeTree, node: ScopeNode): SimpleProxy {
         const backend: ProxyBackend = {
             getKeys(): string[] {
-                return [...node.enumeratePropertyNames()];
+                const keys: string[] = [];
+                const seen = new Set<string>();
+                for (const key of scopeTree.enumeratePropertyNames(node)) {
+                    if (!seen.has(key)) {
+                        keys.push(key);
+                        seen.add(key);
+                    }
+                }
+                return keys;
             },
 
             hasKey(property: string): boolean {
-                return node.isPropertyExists(property);
+                return scopeTree.hasProperty(node, property);
             },
 
             getValue(property: string): any {
                 if (property === '$keys') {
-                    return node.enumeratePropertyNames();
+                    return scopeTree.enumeratePropertyNames(node);
                 }
                 if (property === 'delete') {
-                    return (name: string) => node.deleteProperty(name);
+                    return (name: string) => scopeTree.deleteProperty(node, name);
                 }
-                return node.getPropertyValue(property);
+                return scopeTree.getValue(node, property);
             },
 
             setValue(property: string, value: any): void {
-                node.setPropertyValue(property, value);
+                scopeTree.setValue(node, property, value);
             },
 
             delete(property: string): void {
-                node.deleteProperty(property);
+                scopeTree.deleteProperty(node, property);
             },
         };
 
