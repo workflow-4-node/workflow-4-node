@@ -112,7 +112,7 @@ export class CallContext {
         this._activity!.end(this, reason, result);
     }
 
-    schedule(obj: Activity, endcallback: string): void {
+    schedule(obj: unknown, endcallback: string): void {
         this._activity!.schedule(this, obj, endcallback);
     }
 

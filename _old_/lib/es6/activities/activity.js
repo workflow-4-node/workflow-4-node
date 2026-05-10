@@ -310,7 +310,6 @@ Activity.prototype.end = function (callContext, reason, result) {
                         state.emitState(result, savedScope);
                     },
                     function(e) {
-                        state.emitState(result, savedScope);
                         callContext.fail(e);
                     });
                 return;

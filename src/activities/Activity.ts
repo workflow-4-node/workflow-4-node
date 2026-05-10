@@ -22,22 +22,49 @@ interface SchedulingState {
     endCallbackName: string;
 }
 
-type ActivityOrScheduleItem = Activity | { activity: Activity; variables?: Record<string, unknown> };
+/** Default set of property names excluded from activity scopes. */
+const HIDE_FROM_SCOPE_DEFAULTS = new Set([
+    // Activity identity / metadata
+    'id',
+    '@require',
+    'args',
+    'displayName',
+    // Internal state
+    '_instanceId',
+    '_structureInitialized',
+    '_scopeKeys',
+    '_createScopePartImpl',
+    '_collectAll',
+    // Internal sets — backing fields are own properties
+    '_nonSerializedProperties',
+    '_hideFromScopeProperties',
+    '_codeProperties',
+    '_arrayProperties',
+    // Getters / accessors (defensive — subclasses may shadow them as own props)
+    'hideFromScopeProperties',
+    'nonSerializedProperties',
+    'codeProperties',
+    'arrayProperties',
+    'collectAll',
+    'instanceId',
+    'internalInstanceId',
+    'logger',
+]);
 
 export class Activity {
     constructor() {
         this.id = randomUUID();
         this._nonSerializedProperties = new ExtensibleSet();
-        this._scopedProperties = new ExtensibleSet();
+        this._hideFromScopeProperties = new ExtensibleSet(HIDE_FROM_SCOPE_DEFAULTS);
         this._codeProperties = new ExtensibleSet();
         this._arrayProperties = new ExtensibleSet();
         this['@require'] = null;
     }
 
-    //#region Private fields
+    //#region Properties
 
     private readonly _nonSerializedProperties: ExtensibleSet<string>;
-    private readonly _scopedProperties: ExtensibleSet<string>;
+    private readonly _hideFromScopeProperties: ExtensibleSet<string>;
     private readonly _codeProperties: ExtensibleSet<string>;
     private readonly _arrayProperties: ExtensibleSet<string>;
 
@@ -47,16 +74,18 @@ export class Activity {
     private _scopeKeys: string[] | null = null;
     private _createScopePartImpl: ((a: Activity) => Record<string, unknown>) | null = null;
 
-    //#endregion
-
-    //#region Protected fields, getters and setters
-
     get nonSerializedProperties(): ExtensibleSet<string> {
         return this._nonSerializedProperties;
     }
 
-    protected get scopedProperties(): ExtensibleSet<string> {
-        return this._scopedProperties;
+    /**
+     * Properties in this set are excluded from the activity's scope.
+     * They will NOT be available on `this` inside scope-bound methods
+     * ({@link initializeExec}, {@link run}, {@link unInitializeExec},
+     * {@link resultCollected}, {@link defaultEndCallback}).
+     */
+    protected get hideFromScopeProperties(): ExtensibleSet<string> {
+        return this._hideFromScopeProperties;
     }
 
     protected get codeProperties(): ExtensibleSet<string> {
@@ -66,10 +95,6 @@ export class Activity {
     protected get arrayProperties(): ExtensibleSet<string> {
         return this._arrayProperties;
     }
-
-    //#endregion
-
-    //#region Public fields, getters and setters
 
     readonly id: string;
     ['@require']: unknown = null;
@@ -175,14 +200,41 @@ export class Activity {
         this.startImpl(callContext, null, args.length > 0 ? args : undefined);
     }
 
+    /**
+     * Called when the activity execution is about to start.
+     *
+     * @remarks
+     * **IMPORTANT:** This method is invoked via `.call(scope)`, so `this` is bound to the
+     * **scope object** (not the Activity instance). Properties listed in
+     * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
+     * `this`. Access activity fields via `callContext.activity`.
+     */
     initializeExec(): void {
         // virtual
     }
 
+    /**
+     * Called when the activity execution is ending (complete, cancel, idle, or fail).
+     *
+     * @remarks
+     * **IMPORTANT:** This method is invoked via `.call(scope, reason, result)`, so `this` is
+     * bound to the **scope object** (not the Activity instance). Properties listed in
+     * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
+     * `this`. Access activity fields via `callContext.activity`.
+     */
     unInitializeExec(_reason: ActivityStateValue, _result?: unknown): void {
         // virtual
     }
 
+    /**
+     * Executes the activity logic.
+     *
+     * @remarks
+     * **IMPORTANT:** This method is invoked via `.call(scope, callContext, args)`, so `this` is
+     * bound to the **scope object** (not the Activity instance). Properties listed in
+     * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
+     * `this`. Access activity fields via `callContext.activity`.
+     */
     run(callContext: CallContext, args: unknown[]): void {
         callContext.activity.complete(callContext, args);
     }
@@ -208,7 +260,7 @@ export class Activity {
         let finalResult = result;
 
         try {
-            this.unInitializeExec(reason, result);
+            this.unInitializeExec.call(callContext.scope, reason, result);
         } catch (e) {
             finalReason = AactivityStates.fail;
             finalResult = e;
@@ -238,7 +290,6 @@ export class Activity {
                             state.emitState(finalResult, savedScope);
                         })
                         .catch((e: unknown) => {
-                            state.emitState(finalResult, savedScope);
                             nextContext.fail(e instanceof Error ? e : new ActivityRuntimeError(String(e)));
                         });
                     return;
@@ -254,7 +305,7 @@ export class Activity {
         state.emitState(finalResult, savedScope);
     }
 
-    schedule(callContext: CallContext, obj: ActivityOrScheduleItem | ActivityOrScheduleItem[], endCallback?: string): void {
+    schedule(callContext: CallContext, obj: unknown, endCallback?: string): void {
         const scope = callContext.scope;
         const execContext = callContext.executionContext;
         const selfId = callContext.instanceId;
@@ -277,7 +328,7 @@ export class Activity {
             return;
         }
 
-        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, endCallback, obj);
+        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, endCallback, obj as any);
 
         const state: SchedulingState = {
             many: Array.isArray(obj),
@@ -296,16 +347,19 @@ export class Activity {
             let startedAny = false;
             let index = 0;
 
-            const processValue = (value: ActivityOrScheduleItem): void => {
-                this.logger.debug('%s: Checking value: %j', selfId, value);
+            const processValue = (value: unknown): void => {
+                this.logger.debug('%s: Checking value: %j', selfId, value as any);
                 let activity: Activity | null = null;
                 let variables: Record<string, unknown> | null = null;
 
                 if (value instanceof Activity) {
                     activity = value;
-                } else if (typeof value === 'object' && value !== null && value.activity instanceof Activity) {
-                    activity = value.activity;
-                    variables = value.variables && typeof value.variables === 'object' ? value.variables : null;
+                } else if (typeof value === 'object' && value !== null) {
+                    const obj = value as Record<string, unknown>;
+                    if (obj.activity instanceof Activity) {
+                        activity = obj.activity;
+                        variables = obj.variables && typeof obj.variables === 'object' ? (obj.variables as Record<string, unknown>) : null;
+                    }
                 }
 
                 if (activity) {
@@ -335,19 +389,20 @@ export class Activity {
 
             if (state.many) {
                 this.logger.debug('%s: There are many values, iterating.', selfId);
-                for (const value of obj as ActivityOrScheduleItem[]) {
+                const items = obj as unknown[];
+                for (const value of items) {
                     processValue(value);
                     index++;
                 }
             } else {
-                processValue(obj as ActivityOrScheduleItem);
+                processValue(obj);
             }
 
             if (!startedAny) {
                 this.logger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
                 const result = state.many ? state.results : state.results[0];
                 setImmediate(() => {
-                    this.defaultEndCallback(callContext, AactivityStates.complete, result);
+                    this.defaultEndCallback.call(callContext.scope, callContext, AactivityStates.complete, result);
                 });
             } else {
                 this.logger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
@@ -367,13 +422,28 @@ export class Activity {
             scope.delete('__schedulingState');
             this.logger.debug('%s: Invoking end callback with the error.', selfId);
             setImmediate(() => {
-                this.defaultEndCallback(callContext, AactivityStates.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
+                this.defaultEndCallback.call(
+                    callContext.scope,
+                    callContext,
+                    AactivityStates.fail,
+                    e instanceof Error ? e : new ActivityRuntimeError(String(e)),
+                );
             });
         } finally {
             this.logger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
         }
     }
 
+    /**
+     * Callback invoked when a scheduled child activity's result is collected.
+     *
+     * @remarks
+     * **IMPORTANT:** This method is invoked via `.call(scope, callContext, ...)` by the bookmark
+     * system, so `this` is bound to the **scope object** (not the Activity instance). Properties
+     * listed in {@link hideFromScopeProperties} are excluded from the scope and will NOT be
+     * available on `this`. Access activity fields via `callContext.activity`. The
+     * `__schedulingState` is read from and written to `this` (the scope).
+     */
     resultCollected(callContext: CallContext, reason: ActivityStateValue, result: unknown, bookmark: string): void {
         const selfId = callContext.instanceId;
         const execContext = callContext.executionContext;
@@ -582,6 +652,15 @@ export class Activity {
 
     //#region Protected methods
 
+    /**
+     * Default callback invoked when scheduled activities complete (or fail/cancel).
+     *
+     * @remarks
+     * **IMPORTANT:** This method is invoked via `.call(scope, callContext, reason, result)`, so
+     * `this` is bound to the **scope object** (not the Activity instance). Properties listed in
+     * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
+     * `this`. Access activity fields via `callContext.activity`.
+     */
     protected defaultEndCallback(callContext: CallContext, reason: ActivityStateValue, result?: unknown): void {
         callContext.end(reason, result);
     }
@@ -610,25 +689,23 @@ export class Activity {
         }
 
         for (const fieldName of Object.keys(this) as (keyof this)[]) {
-            if (Object.prototype.hasOwnProperty.call(this, fieldName)) {
-                const fieldValue = this[fieldName];
-                if (fieldValue) {
-                    if (Array.isArray(fieldValue)) {
-                        for (const obj of fieldValue) {
-                            if (obj instanceof Activity) {
-                                if (deep) {
-                                    yield* obj.childrenImpl(deep, except, execContext, effectiveVisited);
-                                } else {
-                                    yield obj;
-                                }
+            const fieldValue = this[fieldName];
+            if (fieldValue) {
+                if (Array.isArray(fieldValue)) {
+                    for (const obj of fieldValue) {
+                        if (obj instanceof Activity) {
+                            if (deep) {
+                                yield* obj.childrenImpl(deep, except, execContext, effectiveVisited);
+                            } else {
+                                yield obj;
                             }
                         }
-                    } else if (fieldValue instanceof Activity) {
-                        if (deep) {
-                            yield* fieldValue.childrenImpl(deep, except, execContext, effectiveVisited);
-                        } else {
-                            yield fieldValue;
-                        }
+                    }
+                } else if (fieldValue instanceof Activity) {
+                    if (deep) {
+                        yield* fieldValue.childrenImpl(deep, except, execContext, effectiveVisited);
+                    } else {
+                        yield fieldValue;
                     }
                 }
             }
@@ -674,9 +751,14 @@ export class Activity {
         if (!this._scopeKeys || !this._structureInitialized) {
             this._scopeKeys = [];
             for (const key of Object.keys(this)) {
-                if (this._scopedProperties.has(key) && Object.prototype.hasOwnProperty.call(this, key)) {
+                if (!this._hideFromScopeProperties.has(key)) {
                     this._scopeKeys.push(key);
                 }
+            }
+            // defaultEndCallback is a prototype method but must be available on scope
+            // so that the bookmark system can invoke it via scope[callbackName].
+            if (!this._scopeKeys.includes('defaultEndCallback')) {
+                this._scopeKeys.push('defaultEndCallback');
             }
         }
         return this._scopeKeys;

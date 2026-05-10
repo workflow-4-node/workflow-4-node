@@ -371,12 +371,13 @@ export class ActivityExecutionContext extends EventEmitter {
             this._bookmarks.delete(bookmark.name);
         }
 
+        const scope = callContext.scope;
         let cb: ((...args: unknown[]) => void) | null = null;
 
         if (typeof bookmark.endCallback === 'string') {
-            const activityCb = (callContext.activity as unknown as Record<string, unknown>)[bookmark.endCallback];
-            if (typeof activityCb === 'function') {
-                cb = activityCb as (...args: unknown[]) => void;
+            const scopeCb = (scope as Record<string, unknown>)[bookmark.endCallback];
+            if (typeof scopeCb === 'function') {
+                cb = scopeCb as (...args: unknown[]) => void;
             }
         } else if (typeof bookmark.endCallback === 'function') {
             cb = bookmark.endCallback;
@@ -384,12 +385,12 @@ export class ActivityExecutionContext extends EventEmitter {
 
         if (!cb) {
             throw new ActivityRuntimeError(
-                "Bookmark's '" + bookmark.name + "' callback '" + String(bookmark.endCallback) + "' is not defined on the activity.",
+                "Bookmark's '" + bookmark.name + "' callback '" + String(bookmark.endCallback) + "' is not defined on the current scope.",
             );
         }
 
         // TODO: if it fails, resume on default callback with the error!
-        cb.call(callContext.activity, callContext, reason, result, bookmark);
+        cb.call(scope, callContext, reason, result, bookmark);
     }
 
     private cancelSubtree(scope: unknown, allIds: Set<string>, activityId: string): void {
