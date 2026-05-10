@@ -310,12 +310,25 @@ export class Activity {
         const execContext = callContext.executionContext;
         const selfId = callContext.instanceId;
 
-        if (endCallback) {
-            const cb = (scope as Record<string, unknown>)[endCallback];
-            if (typeof cb !== 'function') {
-                callContext.fail(new W4NTypeError(`'${endCallback}' is not a function.`));
-                return;
-            }
+        const effectiveEndCallback = endCallback || 'defaultEndCallback';
+
+        const invokeEndCallback = (reason: ActivityStateValue, result?: unknown): void => {
+            setImmediate(() => {
+                const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
+                if (typeof cb === 'function') {
+                    cb.call(scope, callContext, reason, result);
+                }
+            });
+        };
+
+        if (typeof effectiveEndCallback !== 'string') {
+            callContext.fail(new W4NTypeError("Provided argument 'endCallback' value is not a string."));
+            return;
+        }
+        const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
+        if (typeof cb !== 'function') {
+            callContext.fail(new W4NTypeError(`'${effectiveEndCallback}' is not a function.`));
+            return;
         }
 
         if ((scope as Record<string, unknown>).__schedulingState) {
@@ -328,7 +341,7 @@ export class Activity {
             return;
         }
 
-        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, endCallback, obj as any);
+        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, effectiveEndCallback, obj as any);
 
         const state: SchedulingState = {
             many: Array.isArray(obj),
@@ -339,7 +352,7 @@ export class Activity {
             cancelCount: 0,
             completedCount: 0,
             endBookmarkName: null,
-            endCallbackName: endCallback ?? '',
+            endCallbackName: effectiveEndCallback,
         };
 
         const bookmarkNames: string[] = [];
@@ -355,10 +368,13 @@ export class Activity {
                 if (value instanceof Activity) {
                     activity = value;
                 } else if (typeof value === 'object' && value !== null) {
-                    const obj = value as Record<string, unknown>;
-                    if (obj.activity instanceof Activity) {
-                        activity = obj.activity;
-                        variables = obj.variables && typeof obj.variables === 'object' ? (obj.variables as Record<string, unknown>) : null;
+                    const valueObj = value as Record<string, unknown>;
+                    if (valueObj.activity instanceof Activity) {
+                        activity = valueObj.activity;
+                        variables =
+                            valueObj.variables && typeof valueObj.variables === 'object'
+                                ? (valueObj.variables as Record<string, unknown>)
+                                : null;
                     }
                 }
 
@@ -401,18 +417,15 @@ export class Activity {
             if (!startedAny) {
                 this.logger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
                 const result = state.many ? state.results : state.results[0];
-                setImmediate(() => {
-                    this.defaultEndCallback.call(callContext.scope, callContext, AactivityStates.complete, result);
-                });
+                invokeEndCallback(AactivityStates.complete, result);
             } else {
                 this.logger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
-                if (endCallback) {
-                    const endBM = specStrings.activities.createCollectingCompletedBMName(selfId!);
-                    bookmarkNames.push(execContext.createBookmark(selfId!, endBM, endCallback));
-                    state.endBookmarkName = endBM;
-                }
+                const endBM = specStrings.activities.createCollectingCompletedBMName(selfId!);
+                bookmarkNames.push(execContext.createBookmark(selfId!, endBM, effectiveEndCallback));
+                state.endBookmarkName = endBM;
                 (scope as Record<string, unknown>).__schedulingState = state;
             }
+            // TODO: scope.update(SimpleProxy.updateMode.oneWay);
         } catch (e) {
             this.logger.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
             if (bookmarkNames.length > 0) {
@@ -421,14 +434,7 @@ export class Activity {
             }
             scope.delete('__schedulingState');
             this.logger.debug('%s: Invoking end callback with the error.', selfId);
-            setImmediate(() => {
-                this.defaultEndCallback.call(
-                    callContext.scope,
-                    callContext,
-                    AactivityStates.fail,
-                    e instanceof Error ? e : new ActivityRuntimeError(String(e)),
-                );
-            });
+            invokeEndCallback(AactivityStates.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
         } finally {
             this.logger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
         }
@@ -539,15 +545,9 @@ export class Activity {
                 this.logger.debug('%s: Activities cancelled: %j', selfId, ids);
                 this.logger.debug('%s: Reporting the actual reason: %s and result: %j', selfId, reason, result as any);
 
-                if (state.endBookmarkName) {
-                    finished = () => {
-                        void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, reason, result);
-                    };
-                } else {
-                    finished = () => {
-                        this.defaultEndCallback(callContext, reason, result);
-                    };
-                }
+                finished = () => {
+                    void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, reason, result);
+                };
             } else {
                 const onEnd = state.indices.size - state.idleCount === 0;
                 if (onEnd) {
@@ -558,28 +558,13 @@ export class Activity {
                     );
                     if (state.cancelCount > 0) {
                         this.logger.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
-                        if (state.endBookmarkName) {
-                            finished = () => {
-                                void execContext.resumeBookmarkInScope(
-                                    callContext,
-                                    state.endBookmarkName!,
-                                    AactivityStates.cancel,
-                                    undefined,
-                                );
-                            };
-                        } else {
-                            finished = () => {
-                                this.defaultEndCallback(callContext, AactivityStates.cancel);
-                            };
-                        }
+                        finished = () => {
+                            void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, AactivityStates.cancel, undefined);
+                        };
                     } else if (state.idleCount > 0) {
                         this.logger.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
                         state.idleCount--;
-                        if (state.endBookmarkName) {
-                            void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName, AactivityStates.idle, undefined);
-                        } else {
-                            this.defaultEndCallback(callContext, AactivityStates.idle);
-                        }
+                        void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, AactivityStates.idle, undefined);
                     } else {
                         const finalResult = state.many ? state.results : state.results[0];
                         this.logger.debug(
@@ -587,20 +572,14 @@ export class Activity {
                             selfId,
                             finalResult as any,
                         );
-                        if (state.endBookmarkName) {
-                            finished = () => {
-                                void execContext.resumeBookmarkInScope(
-                                    callContext,
-                                    state.endBookmarkName!,
-                                    AactivityStates.complete,
-                                    finalResult,
-                                );
-                            };
-                        } else {
-                            finished = () => {
-                                this.defaultEndCallback(callContext, AactivityStates.complete, finalResult);
-                            };
-                        }
+                        finished = () => {
+                            void execContext.resumeBookmarkInScope(
+                                callContext,
+                                state.endBookmarkName!,
+                                AactivityStates.complete,
+                                finalResult,
+                            );
+                        };
                     }
                 }
             }
