@@ -8,12 +8,16 @@ export interface ActivityExecutionContext {
     readonly rootActivity: Activity;
 
     getExecutionState(activityOrId: Activity | string): ActivityExecutionState;
-    createBookmark(activityId: string, name: string, endCallback: string): void;
+    createBookmark(activityId: string, name: string, endCallback: string): string;
     isBookmarkExists(name: string): boolean;
     deleteBookmark(name: string): void;
-    resumeBookmarkInScope(callContext: CallContext, name: string, reason: string, result: unknown): void;
+    noopCallbacks(bookmarkNames: string[]): void;
+    resumeBookmarkInScope(callContext: CallContext, name: string, reason: string, result: unknown): Promise<boolean>;
+    resumeBookmarkInternal(callContext: CallContext, name: string, reason: string, result: unknown): void;
     resumeBookmarkExternal(name: string, reason: string, result: unknown): void;
-    processResumeBookmarkQueue(): void;
+    processResumeBookmarkQueue(): boolean;
+    cancelExecution(activity: Activity, ids: string[]): void;
+    deleteScopeOfActivity(callContext: CallContext, activityId: string): void;
     getKnownActivity(activityId: string): Activity;
     getScopeTree(): ScopeTree;
     getStateAndPromotions(

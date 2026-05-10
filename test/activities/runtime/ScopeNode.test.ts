@@ -1,11 +1,12 @@
 import { ScopeNode } from '../../../src/activities/runtime/ScopeNode.js';
 import type { Activity } from '../../../src/activities/Activity.js';
+import { ExtensibleSet } from '../../../src/common/ExtensibleSet.js';
 
 function mockActivity(overrides: Partial<Activity> = {}): Activity {
     return {
         instanceId: 'act-1',
         id: 'test-activity',
-        nonSerializedProperties: new Set(),
+        nonSerializedProperties: new ExtensibleSet(),
         complete: () => {},
         cancel: () => {},
         idle: () => {},
@@ -14,7 +15,7 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
         schedule: () => {},
         createScopePart: () => ({}),
         ...overrides,
-    };
+    } as Activity;
 }
 
 describe('ScopeNode', () => {

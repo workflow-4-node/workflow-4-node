@@ -1,13 +1,15 @@
 import type { Activity } from '../Activity.js';
 import type { ActivityExecutionContext } from './ActivityExecutionContext.js';
-import type { ActivityExecutionState } from './ActivityExecutionState.js';
-import type { SimpleProxy } from '../../common/SimpleProxy.js';
+import type { ActivityExecutionState, ActivityStateValue } from './ActivityExecutionState.js';
 import type { ScopeTree } from './ScopeTree.js';
 
+/** The scope object returned by proxy.obj(). */
+type Scope = Record<string, any>;
+
 export class CallContext {
-    constructor(executionContext: ActivityExecutionContext, activity: Activity, scope?: SimpleProxy);
-    constructor(executionContext: ActivityExecutionContext, activityId: string, scope?: SimpleProxy);
-    constructor(executionContext: ActivityExecutionContext, activityOrActivityId: Activity | string, scope?: SimpleProxy) {
+    constructor(executionContext: ActivityExecutionContext, activity: Activity, scope?: Scope);
+    constructor(executionContext: ActivityExecutionContext, activityId: string, scope?: Scope);
+    constructor(executionContext: ActivityExecutionContext, activityOrActivityId: Activity | string, scope?: Scope) {
         this._executionContext = executionContext;
         this._activity =
             typeof activityOrActivityId === 'string' ? executionContext.getKnownActivity(activityOrActivityId) : activityOrActivityId;
@@ -16,7 +18,7 @@ export class CallContext {
 
     private _executionContext: ActivityExecutionContext;
     private _activity: Activity;
-    private _scope?: SimpleProxy;
+    private _scope?: Scope;
     private _executionState?: ActivityExecutionState;
 
     get instanceId(): string {
@@ -43,7 +45,7 @@ export class CallContext {
         return this._executionState;
     }
 
-    get scope(): SimpleProxy {
+    get scope(): Scope {
         if (!this._scope) {
             this._scope = this.getScopeTree().find(this.instanceId);
         }
@@ -83,7 +85,7 @@ export class CallContext {
         this._activity.fail(this, e);
     }
 
-    end(reason: string, result?: unknown): void {
+    end(reason: ActivityStateValue, result?: unknown): void {
         this._activity.end(this, reason, result);
     }
 
@@ -95,8 +97,8 @@ export class CallContext {
         this._executionContext.createBookmark(this.instanceId, name, callback);
     }
 
-    resumeBookmark(name: string, reason: string, result: unknown): void {
-        this._executionContext.resumeBookmarkInScope(this, name, reason, result);
+    resumeBookmark(name: string, reason: ActivityStateValue, result: unknown): void {
+        this._executionContext.resumeBookmarkInternal(this, name, reason, result);
     }
 
     private asActivity(activityOrActivityId: Activity | string): Activity {

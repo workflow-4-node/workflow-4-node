@@ -3,6 +3,7 @@ import { ScopeNode } from '../../../src/activities/runtime/ScopeNode.js';
 import { Expression } from '../../../src/activities/Expression.js';
 import { constants } from '../../../src/common/constants.js';
 import type { Activity } from '../../../src/activities/Activity.js';
+import { ExtensibleSet } from '../../../src/common/ExtensibleSet.js';
 import { type ActivityExecutionContext } from '../../../src/index.js';
 
 function mockActivity(overrides: Partial<Activity> = {}): Activity {
@@ -10,7 +11,7 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
     return {
         instanceId: id,
         id,
-        nonSerializedProperties: new Set(),
+        nonSerializedProperties: new ExtensibleSet(),
         complete: () => {},
         cancel: () => {},
         idle: () => {},
@@ -19,7 +20,7 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
         schedule: () => {},
         createScopePart: () => ({}),
         ...overrides,
-    };
+    } as Activity;
 }
 
 function createTree(initialScope: Record<string, any> = {}): ScopeTree {

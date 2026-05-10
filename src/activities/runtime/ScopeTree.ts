@@ -1,7 +1,6 @@
 import { constants } from '../../common/constants.js';
 import { WorkflowError } from '../../errors/WorkflowError.js';
 import { TypeError } from '../../errors/TypeError.js';
-import type { SimpleProxy } from '../../common/SimpleProxy.js';
 import { type Serializer } from '../../serialization/Serializer.js';
 import { type Activity } from '../Activity.js';
 import { Expression } from '../Expression.js';
@@ -205,7 +204,7 @@ export class ScopeTree {
 
     //#region Walk
 
-    next(nodeInstanceId: string, childInstanceId: string, scopePart: Record<string, any>, childUserId?: string): SimpleProxy {
+    next(nodeInstanceId: string, childInstanceId: string, scopePart: Record<string, any>, childUserId?: string) {
         const currentNode = this.getNodeByExternalId(nodeInstanceId);
         const nextNode = new ScopeNode(childInstanceId, scopePart, childUserId, this.getActivityById(childInstanceId));
         currentNode.addChild(nextNode);
@@ -213,7 +212,7 @@ export class ScopeTree {
         return scope.create(this, nextNode);
     }
 
-    back(nodeId: string, keepItem?: boolean): SimpleProxy {
+    back(nodeId: string, keepItem?: boolean) {
         const currentNode = this.getNodeByExternalId(nodeId);
         if (currentNode === this.initialNode) {
             throw new Error('Cannot go back because current scope is the initial scope.');
@@ -226,7 +225,7 @@ export class ScopeTree {
         return scope.create(this, parent);
     }
 
-    find(nodeId: string): SimpleProxy {
+    find(nodeId: string) {
         const currentNode = this.getNodeByExternalId(nodeId);
         return scope.create(this, currentNode);
     }

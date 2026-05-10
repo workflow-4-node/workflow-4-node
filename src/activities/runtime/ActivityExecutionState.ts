@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import { AactivityStates } from '../../common/enums.js';
 import { TypeError } from '../../errors/TypeError.js';
 
-type ActivityStateValue = `${AactivityStates}`;
+export type ActivityStateValue = AactivityStates;
 
 export interface ActivityStateEvent {
     reason: ActivityStateValue | null;
@@ -24,6 +24,10 @@ export class ActivityExecutionState extends EventEmitter {
 
     get execState(): ActivityStateValue | null {
         return this.execStateValue;
+    }
+
+    set execState(value: ActivityStateValue | null) {
+        this.execStateValue = value;
     }
 
     get isRunning(): boolean {

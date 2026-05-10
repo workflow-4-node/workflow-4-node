@@ -1,5 +1,5 @@
 export class ExtensibleSet<T> {
-    constructor(private readonly baseSet?: Set<T>) {}
+    constructor(private readonly baseSet?: Set<T> | ExtensibleSet<T>) {}
 
     private readonly ownSet = new Set<T>();
 

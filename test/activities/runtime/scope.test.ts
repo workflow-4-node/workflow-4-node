@@ -2,12 +2,13 @@ import type { ScopeNode } from '../../../src/activities/runtime/ScopeNode.js';
 import { ScopeTree } from '../../../src/activities/runtime/ScopeTree.js';
 import { constants } from '../../../src/common/constants.js';
 import type { Activity } from '../../../src/activities/Activity.js';
+import { ExtensibleSet } from '../../../src/common/ExtensibleSet.js';
 
 function getActivityById(id: string): Activity {
     return {
         instanceId: id,
         id,
-        nonSerializedProperties: new Set(),
+        nonSerializedProperties: new ExtensibleSet(),
         complete: () => {},
         cancel: () => {},
         idle: () => {},
@@ -15,7 +16,7 @@ function getActivityById(id: string): Activity {
         end: () => {},
         schedule: () => {},
         createScopePart: () => ({}),
-    };
+    } as unknown as Activity;
 }
 
 function nodeById(tree: ScopeTree, id: string): ScopeNode {

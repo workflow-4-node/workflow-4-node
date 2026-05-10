@@ -1,9 +1,9 @@
-import { SimpleProxy, type ProxyBackend } from '../../common/SimpleProxy.js';
+import { proxy, type ProxyBackend } from '../../common/proxy.js';
 import { type ScopeNode } from './ScopeNode.js';
 import type { ScopeTree } from './ScopeTree.js';
 
 export const scope = {
-    create(scopeTree: ScopeTree, node: ScopeNode): SimpleProxy {
+    create(scopeTree: ScopeTree, node: ScopeNode) {
         const backend: ProxyBackend = {
             getKeys(): string[] {
                 const keys: string[] = [];
@@ -40,6 +40,6 @@ export const scope = {
             },
         };
 
-        return new SimpleProxy(backend);
+        return proxy.obj(backend);
     },
 };

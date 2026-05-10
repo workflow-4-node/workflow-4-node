@@ -1,6 +1,7 @@
 import { constants } from '../../common/constants.js';
 import { specStrings } from '../../common/specStrings.js';
 import type { Activity } from '../Activity.js';
+import { ExtensibleSet } from '../../common/ExtensibleSet.js';
 import type { ActivityExecutionContext } from './ActivityExecutionContext.js';
 import { ScopeNode } from './ScopeNode.js';
 import type { SerializedScopeNode } from './ScopeNode.js';
@@ -87,8 +88,9 @@ export const scopeSerializer = {
 
             state.push(item);
 
-            if (promotedProperties && activity.promotedProperties) {
-                for (const promotedPropName of activity.promotedProperties) {
+            const actPromotedProps = (activity as any).promotedProperties;
+            if (promotedProperties && actPromotedProps instanceof ExtensibleSet) {
+                for (const promotedPropName of actPromotedProps.values()) {
                     const pv = node.getPropertyValue(promotedPropName, true);
                     if (pv !== undefined && !isActivity(pv)) {
                         const promotedEntry = promotedProperties.get(promotedPropName);
@@ -280,15 +282,16 @@ const activityPropHandler: SerializeHandler = {
         propValue: any,
         result: ScopePartResult,
     ): boolean {
+        const activityAny = activity as unknown as Record<string, unknown>;
         if (
             typeof propValue === 'function' &&
             !Object.prototype.hasOwnProperty.call(activity, propName) &&
-            typeof activity[propName] === 'function'
+            typeof activityAny[propName] === 'function'
         ) {
             result.value = specStrings.hosting.createActivityPropertyPart(propName);
             return true;
         }
-        if (typeof propValue === 'object' && propValue !== null && propValue === activity[propName]) {
+        if (typeof propValue === 'object' && propValue !== null && propValue === activityAny[propName]) {
             result.value = specStrings.hosting.createActivityPropertyPart(propName);
             return true;
         }
@@ -306,11 +309,12 @@ const activityPropHandler: SerializeHandler = {
         if (!activityProperty) {
             return false;
         }
-        if (activity[activityProperty] === undefined) {
+        const activityAny = activity as unknown as Record<string, unknown>;
+        if (activityAny[activityProperty] === undefined) {
             throw new ActivityRuntimeError(`Activity has no property '${String(part)}'.`);
         }
         result.name = activityProperty;
-        result.value = activity[activityProperty];
+        result.value = activityAny[activityProperty];
         return true;
     },
 };

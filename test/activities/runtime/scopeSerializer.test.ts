@@ -2,6 +2,7 @@ import { scopeSerializer } from '../../../src/activities/runtime/scopeSerializer
 import { ScopeNode } from '../../../src/activities/runtime/ScopeNode.js';
 import { constants } from '../../../src/common/constants.js';
 import type { Activity } from '../../../src/activities/Activity.js';
+import { ExtensibleSet } from '../../../src/common/ExtensibleSet.js';
 import type { ActivityExecutionContext } from '../../../src/activities/runtime/ActivityExecutionContext.js';
 import type { SerializedScopeNode } from '../../../src/activities/runtime/ScopeNode.js';
 
@@ -10,7 +11,7 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
     return {
         instanceId: id,
         id,
-        nonSerializedProperties: new Set(),
+        nonSerializedProperties: new ExtensibleSet(),
         complete: () => {},
         cancel: () => {},
         idle: () => {},
@@ -19,7 +20,7 @@ function mockActivity(overrides: Partial<Activity> = {}): Activity {
         schedule: () => {},
         createScopePart: () => ({}),
         ...overrides,
-    };
+    } as Activity;
 }
 
 function mockExecContext(): ActivityExecutionContext {
@@ -57,7 +58,7 @@ describe('scopeSerializer', () => {
         it('should skip nonSerializedProperties', () => {
             const act = mockActivity({
                 instanceId: 'n1',
-                nonSerializedProperties: new Set(['secret']),
+                nonSerializedProperties: new ExtensibleSet(new Set(['secret'])),
             });
             const node = new ScopeNode('n1', { visible: 'yes', secret: 'hidden' }, undefined, act);
 
@@ -82,8 +83,8 @@ describe('scopeSerializer', () => {
         it('should handle promotedProperties', () => {
             const act = mockActivity({
                 instanceId: 'n1',
-                promotedProperties: ['color'],
-            });
+            }) as any;
+            act.promotedProperties = new ExtensibleSet(new Set(['color']));
             const node = new ScopeNode('n1', { color: 'red', other: 42 }, undefined, act);
 
             const result = scopeSerializer.serialize(mockExecContext(), () => act, true, [node]);
