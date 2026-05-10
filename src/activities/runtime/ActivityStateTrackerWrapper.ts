@@ -1,7 +1,7 @@
 import { type ActivityStateTracker } from './ActivityStateTracker.js';
 
 export class ActivityStateTrackerWrapper implements ActivityStateTracker {
-    constructor(private tracker: ActivityStateTracker) {}
+    constructor(readonly tracker: ActivityStateTracker) {}
 
     activityStateChanged(args: any[]): void {
         if (this.tracker.activityStateChanged && this.activityStateFilter(args)) {

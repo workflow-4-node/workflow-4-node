@@ -1,4 +1,5 @@
 export * from './ActivityExecutionContext.js';
+export * from './ActivityExecutionEngine.js';
 export * from './ActivityExecutionState.js';
 export * from './CallContext.js';
 export * from './ResumeBookmarkQueue.js';

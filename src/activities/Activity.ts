@@ -1,8 +1,8 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 import { ExtensibleSet } from '../common/ExtensibleSet.js';
 import { AactivityStates } from '../common/enums.js';
 import { specStrings } from '../common/specStrings.js';
-import { w4fLogger } from '../common/w4nLogger.js';
+import { type Logger, w4fLogger } from '../common/w4nLogger.js';
 import { ActivityRuntimeError } from '../errors/ActivityRuntimeError.js';
 import { ActivityStateExceptionError } from '../errors/ActivityStateExceptionError.js';
 import { TypeError as W4NTypeError } from '../errors/TypeError.js';
@@ -94,6 +94,15 @@ export class Activity {
     /** @internal */
     set instanceId(value: string) {
         this._instanceId = value;
+    }
+
+    /** @internal */
+    get internalInstanceId(): string | null {
+        return this._instanceId;
+    }
+
+    get logger(): Logger {
+        return w4fLogger.child({ activity: this.constructor.name });
     }
 
     //#endregion
@@ -259,12 +268,16 @@ export class Activity {
         }
 
         if ((scope as Record<string, unknown>).__schedulingState) {
-            w4fLogger.debug('%s: Error, already existsing state: %j', selfId, (scope as Record<string, unknown>).__schedulingState);
+            this.logger.debug(
+                '%s: Error, already existsing state: %j',
+                selfId,
+                (scope as Record<string, unknown>).__schedulingState as any,
+            );
             callContext.fail(new ActivityStateExceptionError('There are already scheduled items exists.'));
             return;
         }
 
-        w4fLogger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, endCallback, obj);
+        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, endCallback, obj);
 
         const state: SchedulingState = {
             many: Array.isArray(obj),
@@ -284,7 +297,7 @@ export class Activity {
             let index = 0;
 
             const processValue = (value: ActivityOrScheduleItem): void => {
-                w4fLogger.debug('%s: Checking value: %j', selfId, value);
+                this.logger.debug('%s: Checking value: %j', selfId, value);
                 let activity: Activity | null = null;
                 let variables: Record<string, unknown> | null = null;
 
@@ -297,14 +310,14 @@ export class Activity {
 
                 if (activity) {
                     const instanceId = activity.instanceId;
-                    w4fLogger.debug('%s: Value is an activity with instance id: %s', selfId, instanceId);
+                    this.logger.debug('%s: Value is an activity with instance id: %s', selfId, instanceId);
                     if (state.indices.has(instanceId)) {
                         throw new ActivityStateExceptionError(`Activity instance '${instanceId}' has been scheduled already.`);
                     }
-                    w4fLogger.debug('%s: Creating end bookmark, and starting it.', selfId);
+                    this.logger.debug('%s: Creating end bookmark, and starting it.', selfId);
                     bookmarkNames.push(
                         execContext.createBookmark(
-                            selfId,
+                            selfId!,
                             specStrings.activities.createValueCollectedBMName(instanceId),
                             'resultCollected',
                         ),
@@ -315,13 +328,13 @@ export class Activity {
                     state.results.push(null);
                     state.total++;
                 } else {
-                    w4fLogger.debug('%s: Value is not an activity.', selfId);
+                    this.logger.debug('%s: Value is not an activity.', selfId);
                     state.results.push(value);
                 }
             };
 
             if (state.many) {
-                w4fLogger.debug('%s: There are many values, iterating.', selfId);
+                this.logger.debug('%s: There are many values, iterating.', selfId);
                 for (const value of obj as ActivityOrScheduleItem[]) {
                     processValue(value);
                     index++;
@@ -331,33 +344,33 @@ export class Activity {
             }
 
             if (!startedAny) {
-                w4fLogger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
+                this.logger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
                 const result = state.many ? state.results : state.results[0];
                 setImmediate(() => {
                     this.defaultEndCallback(callContext, AactivityStates.complete, result);
                 });
             } else {
-                w4fLogger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
+                this.logger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
                 if (endCallback) {
-                    const endBM = specStrings.activities.createCollectingCompletedBMName(selfId);
-                    bookmarkNames.push(execContext.createBookmark(selfId, endBM, endCallback));
+                    const endBM = specStrings.activities.createCollectingCompletedBMName(selfId!);
+                    bookmarkNames.push(execContext.createBookmark(selfId!, endBM, endCallback));
                     state.endBookmarkName = endBM;
                 }
                 (scope as Record<string, unknown>).__schedulingState = state;
             }
         } catch (e) {
-            w4fLogger.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
+            this.logger.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
             if (bookmarkNames.length > 0) {
-                w4fLogger.debug('%s: Set bookmarks to noop: %j', selfId, bookmarkNames);
+                this.logger.debug('%s: Set bookmarks to noop: %j', selfId, bookmarkNames);
                 execContext.noopCallbacks(bookmarkNames);
             }
             scope.delete('__schedulingState');
-            w4fLogger.debug('%s: Invoking end callback with the error.', selfId);
+            this.logger.debug('%s: Invoking end callback with the error.', selfId);
             setImmediate(() => {
                 this.defaultEndCallback(callContext, AactivityStates.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
             });
         } finally {
-            w4fLogger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
+            this.logger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
         }
     }
 
@@ -367,12 +380,12 @@ export class Activity {
         const childId = specStrings.getString(bookmark);
         const scope = callContext.scope;
 
-        w4fLogger.debug(
+        this.logger.debug(
             '%s: Scheduling result item collected, childId: %s, reason: %s, result: %j, bookmark: %j',
             selfId,
             childId,
             reason,
-            result,
+            result as any,
             bookmark,
         );
 
@@ -394,36 +407,36 @@ export class Activity {
                 throw new ActivityStateExceptionError(`Child activity of '${childId}' scheduling state index out of range.`);
             }
 
-            w4fLogger.debug('%s: Finished child activity id is: %s', selfId, childId);
+            this.logger.debug('%s: Finished child activity id is: %s', selfId, childId);
 
             switch (reason) {
                 case AactivityStates.complete:
-                    w4fLogger.debug('%s: Setting %d. value to result: %j', selfId, index, result);
+                    this.logger.debug('%s: Setting %d. value to result: %j', selfId, index, result as any);
                     state.results[index] = result;
-                    w4fLogger.debug('%s: Removing id from state.', selfId);
+                    this.logger.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     state.completedCount++;
                     break;
                 case AactivityStates.fail:
-                    w4fLogger.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
+                    this.logger.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
                     failFlag = true;
                     state.indices.delete(childId);
                     break;
                 case AactivityStates.cancel:
-                    w4fLogger.debug('%s: Incrementing cancel counter.', selfId);
+                    this.logger.debug('%s: Incrementing cancel counter.', selfId);
                     state.cancelCount++;
-                    w4fLogger.debug('%s: Removing id from state.', selfId);
+                    this.logger.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     break;
                 case AactivityStates.idle:
-                    w4fLogger.debug('%s: Incrementing idle counter.', selfId);
+                    this.logger.debug('%s: Incrementing idle counter.', selfId);
                     state.idleCount++;
                     break;
                 default:
                     throw new ActivityStateExceptionError(`Result collected with unknown reason '${reason}'.`);
             }
 
-            w4fLogger.debug(
+            this.logger.debug(
                 '%s: State so far = total: %s, indices count: %d, completed count: %d, cancel count: %d, error count: %d, idle count: %d',
                 selfId,
                 state.total,
@@ -438,23 +451,23 @@ export class Activity {
 
             if (endWithNoCollectAll || failFlag) {
                 if (!failFlag) {
-                    w4fLogger.debug("%s: ---- Collecting of values ended, because we're not collecting all values (eg.: Pick).", selfId);
+                    this.logger.debug("%s: ---- Collecting of values ended, because we're not collecting all values (eg.: Pick).", selfId);
                 } else {
-                    w4fLogger.debug('%s: ---- Collecting of values ended, because of an error.', selfId);
+                    this.logger.debug('%s: ---- Collecting of values ended, because of an error.', selfId);
                 }
-                w4fLogger.debug('%s: Shutting down %d other, running activities.', selfId, state.indices.size);
+                this.logger.debug('%s: Shutting down %d other, running activities.', selfId, state.indices.size);
                 const ids: string[] = [];
                 for (const id of state.indices.keys()) {
                     ids.push(id);
-                    w4fLogger.debug('%s: Deleting scope of activity: %s', selfId, id);
+                    this.logger.debug('%s: Deleting scope of activity: %s', selfId, id);
                     execContext.deleteScopeOfActivity(callContext, id);
                     const ibmName = specStrings.activities.createValueCollectedBMName(id);
-                    w4fLogger.debug('%s: Deleting value collected bookmark: %s', selfId, ibmName);
+                    this.logger.debug('%s: Deleting value collected bookmark: %s', selfId, ibmName);
                     execContext.deleteBookmark(ibmName);
                 }
-                execContext.cancelExecution(callContext.activity, ids);
-                w4fLogger.debug('%s: Activities cancelled: %j', selfId, ids);
-                w4fLogger.debug('%s: Reporting the actual reason: %s and result: %j', selfId, reason, result);
+                execContext.cancelExecution(callContext.scope, ids);
+                this.logger.debug('%s: Activities cancelled: %j', selfId, ids);
+                this.logger.debug('%s: Reporting the actual reason: %s and result: %j', selfId, reason, result as any);
 
                 if (state.endBookmarkName) {
                     finished = () => {
@@ -468,13 +481,13 @@ export class Activity {
             } else {
                 const onEnd = state.indices.size - state.idleCount === 0;
                 if (onEnd) {
-                    w4fLogger.debug(
+                    this.logger.debug(
                         '%s: ---- Collecting of values ended (ended because of collect all is off: %s).',
                         selfId,
                         endWithNoCollectAll,
                     );
                     if (state.cancelCount > 0) {
-                        w4fLogger.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
+                        this.logger.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
                         if (state.endBookmarkName) {
                             finished = () => {
                                 void execContext.resumeBookmarkInScope(
@@ -490,7 +503,7 @@ export class Activity {
                             };
                         }
                     } else if (state.idleCount > 0) {
-                        w4fLogger.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
+                        this.logger.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
                         state.idleCount--;
                         if (state.endBookmarkName) {
                             void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName, AactivityStates.idle, undefined);
@@ -499,10 +512,10 @@ export class Activity {
                         }
                     } else {
                         const finalResult = state.many ? state.results : state.results[0];
-                        w4fLogger.debug(
+                        this.logger.debug(
                             '%s: This entry has been completed, resuming collect bookmark with the result(s): %j',
                             selfId,
-                            finalResult,
+                            finalResult as any,
                         );
                         if (state.endBookmarkName) {
                             finished = () => {
@@ -526,7 +539,7 @@ export class Activity {
             scope.delete('__schedulingState');
         } finally {
             if (finished) {
-                w4fLogger.debug('%s: Scheduling finished, removing state.', selfId);
+                this.logger.debug('%s: Scheduling finished, removing state.', selfId);
                 scope.delete('__schedulingState');
                 finished();
             }
@@ -557,7 +570,7 @@ export class Activity {
                 // eslint-disable-next-line @typescript-eslint/no-implied-eval
                 this._createScopePartImpl = new Function('a', src) as (a: Activity) => Record<string, unknown>;
             } catch (e) {
-                w4fLogger.debug('Invalid scope part function: %s', src);
+                this.logger.debug('Invalid scope part function: %s', src);
                 throw new ActivityRuntimeError('Invalid scope part function: ' + src, e instanceof Error ? e : undefined);
             }
         }

@@ -2,35 +2,46 @@ import type { Activity } from '../Activity.js';
 import type { ActivityExecutionContext } from './ActivityExecutionContext.js';
 import type { ActivityExecutionState, ActivityStateValue } from './ActivityExecutionState.js';
 import type { ScopeTree } from './ScopeTree.js';
+import { ActivityRuntimeError } from '../../errors/ActivityRuntimeError.js';
 
 /** The scope object returned by proxy.obj(). */
 type Scope = Record<string, any>;
 
 export class CallContext {
+    constructor(executionContext: ActivityExecutionContext);
     constructor(executionContext: ActivityExecutionContext, activity: Activity, scope?: Scope);
     constructor(executionContext: ActivityExecutionContext, activityId: string, scope?: Scope);
-    constructor(executionContext: ActivityExecutionContext, activityOrActivityId: Activity | string, scope?: Scope) {
+    constructor(executionContext: ActivityExecutionContext, activityOrActivityId?: Activity | string, scope?: Scope) {
         this._executionContext = executionContext;
-        this._activity =
-            typeof activityOrActivityId === 'string' ? executionContext.getKnownActivity(activityOrActivityId) : activityOrActivityId;
+        if (activityOrActivityId !== undefined) {
+            this._activity =
+                typeof activityOrActivityId === 'string' ? executionContext.getKnownActivity(activityOrActivityId) : activityOrActivityId;
+        }
         this._scope = scope;
     }
 
     private _executionContext: ActivityExecutionContext;
-    private _activity: Activity;
+    private _activity?: Activity;
     private _scope?: Scope;
     private _executionState?: ActivityExecutionState;
 
-    get instanceId(): string {
-        return this._activity.instanceId;
+    get instanceId(): string | null {
+        return this._activity?.instanceId ?? null;
     }
 
     get parentActivityId(): string | null {
-        const state = this._executionContext.getExecutionState(this.instanceId);
+        const id = this.instanceId;
+        if (!id) {
+            return null;
+        }
+        const state = this._executionContext.getExecutionState(id);
         return state.parentInstanceId;
     }
 
     get activity(): Activity {
+        if (!this._activity) {
+            throw new ActivityRuntimeError('CallContext has no activity.');
+        }
         return this._activity;
     }
 
@@ -40,14 +51,22 @@ export class CallContext {
 
     get executionState(): ActivityExecutionState {
         if (!this._executionState) {
-            this._executionState = this._executionContext.getExecutionState(this.instanceId);
+            const id = this.instanceId;
+            if (!id) {
+                throw new ActivityRuntimeError('CallContext has no activity, cannot get execution state.');
+            }
+            this._executionState = this._executionContext.getExecutionState(id);
         }
         return this._executionState;
     }
 
     get scope(): Scope {
         if (!this._scope) {
-            this._scope = this.getScopeTree().find(this.instanceId);
+            const id = this.instanceId;
+            if (!id) {
+                throw new ActivityRuntimeError('CallContext has no activity, cannot get scope.');
+            }
+            this._scope = this.getScopeTree().find(id);
         }
         return this._scope;
     }
@@ -64,37 +83,45 @@ export class CallContext {
     back(keepScope?: boolean): CallContext | null {
         const parentId = this.parentActivityId;
         if (parentId) {
-            return new CallContext(this._executionContext, parentId, this.getScopeTree().back(this.instanceId, keepScope));
+            const id = this.instanceId;
+            if (!id) {
+                return null;
+            }
+            return new CallContext(this._executionContext, parentId, this.getScopeTree().back(id, keepScope));
         }
         return null;
     }
 
     complete(result?: unknown): void {
-        this._activity.complete(this, result);
+        this._activity!.complete(this, result);
     }
 
     cancel(): void {
-        this._activity.cancel(this);
+        this._activity!.cancel(this);
     }
 
     idle(): void {
-        this._activity.idle(this);
+        this._activity!.idle(this);
     }
 
     fail(e: Error): void {
-        this._activity.fail(this, e);
+        this._activity!.fail(this, e);
     }
 
     end(reason: ActivityStateValue, result?: unknown): void {
-        this._activity.end(this, reason, result);
+        this._activity!.end(this, reason, result);
     }
 
     schedule(obj: Activity, endcallback: string): void {
-        this._activity.schedule(this, obj, endcallback);
+        this._activity!.schedule(this, obj, endcallback);
     }
 
     createBookmark(name: string, callback: string): void {
-        this._executionContext.createBookmark(this.instanceId, name, callback);
+        const id = this.instanceId;
+        if (!id) {
+            throw new ActivityRuntimeError('CallContext has no activity, cannot create bookmark.');
+        }
+        this._executionContext.createBookmark(id, name, callback);
     }
 
     resumeBookmark(name: string, reason: ActivityStateValue, result: unknown): void {

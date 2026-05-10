@@ -204,7 +204,7 @@ export class ScopeTree {
 
     //#region Walk
 
-    next(nodeInstanceId: string, childInstanceId: string, scopePart: Record<string, any>, childUserId?: string) {
+    next(nodeInstanceId: string | null, childInstanceId: string, scopePart: Record<string, any>, childUserId?: string) {
         const currentNode = this.getNodeByExternalId(nodeInstanceId);
         const nextNode = new ScopeNode(childInstanceId, scopePart, childUserId, this.getActivityById(childInstanceId));
         currentNode.addChild(nextNode);
@@ -212,7 +212,7 @@ export class ScopeTree {
         return scope.create(this, nextNode);
     }
 
-    back(nodeId: string, keepItem?: boolean) {
+    back(nodeId: string | null, keepItem?: boolean) {
         const currentNode = this.getNodeByExternalId(nodeId);
         if (currentNode === this.initialNode) {
             throw new Error('Cannot go back because current scope is the initial scope.');
@@ -225,7 +225,7 @@ export class ScopeTree {
         return scope.create(this, parent);
     }
 
-    find(nodeId: string) {
+    find(nodeId: string | null) {
         const currentNode = this.getNodeByExternalId(nodeId);
         return scope.create(this, currentNode);
     }
@@ -242,8 +242,8 @@ export class ScopeTree {
 
     //#region Helpers
 
-    private getNodeByExternalId(id: string): ScopeNode {
-        if (id === constants.ids.initialScope) {
+    private getNodeByExternalId(id: string | null): ScopeNode {
+        if (id === null || id === constants.ids.initialScope) {
             return this.initialNode;
         }
         const node = this.nodes.get(id);
@@ -253,7 +253,7 @@ export class ScopeTree {
         return node;
     }
 
-    deleteScopePart(currentNodeId: string, id: string): void {
+    deleteScopePart(currentNodeId: string | null, id: string): void {
         const currentNode = this.getNodeByExternalId(currentNodeId);
         const delNode = this.nodes.get(id);
         if (delNode) {
