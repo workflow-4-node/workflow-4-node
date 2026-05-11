@@ -7,8 +7,7 @@ import { TypeError as W4NTypeError } from '../../errors/TypeError.js';
 import { Activity } from '../Activity.js';
 import type { ActivityStateValue } from './ActivityExecutionState.js';
 import type { Serializer } from '../../serialization/Serializer.js';
-import type { ScopeTree } from './ScopeTree.js';
-import { ScopeTree as ScopeTreeImpl } from './ScopeTree.js';
+import { ScopeTree } from './ScopeTree.js';
 import { ActivityExecutionState } from './ActivityExecutionState.js';
 import { ResumeBookmarkQueue } from './ResumeBookmarkQueue.js';
 import { CallContext } from './CallContext.js';
@@ -332,7 +331,7 @@ export class ActivityExecutionContext extends EventEmitter {
     //#region Private methods
 
     private createScopeTree(): ScopeTree {
-        return new ScopeTreeImpl(
+        return new ScopeTree(
             {
                 resultCollected: (context: CallContext, reason: string, result: unknown, bookmarkName: string) => {
                     context.activity.resultCollected.call(context.scope, context, reason as ActivityStateValue, result, bookmarkName);

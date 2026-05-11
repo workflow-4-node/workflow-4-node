@@ -1,7 +1,7 @@
 import { type Activity } from '../Activity.js';
 
 class ActivityMarkup {
-    parse(_str: string | Record<string, any>): Activity {
+    async parse(_str: string | Record<string, any>): Promise<Activity> {
         throw new Error('TODO');
     }
 }
@@ -9,8 +9,8 @@ class ActivityMarkup {
 const markup = new ActivityMarkup();
 
 export const activityMarkup = {
-    parse(str: string | Record<string, any>) {
-        return markup.parse(str);
+    async parse(str: string | Record<string, any>) {
+        return await markup.parse(str);
     },
 
     // TODO
