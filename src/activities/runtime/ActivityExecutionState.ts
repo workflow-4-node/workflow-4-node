@@ -1,8 +1,8 @@
 import { EventEmitter } from 'events';
-import { AactivityStates } from '../../common/enums.js';
+import { ActivityState } from '../../common/enums.js';
 import { TypeError } from '../../errors/TypeError.js';
 
-export type ActivityStateValue = AactivityStates;
+export type ActivityStateValue = ActivityState;
 
 export interface ActivityStateEvent {
     reason: ActivityStateValue | null;
@@ -31,7 +31,7 @@ export class ActivityExecutionState extends EventEmitter {
     }
 
     get isRunning(): boolean {
-        return this.execStateValue === AactivityStates.run;
+        return this.execStateValue === ActivityState.run;
     }
 
     reportState(reason: ActivityStateValue | null, result?: unknown, scope?: unknown): void {
@@ -47,8 +47,8 @@ export class ActivityExecutionState extends EventEmitter {
             result,
             scope,
         });
-        if (this.execStateValue !== AactivityStates.run) {
-            this.emit(AactivityStates.end, {
+        if (this.execStateValue !== ActivityState.run) {
+            this.emit(ActivityState.end, {
                 reason: this.execStateValue,
                 result,
                 scope,
@@ -73,7 +73,7 @@ export class ActivityExecutionState extends EventEmitter {
             if (typeof obj.execState !== 'string') {
                 throw new TypeError("Argument object's execState property value is not a string.");
             }
-            const validStates = Object.values(AactivityStates) as string[];
+            const validStates = Object.values(ActivityState) as string[];
             if (!validStates.includes(obj.execState)) {
                 throw new TypeError("Argument object's execState property value is not a valid Activity state value.");
             }

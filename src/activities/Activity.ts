@@ -1,6 +1,6 @@
 ﻿import { randomUUID } from 'node:crypto';
 import { ExtensibleSet } from '../common/ExtensibleSet.js';
-import { AactivityStates } from '../common/enums.js';
+import { ActivityState } from '../common/enums.js';
 import { specStrings } from '../common/specStrings.js';
 import { type Logger, w4fLogger } from '../common/w4nLogger.js';
 import { ActivityRuntimeError } from '../errors/ActivityRuntimeError.js';
@@ -71,7 +71,7 @@ export class Activity {
     private _collectAll = true;
     private _instanceId: string | null = null;
     private _structureInitialized = false;
-    private _scopeKeys: string[] | null = null;
+    private _scopeKeys: Set<string> | null = null;
     private _createScopePartImpl: ((a: Activity) => Record<string, unknown>) | null = null;
 
     get nonSerializedProperties(): ExtensibleSet<string> {
@@ -129,6 +129,9 @@ export class Activity {
     get logger(): Logger {
         return w4fLogger.child({ activity: this.constructor.name });
     }
+
+    // Activity is a dynamic object.
+    [key: string]: any;
 
     //#endregion
 
@@ -240,19 +243,19 @@ export class Activity {
     }
 
     complete(callContext: CallContext, result?: unknown): void {
-        this.end(callContext, AactivityStates.complete, result);
+        this.end(callContext, ActivityState.complete, result);
     }
 
     cancel(callContext: CallContext): void {
-        this.end(callContext, AactivityStates.cancel);
+        this.end(callContext, ActivityState.cancel);
     }
 
     idle(callContext: CallContext): void {
-        this.end(callContext, AactivityStates.idle);
+        this.end(callContext, ActivityState.idle);
     }
 
     fail(callContext: CallContext, e: Error): void {
-        this.end(callContext, AactivityStates.fail, e);
+        this.end(callContext, ActivityState.fail, e);
     }
 
     end(callContext: CallContext, reason: ActivityStateValue, result?: unknown): void {
@@ -262,19 +265,19 @@ export class Activity {
         try {
             this.unInitializeExec.call(callContext.scope, reason, result);
         } catch (e) {
-            finalReason = AactivityStates.fail;
+            finalReason = ActivityState.fail;
             finalResult = e;
         }
 
         const state = callContext.executionState;
 
-        if (state.execState === AactivityStates.cancel || state.execState === AactivityStates.fail) {
+        if (state.execState === ActivityState.cancel || state.execState === ActivityState.fail) {
             return;
         }
 
         state.execState = finalReason;
 
-        const inIdle = finalReason === AactivityStates.idle;
+        const inIdle = finalReason === ActivityState.idle;
         const execContext = callContext.executionContext;
         const savedScope = callContext.scope;
 
@@ -417,7 +420,7 @@ export class Activity {
             if (!startedAny) {
                 this.logger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
                 const result = state.many ? state.results : state.results[0];
-                invokeEndCallback(AactivityStates.complete, result);
+                invokeEndCallback(ActivityState.complete, result);
             } else {
                 this.logger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
                 const endBM = specStrings.activities.createCollectingCompletedBMName(selfId!);
@@ -434,7 +437,7 @@ export class Activity {
             }
             scope.delete('__schedulingState');
             this.logger.debug('%s: Invoking end callback with the error.', selfId);
-            invokeEndCallback(AactivityStates.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
+            invokeEndCallback(ActivityState.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
         } finally {
             this.logger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
         }
@@ -486,25 +489,25 @@ export class Activity {
             this.logger.debug('%s: Finished child activity id is: %s', selfId, childId);
 
             switch (reason) {
-                case AactivityStates.complete:
+                case ActivityState.complete:
                     this.logger.debug('%s: Setting %d. value to result: %j', selfId, index, result as any);
                     state.results[index] = result;
                     this.logger.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     state.completedCount++;
                     break;
-                case AactivityStates.fail:
+                case ActivityState.fail:
                     this.logger.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
                     failFlag = true;
                     state.indices.delete(childId);
                     break;
-                case AactivityStates.cancel:
+                case ActivityState.cancel:
                     this.logger.debug('%s: Incrementing cancel counter.', selfId);
                     state.cancelCount++;
                     this.logger.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     break;
-                case AactivityStates.idle:
+                case ActivityState.idle:
                     this.logger.debug('%s: Incrementing idle counter.', selfId);
                     state.idleCount++;
                     break;
@@ -523,7 +526,7 @@ export class Activity {
                 state.idleCount,
             );
 
-            const endWithNoCollectAll = !callContext.activity.collectAll && reason !== AactivityStates.idle;
+            const endWithNoCollectAll = !callContext.activity.collectAll && reason !== ActivityState.idle;
 
             if (endWithNoCollectAll || failFlag) {
                 if (!failFlag) {
@@ -559,12 +562,12 @@ export class Activity {
                     if (state.cancelCount > 0) {
                         this.logger.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
                         finished = () => {
-                            void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, AactivityStates.cancel, undefined);
+                            void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, ActivityState.cancel, undefined);
                         };
                     } else if (state.idleCount > 0) {
                         this.logger.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
                         state.idleCount--;
-                        void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, AactivityStates.idle, undefined);
+                        void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, ActivityState.idle, undefined);
                     } else {
                         const finalResult = state.many ? state.results : state.results[0];
                         this.logger.debug(
@@ -576,7 +579,7 @@ export class Activity {
                             void execContext.resumeBookmarkInScope(
                                 callContext,
                                 state.endBookmarkName!,
-                                AactivityStates.complete,
+                                ActivityState.complete,
                                 finalResult,
                             );
                         };
@@ -668,7 +671,7 @@ export class Activity {
         }
 
         for (const fieldName of Object.keys(this) as (keyof this)[]) {
-            const fieldValue = this[fieldName];
+            const fieldValue = this[fieldName] as any;
             if (fieldValue) {
                 if (Array.isArray(fieldValue)) {
                     for (const obj of fieldValue) {
@@ -716,7 +719,7 @@ export class Activity {
 
         const capturedArgs = args;
         setImmediate(() => {
-            state.reportState(AactivityStates.run, null, myCallContext.scope);
+            state.reportState(ActivityState.run, null, myCallContext.scope);
             try {
                 this.initializeExec.call(myCallContext.scope);
                 this.run.call(myCallContext.scope, myCallContext, capturedArgs);
@@ -726,24 +729,49 @@ export class Activity {
         });
     }
 
-    private getScopeKeys(): string[] {
-        if (!this._scopeKeys || !this._structureInitialized) {
-            this._scopeKeys = [];
-            for (const key of Object.keys(this)) {
-                if (!this._hideFromScopeProperties.has(key)) {
-                    this._scopeKeys.push(key);
+    /**
+     * Yields every key visible on this activity — own enumerable properties plus
+     * non-enumerable prototype methods from the full prototype chain.  Equivalent to a
+     * `for…in` loop on an ES5-style prototype hierarchy where subclass methods are
+     * enumerable.  TypeScript class methods are non-enumerable, so we walk the chain
+     * manually.
+     *
+     * Stops before `Object.prototype` (excludes `toString`, `hasOwnProperty`, etc.).
+     * Skips `constructor` at every prototype level.
+     */
+    private *allKeys(): Generator<string> {
+        // Own enumerable properties
+        for (const key of Object.keys(this)) {
+            yield key;
+        }
+
+        // Walk the prototype chain for non-enumerable prototype methods
+        for (let proto = Object.getPrototypeOf(this); proto && proto !== Object.prototype; proto = Object.getPrototypeOf(proto)) {
+            for (const key of Object.getOwnPropertyNames(proto)) {
+                if (key !== 'constructor') {
+                    yield key;
                 }
             }
-            // defaultEndCallback is a prototype method but must be available on scope
-            // so that the bookmark system can invoke it via scope[callbackName].
-            if (!this._scopeKeys.includes('defaultEndCallback')) {
-                this._scopeKeys.push('defaultEndCallback');
+        }
+    }
+
+    private getScopeKeys() {
+        if (!this._scopeKeys || !this._structureInitialized) {
+            this._scopeKeys = new Set();
+            for (const key of this.allKeys()) {
+                if (this._hideFromScopeProperties.has(key)) {
+                    continue;
+                }
+                // Exclude Activity.prototype methods except the whitelisted ones
+                // that must appear on scope (defaultEndCallback).
+                const isOnActivityProto = key in Activity.prototype;
+                if (!isOnActivityProto || key === 'defaultEndCallback') {
+                    this._scopeKeys.add(key);
+                }
             }
         }
         return this._scopeKeys;
     }
 
     //#endregion
-
-    static readonly states = AactivityStates;
 }

@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
-import { AactivityStates } from '../../common/enums.js';
+import { ActivityState } from '../../common/enums.js';
 import { converters } from '../../common/converters.js';
 import { ActivityRuntimeError } from '../../errors/ActivityRuntimeError.js';
 import { BookmarkNotFoundError } from '../../errors/BookmarkNotFoundError.js';
 import { TypeError as W4NTypeError } from '../../errors/TypeError.js';
-import type { Activity } from '../Activity.js';
+import { Activity } from '../Activity.js';
 import type { ActivityStateValue } from './ActivityExecutionState.js';
 import type { Serializer } from '../../serialization/Serializer.js';
 import type { ScopeTree } from './ScopeTree.js';
@@ -61,7 +61,7 @@ export class ActivityExecutionContext extends EventEmitter {
         if (this._rootActivity) {
             throw new ActivityRuntimeError('Context is already initialized.');
         }
-        if (!(rootActivity && typeof rootActivity.instanceId === 'string')) {
+        if (!(rootActivity instanceof Activity)) {
             throw new W4NTypeError("Argument 'rootActivity' value is not an activity.");
         }
 
@@ -83,11 +83,11 @@ export class ActivityExecutionContext extends EventEmitter {
         let state = this._activityStates.get(id);
         if (!state) {
             state = new ActivityExecutionState(id);
-            state.on(AactivityStates.run, (args: unknown) => {
-                this.emit(AactivityStates.run, args);
+            state.on(ActivityState.run, (args: unknown) => {
+                this.emit(ActivityState.run, args);
             });
-            state.on(AactivityStates.end, (args: unknown) => {
-                this.emit(AactivityStates.end, args);
+            state.on(ActivityState.end, (args: unknown) => {
+                this.emit(ActivityState.end, args);
             });
             this._activityStates.set(id, state);
         }
@@ -153,7 +153,7 @@ export class ActivityExecutionContext extends EventEmitter {
                             currentBm,
                             reason,
                             result,
-                            (reason as ActivityStateValue) === AactivityStates.idle,
+                            (reason as ActivityStateValue) === ActivityState.idle,
                         );
                         resolve(true);
                     }
@@ -399,7 +399,7 @@ export class ActivityExecutionContext extends EventEmitter {
         for (const id of state.childInstanceIds.values()) {
             this.cancelSubtree(scope, allIds, id);
         }
-        state.reportState(AactivityStates.cancel, null, scope);
+        state.reportState(ActivityState.cancel, null, scope);
     }
 
     //#endregion

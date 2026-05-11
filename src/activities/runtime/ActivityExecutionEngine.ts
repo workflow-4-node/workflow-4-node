@@ -4,7 +4,7 @@ import { ActivityExecutionContext } from './ActivityExecutionContext.js';
 import { type ActivityStateValue, type ActivityExecutionState } from './ActivityExecutionState.js';
 import { CallContext } from './CallContext.js';
 import { activityMarkup } from './activityMarkup.js';
-import { AactivityStates } from '../../common/enums.js';
+import { ActivityState } from '../../common/enums.js';
 import { ActivityRuntimeError } from '../../errors/ActivityRuntimeError.js';
 import { ActivityStateExceptionError } from '../../errors/ActivityStateExceptionError.js';
 import { CancelledError } from '../../errors/CancelledError.js';
@@ -80,16 +80,16 @@ export class ActivityExecutionEngine extends EventEmitter {
             const ctx = new CallContext(this.context);
             this._setRootState(this.context.getExecutionState(this.rootActivity));
 
-            this.once(AactivityStates.end, (eArgs: { reason: ActivityStateValue; result?: unknown }) => {
+            this.once(ActivityState.end, (eArgs: { reason: ActivityStateValue; result?: unknown }) => {
                 const { reason, result } = eArgs;
                 switch (reason) {
-                    case AactivityStates.complete:
+                    case ActivityState.complete:
                         resolve(result);
                         break;
-                    case AactivityStates.cancel:
+                    case ActivityState.cancel:
                         reject(new CancelledError());
                         break;
-                    case AactivityStates.idle:
+                    case ActivityState.idle:
                         resolve(idleSentinel);
                         break;
                     default:
@@ -113,22 +113,22 @@ export class ActivityExecutionEngine extends EventEmitter {
             try {
                 this._setRootState(this.context.getExecutionState(this.rootActivity));
 
-                if (this.execState !== AactivityStates.idle) {
+                if (this.execState !== ActivityState.idle) {
                     reject(new ActivityRuntimeError('Cannot resume bookmark, while the workflow is not in the idle state.'));
                     return;
                 }
 
                 const bmTimestamp = this.context.getBookmarkTimestamp(name);
 
-                this.once(AactivityStates.end, (args: { reason: ActivityStateValue; result?: unknown }) => {
+                this.once(ActivityState.end, (args: { reason: ActivityStateValue; result?: unknown }) => {
                     const endReason = args.reason;
                     const endResult = args.result;
 
                     try {
-                        if (endReason === AactivityStates.complete || endReason === AactivityStates.idle) {
+                        if (endReason === ActivityState.complete || endReason === ActivityState.idle) {
                             const endBmTimestamp = this.context.getBookmarkTimestamp(name);
                             if (endBmTimestamp && endBmTimestamp === bmTimestamp) {
-                                if (endReason === AactivityStates.complete) {
+                                if (endReason === ActivityState.complete) {
                                     reject(new ActivityRuntimeError("Workflow has been completed before bookmark '" + name + "' reached."));
                                 } else {
                                     reject(new IdleError("Workflow has been gone to idle before bookmark '" + name + "' reached."));
@@ -136,9 +136,9 @@ export class ActivityExecutionEngine extends EventEmitter {
                             } else {
                                 resolve();
                             }
-                        } else if (endReason === AactivityStates.cancel) {
+                        } else if (endReason === ActivityState.cancel) {
                             reject(new ActivityRuntimeError("Workflow has been cancelled before bookmark '" + name + "' reached."));
-                        } else if (endReason === AactivityStates.fail) {
+                        } else if (endReason === ActivityState.fail) {
                             reject(endResult instanceof Error ? endResult : new ActivityRuntimeError(String(endResult)));
                         }
                     } catch (e) {
@@ -210,35 +210,35 @@ export class ActivityExecutionEngine extends EventEmitter {
     private _setRootState(state: ActivityExecutionState): void {
         if (!this._rootState) {
             this._rootState = state;
-            this._rootState.on(AactivityStates.cancel, (args: unknown) => {
-                this.emit(AactivityStates.cancel, args);
+            this._rootState.on(ActivityState.cancel, (args: unknown) => {
+                this.emit(ActivityState.cancel, args);
             });
-            this._rootState.on(AactivityStates.complete, (args: unknown) => {
-                this.emit(AactivityStates.complete, args);
+            this._rootState.on(ActivityState.complete, (args: unknown) => {
+                this.emit(ActivityState.complete, args);
             });
-            this._rootState.on(AactivityStates.end, (args: unknown) => {
+            this._rootState.on(ActivityState.end, (args: unknown) => {
                 this.updatedOn = new Date();
-                this.emit(AactivityStates.end, args);
+                this.emit(ActivityState.end, args);
             });
-            this._rootState.on(AactivityStates.fail, (args: unknown) => {
-                this.emit(AactivityStates.fail, args);
+            this._rootState.on(ActivityState.fail, (args: unknown) => {
+                this.emit(ActivityState.fail, args);
             });
-            this._rootState.on(AactivityStates.run, (args: unknown) => {
-                this.emit(AactivityStates.run, args);
+            this._rootState.on(ActivityState.run, (args: unknown) => {
+                this.emit(ActivityState.run, args);
             });
-            this._rootState.on(AactivityStates.idle, (args: unknown) => {
-                this.emit(AactivityStates.idle, args);
+            this._rootState.on(ActivityState.idle, (args: unknown) => {
+                this.emit(ActivityState.idle, args);
             });
         }
     }
 
     private _hookContext(): void {
-        this.context.on(AactivityStates.run, (args: unknown) => {
+        this.context.on(ActivityState.run, (args: unknown) => {
             for (const t of this._trackers) {
                 t.activityStateChanged(args as any[]);
             }
         });
-        this.context.on(AactivityStates.end, (args: unknown) => {
+        this.context.on(ActivityState.end, (args: unknown) => {
             for (const t of this._trackers) {
                 t.activityStateChanged(args as any[]);
             }
@@ -249,7 +249,7 @@ export class ActivityExecutionEngine extends EventEmitter {
     }
 
     private _verifyNotStarted(): void {
-        if (this.execState && this.execState !== AactivityStates.complete) {
+        if (this.execState && this.execState !== ActivityState.complete) {
             throw new ActivityStateExceptionError('Workflow has been already started.');
         }
     }

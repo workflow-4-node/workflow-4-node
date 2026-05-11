@@ -1,4 +1,4 @@
-export enum AactivityStates {
+export enum ActivityState {
     run = 'run',
     end = 'end',
     complete = 'complete',
@@ -7,7 +7,7 @@ export enum AactivityStates {
     fail = 'fail',
 }
 
-export enum WorkflowEvents {
+export enum WorkflowEvent {
     start = 'start',
     invoke = 'invoke',
     end = 'end',
