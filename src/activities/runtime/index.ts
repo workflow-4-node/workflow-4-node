@@ -7,3 +7,5 @@ export * from './ScopeNode.js';
 export * from './ScopeTree.js';
 export * from './scope.js';
 export * from './scopeSerializer.js';
+export * from './templateHelpers.js';
+export * from './activityMarkup.js';

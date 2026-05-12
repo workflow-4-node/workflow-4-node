@@ -1,4 +1,4 @@
-﻿import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { ExtensibleSet } from '../common/ExtensibleSet.js';
 import { ActivityState } from '../common/enums.js';
 import { specStrings } from '../common/specStrings.js';
@@ -26,7 +26,7 @@ interface SchedulingState {
 const HIDE_FROM_SCOPE_DEFAULTS = new Set([
     // Activity identity / metadata
     'id',
-    '@require',
+    '@import',
     'args',
     'displayName',
     // Internal state
@@ -58,7 +58,7 @@ export class Activity {
         this._hideFromScopeProperties = new ExtensibleSet(HIDE_FROM_SCOPE_DEFAULTS);
         this._codeProperties = new ExtensibleSet();
         this._arrayProperties = new ExtensibleSet();
-        this['@require'] = null;
+        this._arrayProperties.add('args');
     }
 
     //#region Properties
@@ -97,7 +97,6 @@ export class Activity {
     }
 
     readonly id: string;
-    ['@require']: unknown = null;
     args: unknown[] = [];
     displayName: string | null = null;
 
@@ -159,6 +158,11 @@ export class Activity {
 
     isArrayProperty(propName: string): boolean {
         return this._arrayProperties.has(propName);
+    }
+
+    /** Returns true if the property stores code (e.g., a function body) rather than a regular value. */
+    isCodeProperty(propName: string): boolean {
+        return this._codeProperties.has(propName);
     }
 
     initializeStructure(_execContext: ActivityExecutionContext): void {
@@ -312,6 +316,7 @@ export class Activity {
         const scope = callContext.scope;
         const execContext = callContext.executionContext;
         const selfId = callContext.instanceId;
+        const log = this.logger;
 
         const effectiveEndCallback = endCallback || 'defaultEndCallback';
 
@@ -335,16 +340,12 @@ export class Activity {
         }
 
         if ((scope as Record<string, unknown>).__schedulingState) {
-            this.logger.debug(
-                '%s: Error, already existsing state: %j',
-                selfId,
-                (scope as Record<string, unknown>).__schedulingState as any,
-            );
+            log.debug('%s: Error, already existsing state: %j', selfId, (scope as Record<string, unknown>).__schedulingState as any);
             callContext.fail(new ActivityStateExceptionError('There are already scheduled items exists.'));
             return;
         }
 
-        this.logger.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, effectiveEndCallback, obj as any);
+        log.debug("%s: Scheduling object(s) by using end callback '%s': %j", selfId, effectiveEndCallback, obj as any);
 
         const state: SchedulingState = {
             many: Array.isArray(obj),
@@ -364,7 +365,7 @@ export class Activity {
             let index = 0;
 
             const processValue = (value: unknown): void => {
-                this.logger.debug('%s: Checking value: %j', selfId, value as any);
+                log.debug('%s: Checking value: %j', selfId, value as any);
                 let activity: Activity | null = null;
                 let variables: Record<string, unknown> | null = null;
 
@@ -383,11 +384,11 @@ export class Activity {
 
                 if (activity) {
                     const instanceId = activity.instanceId;
-                    this.logger.debug('%s: Value is an activity with instance id: %s', selfId, instanceId);
+                    log.debug('%s: Value is an activity with instance id: %s', selfId, instanceId);
                     if (state.indices.has(instanceId)) {
                         throw new ActivityStateExceptionError(`Activity instance '${instanceId}' has been scheduled already.`);
                     }
-                    this.logger.debug('%s: Creating end bookmark, and starting it.', selfId);
+                    log.debug('%s: Creating end bookmark, and starting it.', selfId);
                     bookmarkNames.push(
                         execContext.createBookmark(
                             selfId!,
@@ -401,13 +402,13 @@ export class Activity {
                     state.results.push(null);
                     state.total++;
                 } else {
-                    this.logger.debug('%s: Value is not an activity.', selfId);
+                    log.debug('%s: Value is not an activity.', selfId);
                     state.results.push(value);
                 }
             };
 
             if (state.many) {
-                this.logger.debug('%s: There are many values, iterating.', selfId);
+                log.debug('%s: There are many values, iterating.', selfId);
                 const items = obj as unknown[];
                 for (const value of items) {
                     processValue(value);
@@ -418,11 +419,11 @@ export class Activity {
             }
 
             if (!startedAny) {
-                this.logger.debug('%s: No activity has been started, calling end callback with original object.', selfId);
+                log.debug('%s: No activity has been started, calling end callback with original object.', selfId);
                 const result = state.many ? state.results : state.results[0];
                 invokeEndCallback(ActivityState.complete, result);
             } else {
-                this.logger.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
+                log.debug('%s: %d activities has been started. Registering end bookmark.', selfId, state.indices.size);
                 const endBM = specStrings.activities.createCollectingCompletedBMName(selfId!);
                 bookmarkNames.push(execContext.createBookmark(selfId!, endBM, effectiveEndCallback));
                 state.endBookmarkName = endBM;
@@ -430,16 +431,16 @@ export class Activity {
             }
             // TODO: scope.update(SimpleProxy.updateMode.oneWay);
         } catch (e) {
-            this.logger.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
+            log.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
             if (bookmarkNames.length > 0) {
-                this.logger.debug('%s: Set bookmarks to noop: %j', selfId, bookmarkNames);
+                log.debug('%s: Set bookmarks to noop: %j', selfId, bookmarkNames);
                 execContext.noopCallbacks(bookmarkNames);
             }
             scope.delete('__schedulingState');
-            this.logger.debug('%s: Invoking end callback with the error.', selfId);
+            log.debug('%s: Invoking end callback with the error.', selfId);
             invokeEndCallback(ActivityState.fail, e instanceof Error ? e : new ActivityRuntimeError(String(e)));
         } finally {
-            this.logger.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
+            log.debug('%s: Final state indices count: %d, total: %d', selfId, state.indices.size, state.total);
         }
     }
 
@@ -458,8 +459,9 @@ export class Activity {
         const execContext = callContext.executionContext;
         const childId = specStrings.getString(bookmark);
         const scope = callContext.scope;
+        const log = callContext.activity.logger;
 
-        this.logger.debug(
+        log.debug(
             '%s: Scheduling result item collected, childId: %s, reason: %s, result: %j, bookmark: %j',
             selfId,
             childId,
@@ -486,36 +488,36 @@ export class Activity {
                 throw new ActivityStateExceptionError(`Child activity of '${childId}' scheduling state index out of range.`);
             }
 
-            this.logger.debug('%s: Finished child activity id is: %s', selfId, childId);
+            log.debug('%s: Finished child activity id is: %s', selfId, childId);
 
             switch (reason) {
                 case ActivityState.complete:
-                    this.logger.debug('%s: Setting %d. value to result: %j', selfId, index, result as any);
+                    log.debug('%s: Setting %d. value to result: %j', selfId, index, result as any);
                     state.results[index] = result;
-                    this.logger.debug('%s: Removing id from state.', selfId);
+                    log.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     state.completedCount++;
                     break;
                 case ActivityState.fail:
-                    this.logger.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
+                    log.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
                     failFlag = true;
                     state.indices.delete(childId);
                     break;
                 case ActivityState.cancel:
-                    this.logger.debug('%s: Incrementing cancel counter.', selfId);
+                    log.debug('%s: Incrementing cancel counter.', selfId);
                     state.cancelCount++;
-                    this.logger.debug('%s: Removing id from state.', selfId);
+                    log.debug('%s: Removing id from state.', selfId);
                     state.indices.delete(childId);
                     break;
                 case ActivityState.idle:
-                    this.logger.debug('%s: Incrementing idle counter.', selfId);
+                    log.debug('%s: Incrementing idle counter.', selfId);
                     state.idleCount++;
                     break;
                 default:
                     throw new ActivityStateExceptionError(`Result collected with unknown reason '${reason}'.`);
             }
 
-            this.logger.debug(
+            log.debug(
                 '%s: State so far = total: %s, indices count: %d, completed count: %d, cancel count: %d, error count: %d, idle count: %d',
                 selfId,
                 state.total,
@@ -530,23 +532,23 @@ export class Activity {
 
             if (endWithNoCollectAll || failFlag) {
                 if (!failFlag) {
-                    this.logger.debug("%s: ---- Collecting of values ended, because we're not collecting all values (eg.: Pick).", selfId);
+                    log.debug("%s: ---- Collecting of values ended, because we're not collecting all values (eg.: Pick).", selfId);
                 } else {
-                    this.logger.debug('%s: ---- Collecting of values ended, because of an error.', selfId);
+                    log.debug('%s: ---- Collecting of values ended, because of an error.', selfId);
                 }
-                this.logger.debug('%s: Shutting down %d other, running activities.', selfId, state.indices.size);
+                log.debug('%s: Shutting down %d other, running activities.', selfId, state.indices.size);
                 const ids: string[] = [];
                 for (const id of state.indices.keys()) {
                     ids.push(id);
-                    this.logger.debug('%s: Deleting scope of activity: %s', selfId, id);
+                    log.debug('%s: Deleting scope of activity: %s', selfId, id);
                     execContext.deleteScopeOfActivity(callContext, id);
                     const ibmName = specStrings.activities.createValueCollectedBMName(id);
-                    this.logger.debug('%s: Deleting value collected bookmark: %s', selfId, ibmName);
+                    log.debug('%s: Deleting value collected bookmark: %s', selfId, ibmName);
                     execContext.deleteBookmark(ibmName);
                 }
                 execContext.cancelExecution(callContext.scope, ids);
-                this.logger.debug('%s: Activities cancelled: %j', selfId, ids);
-                this.logger.debug('%s: Reporting the actual reason: %s and result: %j', selfId, reason, result as any);
+                log.debug('%s: Activities cancelled: %j', selfId, ids);
+                log.debug('%s: Reporting the actual reason: %s and result: %j', selfId, reason, result as any);
 
                 finished = () => {
                     void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, reason, result);
@@ -554,23 +556,23 @@ export class Activity {
             } else {
                 const onEnd = state.indices.size - state.idleCount === 0;
                 if (onEnd) {
-                    this.logger.debug(
+                    log.debug(
                         '%s: ---- Collecting of values ended (ended because of collect all is off: %s).',
                         selfId,
                         endWithNoCollectAll,
                     );
                     if (state.cancelCount > 0) {
-                        this.logger.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
+                        log.debug('%s: Collecting has been cancelled, resuming end bookmarks.', selfId);
                         finished = () => {
                             void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, ActivityState.cancel, undefined);
                         };
                     } else if (state.idleCount > 0) {
-                        this.logger.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
+                        log.debug('%s: This entry has been gone to idle, propagating counter.', selfId);
                         state.idleCount--;
                         void execContext.resumeBookmarkInScope(callContext, state.endBookmarkName!, ActivityState.idle, undefined);
                     } else {
                         const finalResult = state.many ? state.results : state.results[0];
-                        this.logger.debug(
+                        log.debug(
                             '%s: This entry has been completed, resuming collect bookmark with the result(s): %j',
                             selfId,
                             finalResult as any,
@@ -591,7 +593,7 @@ export class Activity {
             scope.delete('__schedulingState');
         } finally {
             if (finished) {
-                this.logger.debug('%s: Scheduling finished, removing state.', selfId);
+                log.debug('%s: Scheduling finished, removing state.', selfId);
                 scope.delete('__schedulingState');
                 finished();
             }

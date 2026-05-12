@@ -212,25 +212,26 @@ describe('reflection.visitObject', () => {
         expect(visited.filter((v) => v.value === 'b').length).toBe(1);
     });
 
-    // ----- Visitor returning false stops recursion into that value -----
+    // ----- Visitor returning false breaks the entire traversal -----
 
-    it('should skip recursion into a child when visitor returns false', () => {
-        const obj = { a: { b: { c: 3 } } };
+    it('should break the entire traversal when visitor returns false', () => {
+        const obj = { a: { b: { c: 3 } }, d: 4 };
         const visited: Array<{ key: string | undefined; value: any }> = [];
         reflection.visitObject(obj, (key, value, _parent) => {
             visited.push({ key, value });
-            // Stop recursion into obj.a
+            // Break when reaching obj.a
             if (value === obj.a) {
                 return false;
             }
             return true;
         });
 
-        // Should have visited root and obj.a, but NOT obj.a's children
+        // Should have visited root and obj.a, but NOT obj.a's children or siblings
         expect(visited.filter((v) => v.value === obj).length).toBe(1);
         expect(visited.filter((v) => v.value === obj.a).length).toBe(1);
         expect(visited.filter((v) => v.value === obj.a.b).length).toBe(0);
         expect(visited.filter((v) => v.value === 3).length).toBe(0);
+        expect(visited.filter((v) => v.value === 4).length).toBe(0);
     });
 
     // ----- Ordering (DFS pre-order) -----

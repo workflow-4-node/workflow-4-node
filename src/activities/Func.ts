@@ -31,6 +31,12 @@ export class Func extends Activity {
         }
 
         this.fnArgs = result;
+
+        if (this.code === null || this.code === undefined) {
+            callContext.complete(undefined);
+            return;
+        }
+
         callContext.schedule(this.code, 'codeGot');
     }
 

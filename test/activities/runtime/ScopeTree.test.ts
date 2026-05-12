@@ -331,7 +331,7 @@ describe('ScopeTree', () => {
             (expr as any).id = 'expression';
 
             const realParent = new ScopeNode('real-parent', {});
-            const exprNode = new ScopeNode('expr-1', {}, undefined, expr as unknown as Activity);
+            const exprNode = new ScopeNode('expr-1', {}, undefined, expr);
             exprNode.parent = realParent;
             const child = new ScopeNode('child', {}, undefined, mockActivity({ instanceId: 'child' }));
             child.parent = exprNode;

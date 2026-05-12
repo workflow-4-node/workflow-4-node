@@ -389,7 +389,7 @@ export class ActivityExecutionContext extends EventEmitter {
         }
 
         // TODO: if it fails, resume on default callback with the error!
-        cb.call(scope, callContext, reason, result, bookmark);
+        cb.call(scope, callContext, reason, result, bookmark.name);
     }
 
     private cancelSubtree(scope: unknown, allIds: Set<string>, activityId: string): void {
