@@ -320,19 +320,24 @@ export class Activity {
 
         const effectiveEndCallback = endCallback || 'defaultEndCallback';
 
-        const invokeEndCallback = (reason: ActivityStateValue, result?: unknown): void => {
-            setImmediate(() => {
-                const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
-                if (typeof cb === 'function') {
-                    cb.call(scope, callContext, reason, result);
-                }
-            });
-        };
-
         if (typeof effectiveEndCallback !== 'string') {
             callContext.fail(new W4NTypeError("Provided argument 'endCallback' value is not a string."));
             return;
         }
+
+        const invokeEndCallback = (reason: ActivityStateValue, result?: unknown): void => {
+            setImmediate(async () => {
+                const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
+                if (typeof cb === 'function') {
+                    try {
+                        await cb.call(scope, callContext, reason, result);
+                    } catch (e) {
+                        log.warn(e, 'Error happened in end callback: %s', effectiveEndCallback);
+                    }
+                }
+            });
+        };
+
         const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
         if (typeof cb !== 'function') {
             callContext.fail(new W4NTypeError(`'${effectiveEndCallback}' is not a function.`));
@@ -340,7 +345,7 @@ export class Activity {
         }
 
         if ((scope as Record<string, unknown>).__schedulingState) {
-            log.debug('%s: Error, already existsing state: %j', selfId, (scope as Record<string, unknown>).__schedulingState as any);
+            log.warn('%s: Already existing scheduling state: %j', selfId, (scope as Record<string, unknown>).__schedulingState as any);
             callContext.fail(new ActivityStateExceptionError('There are already scheduled items exists.'));
             return;
         }
@@ -431,7 +436,7 @@ export class Activity {
             }
             // TODO: scope.update(SimpleProxy.updateMode.oneWay);
         } catch (e) {
-            log.debug('%s: Runtime error happened: %s', selfId, e instanceof Error ? e.stack : String(e));
+            log.warn(e, '%s: Runtime error happened', selfId);
             if (bookmarkNames.length > 0) {
                 log.debug('%s: Set bookmarks to noop: %j', selfId, bookmarkNames);
                 execContext.noopCallbacks(bookmarkNames);
@@ -499,7 +504,7 @@ export class Activity {
                     state.completedCount++;
                     break;
                 case ActivityState.fail:
-                    log.debug('%s: Failed with: %s', selfId, result instanceof Error ? result.stack : String(result));
+                    log.warn(result instanceof Error ? result : new Error(String(result)), '%s: Failed', selfId);
                     failFlag = true;
                     state.indices.delete(childId);
                     break;
@@ -624,7 +629,7 @@ export class Activity {
                 // eslint-disable-next-line @typescript-eslint/no-implied-eval
                 this._createScopePartImpl = new Function('a', src) as (a: Activity) => Record<string, unknown>;
             } catch (e) {
-                this.logger.debug('Invalid scope part function: %s', src);
+                this.logger.warn('Invalid scope part function: %s', src);
                 throw new ActivityRuntimeError('Invalid scope part function: ' + src, e instanceof Error ? e : undefined);
             }
         }
