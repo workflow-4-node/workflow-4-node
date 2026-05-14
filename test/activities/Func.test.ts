@@ -471,14 +471,14 @@ describe('Func', () => {
             assert.equal(result, 'Gabor');
         });
 
-        it('should include lodash as last argument', async () => {
+        it('should run escaped code', async () => {
             const markup = await activityMarkup.parse({
                 '@block': {
                     id: 'block',
                     code: {
-                        _: async function (obj: { name: string }, __: typeof _) {
+                        _: async function (obj: { name: string }) {
                             return new Promise<void>((r) => setTimeout(r, 10)).then(function () {
-                                return __.camelCase(obj.name);
+                                return _.camelCase(obj.name);
                             });
                         },
                     },

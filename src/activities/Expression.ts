@@ -4,7 +4,8 @@ import { ActivityRuntimeError } from '../errors/ActivityRuntimeError.js';
 import { type CallContext } from './runtime/CallContext.js';
 
 export class Expression extends Activity {
-    // _f is a backing field for the cached compiled function — underscore is intentional
+    // _f is a backing field for the cached compiled function
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     private _f: ((_: unknown) => unknown) | null = null;
 
     constructor(public expr?: string | null) {
@@ -21,10 +22,19 @@ export class Expression extends Activity {
                     // eslint-disable-next-line @typescript-eslint/no-implied-eval
                     f = this._f = new Function('_', `return (${expr})`) as (_: unknown) => unknown;
                 }
-                const result = f.call(callContext.activity, _);
+                // `this` is the scope proxy (Activity._start calls run.call(scope, ...)),
+                // so property lookups in the expression go through the ScopeTree,
+                // allowing references like `this.block.code` to resolve by userId.
+                let result = f.call(this, _);
                 if (result === callContext.activity) {
-                    callContext.fail(new ActivityRuntimeError("Expression can't reference itself."));
-                    return;
+                    // Self-reference — try re-evaluating from the parent scope
+                    const self: Record<string, any> = this as any;
+                    const parent = self.$parent;
+                    if (!parent) {
+                        callContext.fail(new ActivityRuntimeError("Expression can't reference itself."));
+                        return;
+                    }
+                    result = f.call(parent, _);
                 }
                 callContext.complete(result);
             } catch (e) {
