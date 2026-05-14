@@ -140,11 +140,11 @@ class ActivityMarkup {
                     if (!Array.isArray(v)) {
                         v = [v];
                     }
-                    (activity as Record<string, unknown>)[fieldName] = v;
+                    (activity as any)[fieldName] = v;
                 } else if (fieldName === '@import') {
                     // Already handled at the parse level — skip
                 } else {
-                    (activity as Record<string, unknown>)[fieldName] = this.createValue(types, fieldValue, false, activity, fieldName);
+                    (activity as any)[fieldName] = this.createValue(types, fieldValue, false, activity, fieldName);
                 }
             }
         } else {
@@ -249,7 +249,7 @@ class ActivityMarkup {
     private toTemplate(types: Map<string, new () => Activity>, markup: Record<string, any>): Activity {
         const template = this.createActivityInstance(types, 'template');
         if (template) {
-            (template as Record<string, unknown>).declare = markup;
+            (template as any).declare = markup;
         }
         return template!;
     }
@@ -257,7 +257,7 @@ class ActivityMarkup {
     private toFunc(types: Map<string, new () => Activity>, f: (...args: unknown[]) => unknown): Activity {
         const func = this.createActivityInstance(types, 'func');
         if (func) {
-            (func as Record<string, unknown>).code = f;
+            (func as any).code = f;
         }
         return func!;
     }
@@ -265,7 +265,7 @@ class ActivityMarkup {
     private toExpression(types: Map<string, new () => Activity>, expr: string): Activity {
         const exprActivity = this.createActivityInstance(types, 'expression');
         if (exprActivity) {
-            (exprActivity as Record<string, unknown>).expr = expr;
+            (exprActivity as any).expr = expr;
         }
         return exprActivity!;
     }

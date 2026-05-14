@@ -41,6 +41,7 @@
     "typescript-eslint": "^8.59.2"
   },
   "dependencies": {
+    "es-toolkit": "^1.46.1",
     "pino": "^10.3.1",
     "superjson": "^2.2.6"
   }

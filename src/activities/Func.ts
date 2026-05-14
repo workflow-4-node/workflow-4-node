@@ -15,6 +15,8 @@ export class Func extends Activity {
         this.codeProperties.add('code');
     }
 
+    private fnArgs?: any[] | null;
+
     run(callContext: CallContext, args: unknown[]) {
         callContext.schedule(args, 'argsGot');
     }

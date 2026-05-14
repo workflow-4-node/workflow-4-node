@@ -51,7 +51,7 @@ const HIDE_FROM_SCOPE_DEFAULTS = new Set([
     'logger',
 ]);
 
-export class Activity {
+export abstract class Activity {
     constructor() {
         this.id = randomUUID();
         this._nonSerializedProperties = new ExtensibleSet();
@@ -70,8 +70,8 @@ export class Activity {
 
     private _collectAll = true;
     private _instanceId: string | null = null;
-    private _structureInitialized = false;
-    private _scopeKeys: Set<string> | null = null;
+    private structureInitialized = false;
+    private scopeKeys: Set<string> | null = null;
     private _createScopePartImpl: ((a: Activity) => Record<string, unknown>) | null = null;
 
     get nonSerializedProperties(): ExtensibleSet<string> {
@@ -128,9 +128,6 @@ export class Activity {
     get logger(): Logger {
         return w4fLogger.child({ activity: this.constructor.name });
     }
-
-    // Activity is a dynamic object.
-    [key: string]: any;
 
     //#endregion
 
@@ -608,7 +605,7 @@ export class Activity {
     /* SCOPE */
 
     createScopePart(): Record<string, unknown> {
-        if (!this._structureInitialized) {
+        if (!this.structureInitialized) {
             throw new ActivityRuntimeError('Cannot create activity scope for uninitialized activities.');
         }
 
@@ -635,6 +632,24 @@ export class Activity {
         }
 
         return this._createScopePartImpl(this);
+    }
+
+    getScopeKeys() {
+        if (!this.scopeKeys || !this.structureInitialized) {
+            this.scopeKeys = new Set();
+            for (const key of this.allKeys()) {
+                if (this._hideFromScopeProperties.has(key)) {
+                    continue;
+                }
+                // Exclude Activity.prototype methods except the whitelisted ones
+                // that must appear on scope (defaultEndCallback).
+                const isOnActivityProto = key in Activity.prototype;
+                if (!isOnActivityProto || key === 'defaultEndCallback') {
+                    this.scopeKeys.add(key);
+                }
+            }
+        }
+        return this.scopeKeys;
     }
 
     //#endregion
@@ -702,9 +717,9 @@ export class Activity {
     }
 
     private ensureStructureInitialized(execContext: ActivityExecutionContext): void {
-        if (!this._structureInitialized) {
+        if (!this.structureInitialized) {
             this.initializeStructure(execContext);
-            this._structureInitialized = true;
+            this.structureInitialized = true;
         }
     }
 
@@ -760,24 +775,6 @@ export class Activity {
                 }
             }
         }
-    }
-
-    private getScopeKeys() {
-        if (!this._scopeKeys || !this._structureInitialized) {
-            this._scopeKeys = new Set();
-            for (const key of this.allKeys()) {
-                if (this._hideFromScopeProperties.has(key)) {
-                    continue;
-                }
-                // Exclude Activity.prototype methods except the whitelisted ones
-                // that must appear on scope (defaultEndCallback).
-                const isOnActivityProto = key in Activity.prototype;
-                if (!isOnActivityProto || key === 'defaultEndCallback') {
-                    this._scopeKeys.add(key);
-                }
-            }
-        }
-        return this._scopeKeys;
     }
 
     //#endregion
