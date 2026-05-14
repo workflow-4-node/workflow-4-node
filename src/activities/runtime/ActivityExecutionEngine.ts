@@ -81,8 +81,12 @@ export class ActivityExecutionEngine extends EventEmitter {
                             case ActivityState.idle:
                                 resolve(idleSentinel);
                                 break;
-                            default:
-                                reject(result instanceof Error ? result : new ActivityRuntimeError((result as string) ?? 'Unknown error.'));
+                            case ActivityState.fail:
+                                if (result instanceof Error) {
+                                    reject(result);
+                                } else {
+                                    reject(new ActivityRuntimeError(`Activity failed with result: ${JSON.stringify(result)}`));
+                                }
                                 break;
                         }
                     });

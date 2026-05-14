@@ -44,7 +44,7 @@ export class Func extends Activity {
 
     codeGot(callContext: CallContext, reason: ActivityState, result: unknown) {
         if (reason !== ActivityState.complete) {
-            callContext.end(reason, this.fnArgs);
+            callContext.end(reason, result);
             return;
         }
 
@@ -55,7 +55,7 @@ export class Func extends Activity {
 
         try {
             const fResult = result.apply(this, this.fnArgs || []);
-            if (fResult && typeof result === 'object' && typeof fResult.then === 'function') {
+            if (fResult && typeof fResult === 'object' && typeof fResult.then === 'function') {
                 fResult.then((r: any) => callContext.complete(r)).catch((err: Error) => callContext.fail(err));
             } else {
                 callContext.complete(fResult);
