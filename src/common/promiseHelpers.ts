@@ -20,6 +20,7 @@ export const promiseHelpers = {
     tryAsync,
     try: tryAsync,
     delay,
+    immediate,
     retry,
     retryFor,
     waitFor,
@@ -63,6 +64,16 @@ async function delay(ms: number, unref = false) {
             }
         });
     }
+}
+
+/** Pauses execution until the next tick. Pass `unref = true` to not block process exit. */
+async function immediate(unref = false) {
+    await new Promise<void>((resolve) => {
+        const im = setImmediate(resolve);
+        if (unref) {
+            im.unref();
+        }
+    });
 }
 
 /**
