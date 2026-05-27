@@ -139,16 +139,16 @@ export abstract class Activity {
 
     /* forEach */
 
-    *all(execContext: ActivityExecutionContext): Generator<Activity> {
-        yield* this.childrenImpl(true, null, execContext, null);
+    async all(execContext: ActivityExecutionContext): Promise<Activity[]> {
+        return await this.childrenImpl(true, null, execContext, null);
     }
 
-    *children(execContext: ActivityExecutionContext): Generator<Activity> {
-        yield* this.childrenImpl(true, this, execContext, null);
+    async children(execContext: ActivityExecutionContext): Promise<Activity[]> {
+        return await this.childrenImpl(true, this, execContext, null);
     }
 
-    *immediateChildren(execContext: ActivityExecutionContext): Generator<Activity> {
-        yield* this.childrenImpl(false, this, execContext, null);
+    async immediateChildren(execContext: ActivityExecutionContext): Promise<Activity[]> {
+        return await this.childrenImpl(false, this, execContext, null);
     }
 
     /* Structure */
@@ -162,7 +162,7 @@ export abstract class Activity {
         return this._codeProperties.has(propName);
     }
 
-    initializeStructure(_execContext: ActivityExecutionContext): void {
+    async initializeStructure(_execContext: ActivityExecutionContext): Promise<void> {
         // virtual
     }
 
@@ -673,23 +673,24 @@ export abstract class Activity {
 
     //#region Private methods
 
-    private *childrenImpl(
+    private async childrenImpl(
         deep: boolean,
         except: Activity | null,
         execContext: ActivityExecutionContext,
         visited: Set<Activity> | null,
-    ): Generator<Activity> {
+    ): Promise<Activity[]> {
         const effectiveVisited = visited ?? new Set<Activity>();
 
         if (effectiveVisited.has(this)) {
-            return;
+            return [];
         }
         effectiveVisited.add(this);
 
-        this.ensureStructureInitialized(execContext);
+        await this.ensureStructureInitialized(execContext);
 
+        const result: Activity[] = [];
         if (this !== except) {
-            yield this;
+            result.push(this);
         }
 
         for (const fieldName of Object.keys(this) as (keyof this)[]) {
@@ -699,26 +700,29 @@ export abstract class Activity {
                     for (const obj of fieldValue) {
                         if (obj instanceof Activity) {
                             if (deep) {
-                                yield* obj.childrenImpl(deep, except, execContext, effectiveVisited);
+                                const subItems = await obj.childrenImpl(deep, except, execContext, effectiveVisited);
+                                result.push(...subItems);
                             } else {
-                                yield obj;
+                                result.push(obj);
                             }
                         }
                     }
                 } else if (fieldValue instanceof Activity) {
                     if (deep) {
-                        yield* fieldValue.childrenImpl(deep, except, execContext, effectiveVisited);
+                        const subItems = await fieldValue.childrenImpl(deep, except, execContext, effectiveVisited);
+                        result.push(...subItems);
                     } else {
-                        yield fieldValue;
+                        result.push(fieldValue);
                     }
                 }
             }
         }
+        return result;
     }
 
-    private ensureStructureInitialized(execContext: ActivityExecutionContext): void {
+    private async ensureStructureInitialized(execContext: ActivityExecutionContext): Promise<void> {
         if (!this.structureInitialized) {
-            this.initializeStructure(execContext);
+            await this.initializeStructure(execContext);
             this.structureInitialized = true;
         }
     }

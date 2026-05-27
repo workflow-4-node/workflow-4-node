@@ -5,7 +5,6 @@ import { type CallContext } from './runtime/CallContext.js';
 
 export class Expression extends Activity {
     // _f is a backing field for the cached compiled function
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     private _f: ((_: unknown) => unknown) | null = null;
 
     constructor(public expr?: string | null) {

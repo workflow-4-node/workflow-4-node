@@ -56,7 +56,7 @@ export class ActivityExecutionContext extends EventEmitter {
 
     //#region Public methods
 
-    initialize(rootActivity: Activity): void {
+    async initialize(rootActivity: Activity): Promise<void> {
         if (this._rootActivity) {
             throw new ActivityRuntimeError('Context is already initialized.');
         }
@@ -65,7 +65,7 @@ export class ActivityExecutionContext extends EventEmitter {
         }
 
         this._rootActivity = rootActivity;
-        this.initializeImpl(null, rootActivity, { instanceId: 0 });
+        await this.initializeImpl(null, rootActivity, { instanceId: 0 });
     }
 
     getExecutionState(activityOrId: Activity | string): ActivityExecutionState {
@@ -341,7 +341,7 @@ export class ActivityExecutionContext extends EventEmitter {
         );
     }
 
-    private initializeImpl(parent: Activity | null, activity: Activity, idCounter: { instanceId: number }): void {
+    private async initializeImpl(parent: Activity | null, activity: Activity, idCounter: { instanceId: number }): Promise<void> {
         const activityInstanceId = activity.internalInstanceId;
         const nextId = (idCounter.instanceId++).toString();
 
@@ -359,8 +359,8 @@ export class ActivityExecutionContext extends EventEmitter {
         state.parentInstanceId = parent ? parent.instanceId : null;
         this._knownActivities.set(effectiveId, activity);
 
-        for (const child of activity.immediateChildren(this)) {
-            this.initializeImpl(activity, child, idCounter);
+        for (const child of await activity.immediateChildren(this)) {
+            await this.initializeImpl(activity, child, idCounter);
             state.childInstanceIds.add(child.instanceId);
         }
     }

@@ -218,7 +218,7 @@ export class ActivityExecutionEngine extends EventEmitter {
 
     private async initialize() {
         if (!this._initialized) {
-            this.context.initialize(await this.getRootActivity());
+            await this.context.initialize(await this.getRootActivity());
             this._initialized = true;
         }
     }

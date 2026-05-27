@@ -98,7 +98,7 @@ export abstract class Declarator extends Activity {
             const args = this.savedArgs;
             this.savedArgs = undefined;
             this.activityVariableFieldNames = undefined;
-            this.varsDeclared(callContext, args || []);
+            (callContext.activity as Declarator).varsDeclared.call(this, callContext, args || []);
         } else {
             callContext.end(reason, result);
         }
