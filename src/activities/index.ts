@@ -22,3 +22,4 @@ export * from './NotEquals.js';
 export * from './Not.js';
 export * from './And.js';
 export * from './Or.js';
+export * from './Assign.js';

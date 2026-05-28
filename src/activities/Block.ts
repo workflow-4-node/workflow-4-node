@@ -3,11 +3,11 @@ import { Declarator } from './Declarator.js';
 import { type CallContext } from './runtime/CallContext.js';
 
 export class Block extends Declarator {
-    private todo?: unknown[];
+    private _todo?: unknown[];
 
     varsDeclared(callContext: CallContext, args: unknown[]) {
         const todo: unknown[] = [];
-        this.todo = todo;
+        this._todo = todo;
 
         if (args.length) {
             for (let i = args.length - 1; i >= 1; i--) {
@@ -20,7 +20,7 @@ export class Block extends Declarator {
     }
 
     argGot(callContext: CallContext, reason: ActivityState, result: unknown) {
-        const todo = this.todo;
+        const todo = this._todo;
 
         if (reason === ActivityState.complete) {
             if (!todo || todo.length === 0) {

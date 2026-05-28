@@ -4,16 +4,16 @@ import { Block } from './Block.js';
 import { type CallContext } from './runtime/CallContext.js';
 
 export abstract class WithBody extends Activity {
-    protected bodyBlock: Block | null = null;
+    protected _bodyBlock: Block | null = null;
 
     async initializeStructure(): Promise<void> {
-        this.bodyBlock = new Block();
-        this.bodyBlock.args = this.args;
+        this._bodyBlock = new Block();
+        this._bodyBlock.args = this.args;
         this.args = [];
     }
 
     run(callContext: CallContext, _args: unknown[]): void {
-        const body = this.bodyBlock;
+        const body = this._bodyBlock;
         if (body && body.args && body.args.length) {
             callContext.schedule(body, 'bodyCompleted');
         } else {
@@ -28,7 +28,7 @@ export abstract class WithBody extends Activity {
 
     /** Schedules the body block, used by subclasses that want to run the body explicitly. */
     protected runBody(callContext: CallContext): void {
-        const body = this.bodyBlock;
+        const body = this._bodyBlock;
         if (body && body.args && body.args.length) {
             callContext.schedule(body, 'bodyCompleted');
         } else {

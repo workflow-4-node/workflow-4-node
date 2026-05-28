@@ -70,8 +70,8 @@ export abstract class Activity {
 
     private _collectAll = true;
     private _instanceId: string | null = null;
-    private structureInitialized = false;
-    private scopeKeys: Set<string> | null = null;
+    private _structureInitialized = false;
+    private _scopeKeys: Set<string> | null = null;
     private _createScopePartImpl: ((a: Activity) => Record<string, unknown>) | null = null;
 
     get nonSerializedProperties(): ExtensibleSet<string> {
@@ -605,7 +605,7 @@ export abstract class Activity {
     /* SCOPE */
 
     createScopePart(): Record<string, unknown> {
-        if (!this.structureInitialized) {
+        if (!this._structureInitialized) {
             throw new ActivityRuntimeError('Cannot create activity scope for uninitialized activities.');
         }
 
@@ -635,8 +635,8 @@ export abstract class Activity {
     }
 
     getScopeKeys() {
-        if (!this.scopeKeys || !this.structureInitialized) {
-            this.scopeKeys = new Set();
+        if (!this._scopeKeys || !this._structureInitialized) {
+            this._scopeKeys = new Set();
             for (const key of this.allKeys()) {
                 if (this._hideFromScopeProperties.has(key)) {
                     continue;
@@ -645,11 +645,11 @@ export abstract class Activity {
                 // that must appear on scope (defaultEndCallback).
                 const isOnActivityProto = key in Activity.prototype;
                 if (!isOnActivityProto || key === 'defaultEndCallback') {
-                    this.scopeKeys.add(key);
+                    this._scopeKeys.add(key);
                 }
             }
         }
-        return this.scopeKeys;
+        return this._scopeKeys;
     }
 
     //#endregion
@@ -721,9 +721,9 @@ export abstract class Activity {
     }
 
     private async ensureStructureInitialized(execContext: ActivityExecutionContext): Promise<void> {
-        if (!this.structureInitialized) {
+        if (!this._structureInitialized) {
             await this.initializeStructure(execContext);
-            this.structureInitialized = true;
+            this._structureInitialized = true;
         }
     }
 

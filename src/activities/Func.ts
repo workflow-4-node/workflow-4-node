@@ -15,7 +15,7 @@ export class Func extends Activity {
         this.codeProperties.add('code');
     }
 
-    private fnArgs?: any[] | null;
+    private _fnArgs?: any[] | null;
 
     run(callContext: CallContext, args: unknown[]) {
         callContext.schedule(args, 'argsGot');
@@ -32,7 +32,7 @@ export class Func extends Activity {
             return;
         }
 
-        this.fnArgs = result;
+        this._fnArgs = result;
 
         if (this.code === null || this.code === undefined) {
             callContext.complete(undefined);
@@ -54,7 +54,7 @@ export class Func extends Activity {
         }
 
         try {
-            const fResult = result.apply(this, this.fnArgs || []);
+            const fResult = result.apply(this, this._fnArgs || []);
             if (fResult && typeof fResult === 'object' && typeof fResult.then === 'function') {
                 fResult.then((r: any) => callContext.complete(r)).catch((err: Error) => callContext.fail(err));
             } else {

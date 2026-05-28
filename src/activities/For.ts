@@ -9,9 +9,9 @@ export class For extends WithBody {
     step: unknown = 1;
     varName = 'i';
 
-    private resolvedFrom: number = 0;
-    private resolvedTo: number = 0;
-    private resolvedStep: number = 1;
+    private _resolvedFrom: number = 0;
+    private _resolvedTo: number = 0;
+    private _resolvedStep: number = 1;
 
     run(callContext: CallContext, _args: unknown[]) {
         const from = this.from;
@@ -28,9 +28,9 @@ export class For extends WithBody {
     valuesGot(callContext: CallContext, reason: ActivityState, result: unknown) {
         if (reason === ActivityState.complete) {
             const results = result as unknown[];
-            this.resolvedFrom = results[0] as number;
-            this.resolvedTo = results[1] as number;
-            this.resolvedStep = results[2] as number;
+            this._resolvedFrom = results[0] as number;
+            this._resolvedTo = results[1] as number;
+            this._resolvedStep = results[2] as number;
             this.doStep(callContext);
         } else {
             callContext.end(reason, result);
@@ -39,9 +39,9 @@ export class For extends WithBody {
 
     private doStep(callContext: CallContext, lastResult?: unknown) {
         const varName = this.varName;
-        const from = this.resolvedFrom;
-        const to = this.resolvedTo;
-        const step = this.resolvedStep;
+        const from = this._resolvedFrom;
+        const to = this._resolvedTo;
+        const step = this._resolvedStep;
 
         if (typeof from !== 'number') {
             callContext.fail(new ValidationError(`For activity's from value '${String(from)}' is not a number.`));

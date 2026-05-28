@@ -4,7 +4,7 @@ import { type CallContext } from './runtime/CallContext.js';
 
 export class While extends WithBody {
     condition: unknown = null;
-    private lastBodyResult?: unknown;
+    private _lastBodyResult?: unknown;
 
     run(callContext: CallContext, _args: unknown[]) {
         const condition = this.condition;
@@ -18,7 +18,7 @@ export class While extends WithBody {
     conditionGot(callContext: CallContext, reason: ActivityState, result: unknown) {
         if (reason === ActivityState.complete) {
             if (!result) {
-                callContext.complete(this.lastBodyResult);
+                callContext.complete(this._lastBodyResult);
             } else {
                 this.runBody(callContext);
             }
@@ -29,7 +29,7 @@ export class While extends WithBody {
 
     bodyCompleted(callContext: CallContext, reason: ActivityState, result: unknown) {
         if (reason === ActivityState.complete) {
-            this.lastBodyResult = result;
+            this._lastBodyResult = result;
             callContext.schedule(this.condition, 'conditionGot');
         } else {
             callContext.end(reason, result);

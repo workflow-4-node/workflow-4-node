@@ -6,8 +6,8 @@ export class ForEach extends WithBody {
     items: unknown = null;
     varName = 'item';
 
-    private remainingItems: unknown[] | null = null;
-    private itemIterator: Iterator<unknown> | null = null;
+    private _remainingItems: unknown[] | null = null;
+    private _itemIterator: Iterator<unknown> | null = null;
 
     run(callContext: CallContext, _args: unknown[]) {
         const items = this.items;
@@ -22,9 +22,9 @@ export class ForEach extends WithBody {
     itemsGot(callContext: CallContext, reason: ActivityState, result: unknown) {
         if (reason === ActivityState.complete && result !== undefined) {
             if (result !== null && typeof result === 'object' && 'next' in (result as any) && typeof (result as any).next === 'function') {
-                this.itemIterator = result as Iterator<unknown>;
+                this._itemIterator = result as Iterator<unknown>;
             } else {
-                this.remainingItems = Array.isArray(result) ? [...result] : [result];
+                this._remainingItems = Array.isArray(result) ? [...result] : [result];
             }
             this.doStep(callContext);
         } else {
@@ -34,15 +34,15 @@ export class ForEach extends WithBody {
 
     private doStep(callContext: CallContext, lastResult?: unknown) {
         const varName = this.varName;
-        const remainingItems = this.remainingItems;
-        const iterator = this.itemIterator;
+        const remainingItems = this._remainingItems;
+        const iterator = this._itemIterator;
 
         if (remainingItems && remainingItems.length) {
             const item = remainingItems[0];
             remainingItems.splice(0, 1);
             const variables: Record<string, unknown> = {};
             variables[varName] = item;
-            callContext.schedule({ activity: this.bodyBlock!, variables }, 'bodyFinished');
+            callContext.schedule({ activity: this._bodyBlock!, variables }, 'bodyFinished');
             return;
         }
 
@@ -51,7 +51,7 @@ export class ForEach extends WithBody {
             if (!next.done) {
                 const variables: Record<string, unknown> = {};
                 variables[varName] = next.value;
-                callContext.schedule({ activity: this.bodyBlock!, variables }, 'bodyFinished');
+                callContext.schedule({ activity: this._bodyBlock!, variables }, 'bodyFinished');
                 return;
             }
         }

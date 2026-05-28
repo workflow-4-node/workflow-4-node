@@ -125,6 +125,7 @@ class ActivityMarkup {
     private setupActivity(types: Map<string, new () => Activity>, activityRef: { name: string; value: Activity }, pars: unknown): void {
         const activity = activityRef.value;
         const noTemplate = activityRef.name === 'template';
+        let to: string | null = null;
 
         if (Array.isArray(pars)) {
             activity.args = [];
@@ -145,12 +146,24 @@ class ActivityMarkup {
                     (activity as any)[fieldName] = v;
                 } else if (fieldName === '@import') {
                     // Already handled at the parse level — skip
+                } else if (fieldName === '@to') {
+                    to = fieldValue as string;
                 } else {
                     (activity as any)[fieldName] = this.createValue(types, fieldValue, false, activity, fieldName, noTemplate);
                 }
             }
         } else {
             activity.args = [this.createValue(types, pars, false, activity, undefined, noTemplate)];
+        }
+
+        if (to) {
+            const assign = this.createActivityInstance(types, 'assign');
+            if (!assign) {
+                throw new ActivityMarkupError("Cannot create 'assign' activity for @to binding.");
+            }
+            (assign as any).value = activityRef.value;
+            (assign as any).to = to;
+            activityRef.value = assign;
         }
     }
 

@@ -16,8 +16,8 @@ export abstract class Declarator extends Activity {
         this.hideFromScopeProperties.add('varsDeclared');
     }
 
-    private activityVariableFieldNames?: string[];
-    private savedArgs?: unknown[];
+    private _activityVariableFieldNames?: string[];
+    private _savedArgs?: unknown[];
 
     private readonly _reservedProperties = new ExtensibleSet<string>();
 
@@ -58,7 +58,7 @@ export abstract class Declarator extends Activity {
     run(callContext: CallContext, args: unknown[]) {
         const activityVariables = [];
         const activityVariableFieldNames: string[] = [];
-        this.activityVariableFieldNames = activityVariableFieldNames;
+        this._activityVariableFieldNames = activityVariableFieldNames;
         const resProps = this.getReservedProperties(callContext);
         for (const fieldName of callContext.activity.getScopeKeys()) {
             if (!resProps?.has(fieldName)) {
@@ -71,10 +71,10 @@ export abstract class Declarator extends Activity {
         }
 
         if (activityVariables.length) {
-            this.savedArgs = args;
+            this._savedArgs = args;
             callContext.schedule(activityVariables, 'varsGot');
         } else {
-            this.activityVariableFieldNames = undefined;
+            this._activityVariableFieldNames = undefined;
             // TODO: This 'call' is a workaround because of weird scoping. Remove this later.
             (callContext.activity as Declarator).varsDeclared.call(this, callContext, args);
         }
@@ -85,19 +85,19 @@ export abstract class Declarator extends Activity {
             assert(Array.isArray(result), 'Result from scheduled activity variables is expected to be an array.');
 
             let idx = 0;
-            if (this.activityVariableFieldNames?.length) {
+            if (this._activityVariableFieldNames?.length) {
                 assert(
-                    result.length === this.activityVariableFieldNames.length,
+                    result.length === this._activityVariableFieldNames.length,
                     'Result array length is expected to be same as the number of activity variable fields.',
                 );
 
-                for (const fieldName of this.activityVariableFieldNames) {
+                for (const fieldName of this._activityVariableFieldNames) {
                     (this as any)[fieldName] = result[idx++];
                 }
             }
-            const args = this.savedArgs;
-            this.savedArgs = undefined;
-            this.activityVariableFieldNames = undefined;
+            const args = this._savedArgs;
+            this._savedArgs = undefined;
+            this._activityVariableFieldNames = undefined;
             (callContext.activity as Declarator).varsDeclared.call(this, callContext, args || []);
         } else {
             callContext.end(reason, result);
