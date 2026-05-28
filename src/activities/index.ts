@@ -13,4 +13,5 @@ export * from './Case.js';
 export * from './Default.js';
 export * from './When.js';
 export * from './CustomActivity.js';
+export * from './Template.js';
 export * from './Declarator.js';

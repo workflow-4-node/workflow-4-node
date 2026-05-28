@@ -1,5 +1,31 @@
 export const reflection = {
     /**
+     * Deep-clones a value, handling plain objects, arrays, primitives, and functions
+     * (functions are shared by reference). Unlike `structuredClone`, this does not throw
+     * on functions, Date, Map, Set, etc.
+     */
+    deepClone(value: unknown): unknown {
+        if (value === null || value === undefined) {
+            return value;
+        }
+        if (typeof value === 'function') {
+            return value;
+        }
+        if (Array.isArray(value)) {
+            return value.map((v) => this.deepClone(v));
+        }
+        if (typeof value === 'object') {
+            const obj: Record<string, unknown> = {};
+            const source = value as Record<string, unknown>;
+            for (const key of Object.keys(source)) {
+                obj[key] = this.deepClone(source[key]);
+            }
+            return obj;
+        }
+        return value;
+    },
+
+    /**
      * Enumerates all properties of a plain object or array recursively.
      * Calls the visitor first on the root object (with `key` and `parent` as `undefined`),
      * then on each property/element with `(key, value, parent)`.

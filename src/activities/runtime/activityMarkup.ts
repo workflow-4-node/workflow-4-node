@@ -1,4 +1,5 @@
 import { templateHelpers } from './templateHelpers.js';
+import { reflection } from '../../common/reflection.js';
 import { Activity } from '../Activity.js';
 import { ActivityMarkupError } from '../../errors/ActivityMarkupError.js';
 import { TypeError } from '../../errors/TypeError.js';
@@ -45,7 +46,7 @@ class ActivityMarkup {
             return obj;
         }
 
-        const cloned = structuredClone(obj);
+        const cloned = reflection.deepClone(obj);
         this.functionsToString(cloned);
         return JSON.stringify(cloned);
     }
@@ -123,11 +124,12 @@ class ActivityMarkup {
 
     private setupActivity(types: Map<string, new () => Activity>, activityRef: { name: string; value: Activity }, pars: unknown): void {
         const activity = activityRef.value;
+        const noTemplate = activityRef.name === 'template';
 
         if (Array.isArray(pars)) {
             activity.args = [];
             for (const obj of pars) {
-                activity.args.push(this.createValue(types, obj, false, activity));
+                activity.args.push(this.createValue(types, obj, false, activity, undefined, noTemplate));
             }
         } else if (typeof pars === 'object' && pars !== null) {
             const parObj = pars as Record<string, unknown>;
@@ -136,7 +138,7 @@ class ActivityMarkup {
                 const fieldValue = parObj[fieldName];
 
                 if (activity.isArrayProperty(fieldName)) {
-                    let v = this.createValue(types, fieldValue, true, activity);
+                    let v = this.createValue(types, fieldValue, true, activity, undefined, noTemplate);
                     if (!Array.isArray(v)) {
                         v = [v];
                     }
@@ -144,11 +146,11 @@ class ActivityMarkup {
                 } else if (fieldName === '@import') {
                     // Already handled at the parse level — skip
                 } else {
-                    (activity as any)[fieldName] = this.createValue(types, fieldValue, false, activity, fieldName);
+                    (activity as any)[fieldName] = this.createValue(types, fieldValue, false, activity, fieldName, noTemplate);
                 }
             }
         } else {
-            activity.args = [this.createValue(types, pars, false, activity)];
+            activity.args = [this.createValue(types, pars, false, activity, undefined, noTemplate)];
         }
     }
 
@@ -158,6 +160,7 @@ class ActivityMarkup {
         canBeArray: boolean,
         parent?: Activity,
         fieldName?: string,
+        noTemplate?: boolean,
     ): unknown {
         const noFunction = parent && fieldName ? parent.isCodeProperty(fieldName) : undefined;
 
@@ -165,10 +168,10 @@ class ActivityMarkup {
             if (canBeArray) {
                 return markup.map((v) => this.createValue(types, v, false, parent));
             }
-            if (templateHelpers.isTemplate(markup as Record<string, any>)) {
+            if (!noTemplate && templateHelpers.isTemplate(markup as Record<string, any>)) {
                 return this.toTemplate(types, markup as Record<string, any>);
             }
-            return structuredClone(markup);
+            return reflection.deepClone(markup);
         }
 
         if (typeof markup === 'object' && markup !== null) {
@@ -188,11 +191,11 @@ class ActivityMarkup {
                 }
             }
 
-            if (templateHelpers.isTemplate(obj as Record<string, any>)) {
+            if (!noTemplate && templateHelpers.isTemplate(obj as Record<string, any>)) {
                 return this.toTemplate(types, obj as Record<string, any>);
             }
 
-            return structuredClone(markup);
+            return reflection.deepClone(markup);
         }
 
         if (typeof markup === 'string') {
@@ -218,7 +221,7 @@ class ActivityMarkup {
             return fn;
         }
 
-        return structuredClone(markup);
+        return reflection.deepClone(markup);
     }
 
     private getActivityTypeName(str: string): string | null {
