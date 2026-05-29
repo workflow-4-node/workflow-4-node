@@ -7,7 +7,7 @@ import { ActivityRuntimeError } from '../errors/ActivityRuntimeError.js';
 import { ActivityStateExceptionError } from '../errors/ActivityStateExceptionError.js';
 import { TypeError as W4NTypeError } from '../errors/TypeError.js';
 import type { ActivityExecutionContext } from './runtime/ActivityExecutionContext.js';
-import type { ActivityStateValue } from './runtime/ActivityExecutionState.js';
+
 import type { CallContext } from './runtime/CallContext.js';
 
 interface SchedulingState {
@@ -226,7 +226,7 @@ export abstract class Activity {
      * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
      * `this`. Access activity fields via `callContext.activity`.
      */
-    unInitializeExec(_reason: ActivityStateValue, _result?: unknown): void {
+    unInitializeExec(_reason: ActivityState, _result?: unknown): void {
         // virtual
     }
 
@@ -259,8 +259,8 @@ export abstract class Activity {
         this.end(callContext, ActivityState.fail, e);
     }
 
-    end(callContext: CallContext, reason: ActivityStateValue, result?: unknown): void {
-        let finalReason: ActivityStateValue = reason;
+    end(callContext: CallContext, reason: ActivityState, result?: unknown): void {
+        let finalReason: ActivityState = reason;
         let finalResult = result;
 
         try {
@@ -322,7 +322,7 @@ export abstract class Activity {
             return;
         }
 
-        const invokeEndCallback = (reason: ActivityStateValue, result?: unknown): void => {
+        const invokeEndCallback = (reason: ActivityState, result?: unknown): void => {
             setImmediate(async () => {
                 const cb = (scope as Record<string, unknown>)[effectiveEndCallback];
                 if (typeof cb === 'function') {
@@ -456,7 +456,7 @@ export abstract class Activity {
      * available on `this`. Access activity fields via `callContext.activity`. The
      * `__schedulingState` is read from and written to `this` (the scope).
      */
-    resultCollected(callContext: CallContext, reason: ActivityStateValue, result: unknown, bookmark: string): void {
+    resultCollected(callContext: CallContext, reason: ActivityState, result: unknown, bookmark: string): void {
         const selfId = callContext.instanceId;
         const execContext = callContext.executionContext;
         const childId = specStrings.getString(bookmark);
@@ -665,7 +665,7 @@ export abstract class Activity {
      * {@link hideFromScopeProperties} are excluded from the scope and will NOT be available on
      * `this`. Access activity fields via `callContext.activity`.
      */
-    protected defaultEndCallback(callContext: CallContext, reason: ActivityStateValue, result?: unknown): void {
+    protected defaultEndCallback(callContext: CallContext, reason: ActivityState, result?: unknown): void {
         callContext.end(reason, result);
     }
 

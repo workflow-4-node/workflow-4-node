@@ -1,4 +1,6 @@
+import type { ActivityStateEvent } from './ActivityExecutionState.js';
+
 export interface ActivityStateTracker {
-    activityStateChanged?(args: any[]): void;
-    activityStateFilter?(args: any[]): boolean;
+    activityStateChanged?(args: ActivityStateEvent): void;
+    activityStateFilter?(args: ActivityStateEvent): boolean;
 }

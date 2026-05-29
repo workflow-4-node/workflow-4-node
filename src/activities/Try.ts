@@ -1,5 +1,5 @@
 import { ActivityState } from '../common/enums.js';
-import type { ActivityStateValue } from './runtime/ActivityExecutionState.js';
+
 import { Activity } from './Activity.js';
 import { Block } from './Block.js';
 import { type CallContext } from './runtime/CallContext.js';
@@ -13,7 +13,7 @@ export class Try extends Activity {
     // Accessed by runtime engine / scope — intentionally non-private
     _body: Block | null = null;
     _originalResult?: unknown;
-    _originalReason?: ActivityStateValue;
+    _originalReason?: ActivityState;
     _catchResult?: unknown;
 
     constructor() {

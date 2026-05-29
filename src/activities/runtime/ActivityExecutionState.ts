@@ -2,10 +2,8 @@ import { EventEmitter } from 'events';
 import { ActivityState } from '../../common/enums.js';
 import { TypeError } from '../../errors/TypeError.js';
 
-export type ActivityStateValue = ActivityState;
-
 export interface ActivityStateEvent {
-    reason: ActivityStateValue | null;
+    reason: ActivityState | null;
     result?: unknown;
     scope?: unknown;
 }
@@ -16,17 +14,17 @@ export class ActivityExecutionState extends EventEmitter {
         this.instanceId = activityInstanceId;
     }
 
-    private execStateValue: ActivityStateValue | null = null;
+    private execStateValue: ActivityState | null = null;
 
     readonly instanceId: string;
     parentInstanceId: string | null = null;
     readonly childInstanceIds: Set<string> = new Set();
 
-    get execState(): ActivityStateValue | null {
+    get execState(): ActivityState | null {
         return this.execStateValue;
     }
 
-    set execState(value: ActivityStateValue | null) {
+    set execState(value: ActivityState | null) {
         this.execStateValue = value;
     }
 
@@ -34,7 +32,7 @@ export class ActivityExecutionState extends EventEmitter {
         return this.execStateValue === ActivityState.run;
     }
 
-    reportState(reason: ActivityStateValue | null, result?: unknown, scope?: unknown): void {
+    reportState(reason: ActivityState | null, result?: unknown, scope?: unknown): void {
         if (this.execStateValue !== reason) {
             this.execStateValue = reason;
             this.emitState(result, scope);
@@ -56,7 +54,7 @@ export class ActivityExecutionState extends EventEmitter {
         }
     }
 
-    toJSON(): { execState: ActivityStateValue | null } {
+    toJSON(): { execState: ActivityState | null } {
         return {
             execState: this.execStateValue,
         };
@@ -77,7 +75,7 @@ export class ActivityExecutionState extends EventEmitter {
             if (!validStates.includes(obj.execState)) {
                 throw new TypeError("Argument object's execState property value is not a valid Activity state value.");
             }
-            this.execStateValue = obj.execState as ActivityStateValue;
+            this.execStateValue = obj.execState as ActivityState;
         } else {
             this.execStateValue = null;
         }

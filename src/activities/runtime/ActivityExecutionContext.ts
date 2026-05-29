@@ -5,7 +5,6 @@ import { ActivityRuntimeError } from '../../errors/ActivityRuntimeError.js';
 import { BookmarkNotFoundError } from '../../errors/BookmarkNotFoundError.js';
 import { TypeError as W4NTypeError } from '../../errors/TypeError.js';
 import { Activity } from '../Activity.js';
-import type { ActivityStateValue } from './ActivityExecutionState.js';
 import type { Serializer } from '../../serialization/Serializer.js';
 import { ScopeTree } from './ScopeTree.js';
 import { ActivityExecutionState } from './ActivityExecutionState.js';
@@ -147,13 +146,7 @@ export class ActivityExecutionContext extends EventEmitter {
                     const currentBm = this._bookmarks.get(name);
                     if (currentBm) {
                         // If bm still exists.
-                        this.doResumeBookmark(
-                            callContext,
-                            currentBm,
-                            reason,
-                            result,
-                            (reason as ActivityStateValue) === ActivityState.idle,
-                        );
+                        this.doResumeBookmark(callContext, currentBm, reason, result, (reason as ActivityState) === ActivityState.idle);
                         resolve(true);
                     }
                     resolve(false);
@@ -334,7 +327,7 @@ export class ActivityExecutionContext extends EventEmitter {
         return new ScopeTree(
             {
                 resultCollected: (context: CallContext, reason: string, result: unknown, bookmarkName: string) => {
-                    context.activity.resultCollected.call(context.scope, context, reason as ActivityStateValue, result, bookmarkName);
+                    context.activity.resultCollected.call(context.scope, context, reason as ActivityState, result, bookmarkName);
                 },
             },
             (id: string) => this.getKnownActivity(id),

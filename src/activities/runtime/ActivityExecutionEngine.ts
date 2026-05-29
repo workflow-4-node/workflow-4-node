@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { Activity } from '../Activity.js';
 import { ActivityExecutionContext } from './ActivityExecutionContext.js';
-import { type ActivityStateValue, type ActivityExecutionState } from './ActivityExecutionState.js';
+import { type ActivityExecutionState, type ActivityStateEvent } from './ActivityExecutionState.js';
 import { CallContext } from './CallContext.js';
 import { activityMarkup } from './activityMarkup.js';
 import { ActivityState } from '../../common/enums.js';
@@ -39,7 +39,7 @@ export class ActivityExecutionEngine extends EventEmitter {
     readonly instance: null;
     updatedOn: Date | null;
 
-    get execState(): ActivityStateValue | null {
+    get execState(): ActivityState | null {
         return this._rootState ? this._rootState.execState : null;
     }
 
@@ -69,7 +69,7 @@ export class ActivityExecutionEngine extends EventEmitter {
                     const ctx = new CallContext(this.context);
                     this.setRootState(this.context.getExecutionState(await this.getRootActivity()));
 
-                    this.once(ActivityState.end, (eArgs: { reason: ActivityStateValue; result?: unknown }) => {
+                    this.once(ActivityState.end, (eArgs: { reason: ActivityState; result?: unknown }) => {
                         const { reason, result } = eArgs;
                         switch (reason) {
                             case ActivityState.complete:
@@ -99,7 +99,7 @@ export class ActivityExecutionEngine extends EventEmitter {
         });
     }
 
-    async resumeBookmark(name: string, reason: ActivityStateValue, result?: unknown): Promise<void> {
+    async resumeBookmark(name: string, reason: ActivityState, result?: unknown): Promise<void> {
         await this.initialize();
 
         return new Promise<void>((resolve, reject) => {
@@ -114,7 +114,7 @@ export class ActivityExecutionEngine extends EventEmitter {
 
                     const bmTimestamp = this.context.getBookmarkTimestamp(name);
 
-                    this.once(ActivityState.end, (args: { reason: ActivityStateValue; result?: unknown }) => {
+                    this.once(ActivityState.end, (args: { reason: ActivityState; result?: unknown }) => {
                         const endReason = args.reason;
                         const endResult = args.result;
 
@@ -251,12 +251,12 @@ export class ActivityExecutionEngine extends EventEmitter {
     private hookContext(): void {
         this.context.on(ActivityState.run, (args: unknown) => {
             for (const t of this._trackers) {
-                t.activityStateChanged(args as any[]);
+                t.activityStateChanged(args as ActivityStateEvent);
             }
         });
         this.context.on(ActivityState.end, (args: unknown) => {
             for (const t of this._trackers) {
-                t.activityStateChanged(args as any[]);
+                t.activityStateChanged(args as ActivityStateEvent);
             }
         });
         this.context.on('workflowEvent', (args: unknown) => {

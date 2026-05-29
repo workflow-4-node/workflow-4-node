@@ -11,24 +11,20 @@ These files from `_old_/lib/es6/activities/` have no corresponding `.ts` file in
 | # | Old file | Description |
 |---|----------|-------------|
 | 1 | `beginMethod.js` | Begin method activity |
-| 2 | `console.js` | Console logging activity |
-| 3 | `consoleTracker.js` | Console activity state tracker |
+| 2 | `consoleTracker.js` | Console activity state tracker |
 | 4 | `delay.js` | Delay activity (time-based) |
 | 5 | `delayTo.js` | Delay to specific time |
-| 6 | `emit.js` | Emit event activity |
-| 7 | `endMethod.js` | End method activity |
+| 6 | `endMethod.js` | End method activity |
 | 8 | `instanceData.js` | Instance data helper |
-| 9 | `merge.js` | Merge activity |
-| 10 | `method.js` | Method activity |
-| 11 | `obj.js` | Object activity |
-| 12 | `repeat.js` | Repeat activity |
+| 9 | `method.js` | Method activity |
+| 10 | `repeat.js` | Repeat activity |
 | 13 | `resumeBookmark.js` | Resume bookmark activity |
 | 14 | `waitForBookmark.js` | Wait for external event / bookmark |
 | 15 | `workflow.js` | Workflow root activity |
 
 ### Activities — Already Converted ✅
 
-`Activity`, `And`, `Assign`, `Block`, `Cancel`, `CancellationScope`, `Case`, `CustomActivity` (= old `Composite`), `Declarator`, `Default`, `Equals`, `Expression`, `Falsy`, `For`, `ForEach`, `Func`, `If`, `Not`, `NotEquals`, `Or`, `Parallel`, `Pick`, `Switch`, `Template`, `Throw`, `Truthy`, `Try`, `When`, `While`, `WithBody`.
+`Activity`, `And`, `Assign`, `Block`, `Cancel`, `CancellationScope`, `Case`, `Console`, `CustomActivity` (= old `Composite`), `Declarator`, `Default`, `Emit`, `Equals`, `Expression`, `Falsy`, `For`, `ForEach`, `Func`, `If`, `Merge`, `Not`, `NotEquals`, `Obj`, `Or`, `Parallel`, `Pick`, `Switch`, `Template`, `Throw`, `Truthy`, `Try`, `When`, `While`, `WithBody`.
 
 Runtime infrastructure (`runtime/`): `ActivityExecutionContext`, `ActivityExecutionEngine`, `ActivityExecutionState`, `activityMarkup`, `ActivityStateTracker`, `ActivityStateTrackerWrapper` (new), `CallContext`, `ResumeBookmarkQueue`, `scope`, `ScopeNode`, `scopeSerializer`, `ScopeTree`, `templateHelpers` — all converted ✅
 
@@ -72,6 +68,6 @@ The old `hosting/` module has **no** corresponding `src/hosting/` directory:
 
 | Category | Total old files | Not converted |
 |----------|----------------|---------------|
-| Activities | 40 files (incl. runtime) | **15 activities** |
+| Activities | 40 files (incl. runtime) | **11 activities** |
 | Common | 9 files | **2 modules** |
 | Hosting | 12 files | **12 files (entire module)** |
