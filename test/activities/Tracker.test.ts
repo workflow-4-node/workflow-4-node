@@ -1,4 +1,5 @@
-import { ActivityExecutionEngine, activityMarkup, TestTracker } from '../../src/index.js';
+import { ActivityExecutionEngine, activityMarkup } from '../../src/index.js';
+import { TestTracker } from './runtime/TestTracker.js';
 import assert from 'assert';
 
 describe('Tracker', () => {

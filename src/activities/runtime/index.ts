@@ -9,3 +9,4 @@ export * from './scope.js';
 export * from './scopeSerializer.js';
 export * from './templateHelpers.js';
 export * from './activityMarkup.js';
+export * from './ConsoleTracker.js';

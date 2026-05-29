@@ -1,7 +1,12 @@
 import { inspect } from 'node:util';
-import { ActivityState } from '../common/enums.js';
-import type { ActivityStateEvent } from './runtime/ActivityExecutionState.js';
-import type { ActivityStateTracker } from './runtime/ActivityStateTracker.js';
+import type { ActivityStateEvent } from '../../../src/activities/runtime/ActivityExecutionState.js';
+import type { ActivityStateTracker } from '../../../src/activities/runtime/ActivityStateTracker.js';
+
+export interface TrackerEntry {
+    name: string;
+    reason: string;
+    result: string;
+}
 
 function formatResult(result: unknown): string {
     if (result instanceof Error) {
@@ -22,19 +27,19 @@ function formatResult(result: unknown): string {
     return '';
 }
 
-export class ConsoleTracker implements ActivityStateTracker {
+export class TestTracker implements ActivityStateTracker {
+    readonly entries: TrackerEntry[] = [];
+
     activityStateChanged(args: ActivityStateEvent): void {
         const activity = (args.scope as Record<string, unknown>)?.['$activity'] as { toString(): string } | undefined;
         if (!activity) {
             return;
         }
 
-        const reason = args.reason;
-        const result = formatResult(args.result);
-
-        const name = activity.toString();
-        const resultStr = result ? `, result: ${result}` : '';
-        const method = reason === ActivityState.fail ? 'error' : 'log';
-        console[method](`Activity '${name}' state changed - reason: ${reason}${resultStr}`);
+        this.entries.push({
+            name: activity.toString(),
+            reason: args.reason ?? '',
+            result: formatResult(args.result),
+        });
     }
 }
