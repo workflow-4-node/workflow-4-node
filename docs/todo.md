@@ -11,12 +11,10 @@ These files from `_old_/lib/es6/activities/` have no corresponding `.ts` file in
 | 5 | `instanceData.js` | Instance data helper |
 | 6 | `method.js` | Method activity |
 | 7 | `repeat.js` | Repeat activity |
-| 8 | `resumeBookmark.js` | Resume bookmark activity |
-| 9 | `waitForBookmark.js` | Wait for external event / bookmark |
-| 10 | `workflow.js` | Workflow root activity |
+| 8 | `workflow.js` | Workflow root activity |
 
 ### Activities — Already Converted ✅
 
-`Activity`, `And`, `Assign`, `Block`, `Cancel`, `CancellationScope`, `Case`, `Console`, `ConsoleTracker`, `CustomActivity` (= old `Composite`), `Declarator`, `Default`, `Emit`, `Equals`, `Expression`, `Falsy`, `For`, `ForEach`, `Func`, `If`, `Merge`, `Not`, `NotEquals`, `Obj`, `Or`, `Parallel`, `Pick`, `Switch`, `Template`, `TestTracker`, `Throw`, `Truthy`, `Try`, `When`, `While`, `WithBody`.
+`Activity`, `And`, `Assign`, `Block`, `Cancel`, `CancellationScope`, `Case`, `Console`, `ConsoleTracker`, `CustomActivity` (= old `Composite`), `Declarator`, `Default`, `Emit`, `Equals`, `Expression`, `Falsy`, `For`, `ForEach`, `Func`, `If`, `Merge`, `Not`, `NotEquals`, `Obj`, `Or`, `Parallel`, `Pick`, `ResumeBookmark`, `Switch`, `Template`, `TestTracker`, `Throw`, `Truthy`, `Try`, `WaitForBookmark`, `When`, `While`, `WithBody`.
 
 Runtime infrastructure (`runtime/`): `ActivityExecutionContext`, `ActivityExecutionEngine`, `ActivityExecutionState`, `activityMarkup`, `ActivityStateTracker`, `ActivityStateTrackerWrapper` (new), `CallContext`, `ResumeBookmarkQueue`, `scope`, `ScopeNode`, `scopeSerializer`, `ScopeTree`, `templateHelpers` — all converted ✅
