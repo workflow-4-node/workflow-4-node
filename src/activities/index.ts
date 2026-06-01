@@ -36,3 +36,6 @@ export * from './Emit.js';
 export * from './ResumeBookmark.js';
 export * from './WaitForBookmark.js';
 export * from './Workflow.js';
+export * from './BeginMethod.js';
+export * from './EndMethod.js';
+export * from './Method.js';

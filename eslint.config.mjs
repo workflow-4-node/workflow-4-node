@@ -60,6 +60,7 @@ export default tseslint.config(
             '@typescript-eslint/no-unsafe-call': 'off',
             '@typescript-eslint/no-unsafe-argument': 'off',
             '@typescript-eslint/require-await': 'off',
+            'prefer-const': 'error',
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 {

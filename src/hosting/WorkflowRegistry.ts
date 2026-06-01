@@ -1,17 +1,22 @@
+import assert from 'assert';
 import { createHash } from 'node:crypto';
 import { Activity } from '../activities/Activity.js';
+import { BeginMethod } from '../activities/BeginMethod.js';
+import { EndMethod } from '../activities/EndMethod.js';
 import type { Workflow } from '../activities/Workflow.js';
 import { ValidationError } from '../errors/ValidationError.js';
 import { WorkflowNotFoundError } from '../errors/WorkflowNotFoundError.js';
 import { DefaultSerializer } from '../serialization/DefaultSerializer.js';
 import type { Serializer } from '../serialization/Serializer.js';
 import { ActivityExecutionContext } from '../activities/runtime/ActivityExecutionContext.js';
+import { activityMarkup } from '../activities/runtime/activityMarkup.js';
 
 export type MethodInfo = {
     name: string;
     version: string;
     canCreateInstance: boolean;
     instanceIdPath: string | null;
+    execContext: ActivityExecutionContext;
 };
 
 export type WorkflowDescriptor = {
@@ -56,13 +61,13 @@ export class WorkflowRegistry {
                 }
             }
 
-            const desc = this.createDescriptor(execContext, name, version, deprecated);
+            const desc = await this.createDescriptor(execContext, name, version, deprecated);
             entry.set(version, desc);
             return desc;
         }
 
         entry = new Map();
-        const desc = this.createDescriptor(execContext, name, version, deprecated);
+        const desc = await this.createDescriptor(execContext, name, version, deprecated);
         entry.set(version, desc);
         this.workflows.set(name, entry);
         return desc;
@@ -118,41 +123,83 @@ export class WorkflowRegistry {
         }
     }
 
-    private createDescriptor(
+    private async createDescriptor(
         execContext: ActivityExecutionContext,
         name: string,
         version: string,
         deprecated: boolean,
-    ): WorkflowDescriptor {
+    ): Promise<WorkflowDescriptor> {
         return {
             name,
             version,
             deprecated,
             execContext,
-            methods: this.collectMethodInfos(execContext, version),
+            methods: await this.collectMethodInfos(execContext, version),
         };
     }
 
-    private collectMethodInfos(_execContext: ActivityExecutionContext, _version: string): Map<string, MethodInfo> {
-        // TODO: Implement when BeginMethod and EndMethod activities are added to the new codebase.
-        return new Map();
+    private async collectMethodInfos(execContext: ActivityExecutionContext, version: string): Promise<Map<string, MethodInfo>> {
+        const infos = new Map<string, MethodInfo>();
+        const workflow = execContext.rootActivity;
+        const children = await workflow.children(execContext);
+
+        for (const child of children) {
+            const isBM = child instanceof BeginMethod;
+            const isEM = child instanceof EndMethod;
+            if (isBM || isEM) {
+                const methodName = typeof child.methodName === 'string' ? child.methodName.trim() : null;
+                const instanceIdPath = typeof child.instanceIdPath === 'string' ? child.instanceIdPath.trim() : null;
+                if (methodName) {
+                    let info = infos.get(methodName);
+                    if (!info) {
+                        info = {
+                            name: methodName,
+                            version,
+                            canCreateInstance: false,
+                            instanceIdPath: null,
+                            execContext,
+                        };
+                        infos.set(methodName, info);
+                    }
+                    if (isBM && child.canCreateInstance) {
+                        info.canCreateInstance = true;
+                    }
+                    if (instanceIdPath) {
+                        if (info.instanceIdPath) {
+                            if (info.instanceIdPath !== instanceIdPath) {
+                                throw new ValidationError(
+                                    `Method '${methodName}' in workflow '${(workflow as Workflow).name}' has multiple different instanceIdPath value which is not supported.`,
+                                );
+                            }
+                        } else {
+                            info.instanceIdPath = instanceIdPath;
+                        }
+                    }
+                }
+            }
+        }
+
+        const result = new Map<string, MethodInfo>();
+        for (const [key, info] of infos.entries()) {
+            if (info.instanceIdPath) {
+                result.set(key, info);
+            }
+        }
+        return result;
     }
 
     private async computeVersion(execContext: ActivityExecutionContext): Promise<string> {
         const sha = createHash('sha256');
         const workflow = execContext.rootActivity;
-        const activities = await workflow.all(execContext);
-
         const add = (value: unknown): void => {
-            if (value !== null && value !== undefined) {
+            if (value !== null) {
                 sha.update(this.serializer.toJSON(value));
             }
         };
-
-        for (const activity of activities) {
-            const alias = activity.constructor.name[0].toLowerCase() + activity.constructor.name.slice(1);
+        for (const activity of await workflow.all(execContext)) {
+            const alias = activityMarkup.getAlias(activity);
+            assert(alias);
             add(alias);
-
             for (const key of Object.keys(activity)) {
                 if (!activity.hideFromScopeProperties.has(key) && !activity.nonSerializedProperties.has(key)) {
                     const value = (activity as unknown as Record<string, unknown>)[key];
@@ -170,7 +217,6 @@ export class WorkflowRegistry {
                 }
             }
         }
-
         return sha.digest('hex');
     }
 }

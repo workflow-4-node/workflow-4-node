@@ -245,7 +245,7 @@ class ActivityMarkup {
         return null;
     }
 
-    private getAlias(Ctor: new () => Activity): string | null {
+    getAlias(Ctor: new () => Activity): string | null {
         if (!this.isActivityConstructor(Ctor)) {
             return null;
         }
@@ -340,5 +340,9 @@ export const activityMarkup = {
 
     stringify(obj: unknown): string {
         return instance.stringify(obj);
+    },
+
+    getAlias(activity: Activity): string | null {
+        return instance.getAlias(activity.constructor as new () => Activity);
     },
 };
