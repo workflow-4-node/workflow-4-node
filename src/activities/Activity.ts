@@ -84,7 +84,7 @@ export abstract class Activity {
      * ({@link initializeExec}, {@link run}, {@link unInitializeExec},
      * {@link resultCollected}, {@link defaultEndCallback}).
      */
-    protected get hideFromScopeProperties(): ExtensibleSet<string> {
+    get hideFromScopeProperties(): ExtensibleSet<string> {
         return this._hideFromScopeProperties;
     }
 

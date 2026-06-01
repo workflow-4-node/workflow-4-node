@@ -1,6 +1,6 @@
 import { ExtensibleSet } from '../common/ExtensibleSet.js';
 import { ValidationError } from '../errors/ValidationError.js';
-import { ActivityState } from '../index.js';
+import { ActivityState } from '../common/enums.js';
 import { Activity } from './Activity.js';
 import { type CallContext } from './runtime/CallContext.js';
 import assert from 'assert';
