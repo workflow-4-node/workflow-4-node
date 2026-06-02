@@ -8,10 +8,13 @@ import type { LockInfo, PersistedState, WorkflowPersistence } from './WorkflowPe
  * retry-on-null semantics to `enterLock` (mirroring the behaviour
  * of the original JS `WorkflowPersistence` class).
  */
-export class WorkflowPersistenceSocket {
-    constructor(private readonly impl: WorkflowPersistence) {}
+export class WorkflowPersistenceSocket implements WorkflowPersistence {
+    constructor(
+        private readonly impl: WorkflowPersistence,
+        private readonly enterLockTimeoutMs: number,
+    ) {}
 
-    async enterLock(lockName: string, enterLockTimeoutMs: number, inLockTimeoutMs: number): Promise<LockInfo> {
+    async enterLock(lockName: string, inLockTimeoutMs: number): Promise<LockInfo | null> {
         return promiseHelpers.retryFor(
             async () => {
                 const lockInfo = await this.impl.enterLock(lockName, inLockTimeoutMs);
@@ -20,7 +23,7 @@ export class WorkflowPersistenceSocket {
                 }
                 return lockInfo;
             },
-            enterLockTimeoutMs,
+            this.enterLockTimeoutMs,
             { minInterval: 250, maxInterval: 3000 },
             (err) => err instanceof LockError,
         );

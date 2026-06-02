@@ -1,6 +1,7 @@
 export { InstanceIdParser } from './InstanceIdParser.js';
 export { InstIdPaths } from './InstIdPaths.js';
 export { KeepAlive } from './KeepAlive.js';
+export { KeepLockAlive } from './KeepLockAlive.js';
 export { KnownInstaStore } from './KnownInstaStore.js';
 export { WorkflowPersistenceSocket } from './WorkflowPersistenceSocket.js';
 export { WorkflowRegistry } from './WorkflowRegistry.js';
