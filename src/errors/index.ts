@@ -6,6 +6,7 @@ export * from './AggregateError.js';
 export * from './BookmarkNotFoundError.js';
 export * from './CancelledError.js';
 export * from './IdleError.js';
+export * from './LockError.js';
 export * from './MethodIsNotAccessibleError.js';
 export * from './MethodNotFoundError.js';
 export * from './TimeoutError.js';

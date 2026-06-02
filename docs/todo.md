@@ -11,7 +11,6 @@ These files from `_old_/lib/es6/activities/` have no corresponding `.ts` file in
 | 5 | `instanceData.js` | Instance data helper |
 | 6 | `method.js` | Method activity |
 | 7 | `repeat.js` | Repeat activity |
-| _ | _(none – all done)_ | |
 
 ### Activities — Already Converted ✅
 

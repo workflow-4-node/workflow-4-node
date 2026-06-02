@@ -3,6 +3,19 @@ import { TimeoutError } from '../errors/index.js';
 
 const dateNow = Date.now;
 
+/** Backoff configuration for retry operations. */
+export type Backoff = {
+    /** Starting interval in milliseconds. */
+    minInterval: number;
+    /** Maximum interval cap in milliseconds. */
+    maxInterval: number;
+    /**
+     * Multiplier applied to the interval on each retry.
+     * @default 2.0
+     */
+    multiply?: number;
+};
+
 /**
  * A collection of async utility functions for controlling async flow.
  *
@@ -84,12 +97,27 @@ async function immediate(unref = false) {
 async function retry<T>(
     fn: (() => T) | (() => Promise<T>),
     times: number,
-    interval: number,
+    interval: number | Backoff,
     shouldRetryOnErrorCallback: ((err: Error) => boolean) | null = null,
     logFn: ((err: Error, count: number) => void) | null = null,
 ): Promise<T> {
     assert(times > 0, 'Argument "times" is invalid.');
-    assert(interval > 0, 'Argument "interval" is invalid.');
+
+    let currentInterval: number;
+    let maxInterval: number;
+    let multiply: number;
+    if (typeof interval === 'number') {
+        assert(interval > 0, 'Argument "interval" is invalid.');
+        currentInterval = interval;
+        maxInterval = 1000;
+        multiply = 2.0;
+    } else {
+        assert(interval.minInterval > 0, 'Argument "interval.minInterval" is invalid.');
+        assert(interval.maxInterval > 0, 'Argument "interval.maxInterval" is invalid.');
+        currentInterval = interval.minInterval;
+        maxInterval = interval.maxInterval;
+        multiply = interval.multiply ?? 2.0;
+    }
 
     for (let i = 1; ; i++) {
         try {
@@ -106,8 +134,8 @@ async function retry<T>(
                 logFn(error, i);
             }
         }
-        await delay(interval, true);
-        interval = increaseInterval(interval, 1000);
+        await delay(currentInterval, true);
+        currentInterval = increaseInterval(currentInterval, maxInterval, multiply);
     }
 }
 
@@ -115,13 +143,27 @@ async function retry<T>(
 async function retryFor<T>(
     fn: (() => T) | (() => Promise<T>),
     ms: number,
-    interval: number,
+    interval: number | Backoff,
     shouldRetryOnErrorCallback: ((err: Error) => boolean) | null = null,
     logFn: ((err: Error, count: number) => void) | null = null,
 ) {
-    interval = interval || 500;
     assert(ms > 0, 'Argument "ms" is invalid.');
-    assert(interval > 0, 'Argument "interval" is invalid.');
+
+    let currentInterval: number;
+    let maxInterval: number;
+    let multiply: number;
+    if (typeof interval === 'number') {
+        currentInterval = interval || 500;
+        assert(currentInterval > 0, 'Argument "interval" is invalid.');
+        maxInterval = 1000;
+        multiply = 2.0;
+    } else {
+        assert(interval.minInterval > 0, 'Argument "interval.minInterval" is invalid.');
+        assert(interval.maxInterval > 0, 'Argument "interval.maxInterval" is invalid.');
+        currentInterval = interval.minInterval;
+        maxInterval = interval.maxInterval;
+        multiply = interval.multiply ?? 2.0;
+    }
 
     const start = dateNow();
     for (let i = 1; ; i++) {
@@ -139,14 +181,14 @@ async function retryFor<T>(
                 logFn(error, i);
             }
         }
-        await delay(interval, true);
-        interval = increaseInterval(interval, 1000);
+        await delay(currentInterval, true);
+        currentInterval = increaseInterval(currentInterval, maxInterval, multiply);
     }
 }
 
-function increaseInterval(currentInterval: number, maxInterval = 1000) {
+function increaseInterval(currentInterval: number, maxInterval: number, multiply = 2.0) {
     if (currentInterval < maxInterval) {
-        currentInterval *= 2;
+        currentInterval *= multiply;
         if (currentInterval > maxInterval) {
             currentInterval = maxInterval;
         }
